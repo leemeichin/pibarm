@@ -25,7 +25,7 @@ export default function sourcehutExtension(pi: ExtensionAPI) {
     promptGuidelines: ["Use sourcehut_builds when the user asks about SourceHut CI/builds."],
     parameters: LIMIT_PARAMS,
     async execute(_id, params, signal) {
-      const result = await runHut(pi, ["builds", "list", "-n", String(params.limit ?? 10)], signal);
+      const result = await runHut(pi, ["builds", "list", "--count", String(params.limit ?? 10)], signal);
       return { content: [{ type: "text", text: text(result) }], details: result, isError: result.code !== 0 };
     },
   });
@@ -38,7 +38,7 @@ export default function sourcehutExtension(pi: ExtensionAPI) {
     promptGuidelines: ["Use sourcehut_tickets when the user asks about SourceHut tickets/issues."],
     parameters: LIMIT_PARAMS,
     async execute(_id, params, signal) {
-      const result = await runHut(pi, ["todo", "ticket", "list", "-n", String(params.limit ?? 10)], signal);
+      const result = await runHut(pi, ["todo", "ticket", "list", "--count", String(params.limit ?? 10)], signal);
       return { content: [{ type: "text", text: text(result) }], details: result, isError: result.code !== 0 };
     },
   });
@@ -46,7 +46,7 @@ export default function sourcehutExtension(pi: ExtensionAPI) {
   pi.registerCommand("srht-builds", {
     description: "List recent SourceHut builds with hut",
     handler: async (_args, ctx) => {
-      const result = await runHut(pi, ["builds", "list", "-n", "10"]);
+      const result = await runHut(pi, ["builds", "list", "--count", "10"]);
       ctx.ui.notify(text(result), result.code === 0 ? "info" : "error");
     },
   });

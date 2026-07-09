@@ -1,0 +1,8 @@
+{
+  "command": "mcporter",
+  "callArgs": ["call", "{selector}", "--args", "{argumentsJson}", "--output", "json"],
+  "listArgs": ["list", "{server}", "{schemaFlag}", "--json"],
+  "resourceArgs": ["resource", "{server}", "{uri}"],
+  "env": {},
+  "timeoutMs": 120000
+}

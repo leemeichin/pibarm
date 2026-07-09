@@ -187,6 +187,9 @@ Available skill commands:
 ## Files
 
 ```text
+AGENTS.md                     # project agent instructions
+SECURITY.md                   # local security policy
+.pi/APPEND_SYSTEM.md          # project system-prompt addendum
 extensions/plan-worktree.ts   # plan mode, elicitation, worktrees
 extensions/question.ts        # single-question user prompt tool
 extensions/mcporter.ts        # mcporter MCP bridge

@@ -12,7 +12,7 @@ Use this skill for complex work that benefits from explicit roles.
 - Planner: read-only, asks clarifying questions, writes a concise plan, avoids file changes.
 - Elicitor: uses `elicit_plan_questions` to ask about scope, risks, tradeoffs, and execution location before approval.
 - Executor: implements approved changes, ideally in an isolated git worktree, runs checks, summarizes modified files.
-- Subagent: isolated research, verification, or implementation via `run_subagent` or `run_worktree_agent`.
+- Subagent: isolated research, verification, comparison, or implementation via `run_subagent`, `run_subagents`, or `run_worktree_agent`.
 
 ## Commands
 
@@ -26,11 +26,11 @@ Use this skill for complex work that benefits from explicit roles.
 
 ## Delegation Guidance
 
-Use `run_worktree_agent` when the subtask may modify files or should not affect the active checkout. Use `run_subagent` when the subtask is self-contained and read-only, for example:
+Use `run_worktree_agent` when the subtask may modify files or should not affect the active checkout. Use `run_subagent` for one self-contained read-only subtask. Use `run_subagents` when comparing or delegating several read-only subtasks, especially across models, for example:
 
 - inspect unfamiliar docs and summarize them
-- compare alternatives
-- run a verification pass against a completed change
+- compare alternatives across models
+- run planner/reviewer/verifier subagents in parallel
 - produce a focused checklist
 
 Subagent prompts must include all necessary context. Do not assume the subagent can see the active conversation.

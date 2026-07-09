@@ -20,6 +20,16 @@ const SUBAGENT_PARAMS = Type.Object({
   timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds" })),
 });
 
+const SUBAGENTS_PARAMS = Type.Object({
+  jobs: Type.Array(Type.Object({
+    name: Type.Optional(Type.String({ description: "Short label for this subagent" })),
+    prompt: Type.String({ description: "Self-contained prompt for this subagent" }),
+    model: Type.Optional(Type.String({ description: "Optional pi model pattern for this subagent" })),
+    timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds for this subagent" })),
+  }), { description: "Subagent jobs to run in parallel" }),
+  timeoutMs: Type.Optional(Type.Number({ description: "Default timeout per subagent in milliseconds" })),
+});
+
 async function loadPresets(cwd: string): Promise<PresetFile> {
   const raw = await readFile(join(cwd, ".pi", "agent-presets.json"), "utf8");
   return JSON.parse(raw) as PresetFile;
@@ -31,6 +41,13 @@ function splitModel(provider: string | undefined, model: string | undefined): { 
   const slash = model.indexOf("/");
   if (slash > 0) return { provider: model.slice(0, slash), id: model.slice(slash + 1) };
   return { provider, id: model };
+}
+
+async function runPiPrompt(pi: ExtensionAPI, prompt: string, model: string | undefined, signal: AbortSignal | undefined, timeoutMs: number) {
+  const args = ["-p"];
+  if (model) args.push("--model", model);
+  args.push(prompt);
+  return pi.exec("pi", args, { signal, timeout: timeoutMs });
 }
 
 async function applyPreset(pi: ExtensionAPI, ctx: any, name: string): Promise<boolean> {
@@ -83,16 +100,44 @@ export default function agentPresets(pi: ExtensionAPI) {
     promptSnippet: "Run an isolated pi -p subagent for research, planning, or verification",
     promptGuidelines: ["Use run_subagent only for isolated research, planning, or verification tasks with a self-contained prompt."],
     parameters: SUBAGENT_PARAMS,
-    async execute(_toolCallId, params, signal, _onUpdate, ctx) {
-      const args = ["-p"];
-      if (params.model) args.push("--model", params.model);
-      args.push(params.prompt);
-      const result = await pi.exec("pi", args, { signal, timeout: params.timeoutMs ?? 120000 });
+    async execute(_toolCallId, params, signal) {
+      const result = await runPiPrompt(pi, params.prompt, params.model, signal, params.timeoutMs ?? 120000);
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
       return {
         content: [{ type: "text", text: text || `(pi exited ${result.code})` }],
         details: result,
         isError: result.code !== 0,
+      };
+    },
+  });
+
+  pi.registerTool({
+    name: "run_subagents",
+    label: "Run Subagents",
+    description: "Run several non-interactive pi subagents in parallel, optionally on different models.",
+    promptSnippet: "Run multiple isolated pi -p subagents in parallel, optionally across models",
+    promptGuidelines: ["Use run_subagents when the user asks to compare, delegate, or orchestrate multiple subagents across models."],
+    parameters: SUBAGENTS_PARAMS,
+    async execute(_toolCallId, params, signal) {
+      if (params.jobs.length === 0) {
+        return { content: [{ type: "text", text: "No subagent jobs provided." }], details: undefined, isError: true };
+      }
+      if (params.jobs.length > 4) {
+        return { content: [{ type: "text", text: "Refusing to run more than 4 subagents at once." }], details: undefined, isError: true };
+      }
+
+      const results = await Promise.all(params.jobs.map(async (job, index) => {
+        const result = await runPiPrompt(pi, job.prompt, job.model, signal, job.timeoutMs ?? params.timeoutMs ?? 120000);
+        return { name: job.name ?? `job-${index + 1}`, model: job.model, result };
+      }));
+      const text = results.map(({ name, model, result }) => {
+        const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
+        return `## ${name}${model ? ` (${model})` : ""}\n${output || `(pi exited ${result.code})`}`;
+      }).join("\n\n---\n\n");
+      return {
+        content: [{ type: "text", text }],
+        details: { results },
+        isError: results.some(({ result }) => result.code !== 0),
       };
     },
   });

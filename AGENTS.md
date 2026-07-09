@@ -47,7 +47,7 @@ git diff --check
 If TypeScript dependencies are installed, also run:
 
 ```bash
-npm run check
+bun run check
 ```
 
 ## Security

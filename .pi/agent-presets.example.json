@@ -37,6 +37,7 @@
         "remove_git_worktree",
         "run_worktree_agent",
         "run_subagent",
+        "run_subagents",
         "question",
         "repo_status",
         "github_prs",

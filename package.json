@@ -2,6 +2,7 @@
   "name": "pibarm",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "bun@1.3.13",
   "description": "Pi skills and extensions for MCP CLI wrappers, agent orchestration, model presets, planning, execution, and subagents.",
   "keywords": ["pi-package", "pi", "agent-skills", "mcp"],
   "license": "MIT",

@@ -7,7 +7,7 @@ TL;DR pi extensions + skills for safer agent workflows:
 - run risky/parallel work in git worktrees instead of the active repo
 - use MCP tools through `mcporter`
 - switch model/tool/thinking presets by role
-- spawn isolated subagents when useful
+- spawn isolated subagents, including parallel multi-model runs, when useful
 
 ## Quick start
 
@@ -20,6 +20,13 @@ pi
 ```
 
 Trust the project when prompted. Pi loads project resources from `.pi/settings.json`.
+
+Development uses Bun:
+
+```bash
+bun install
+bun run check
+```
 
 Use from another project:
 
@@ -94,6 +101,7 @@ Use active-checkout execution only when you really want it:
 | `remove_git_worktree` | Remove an isolated worktree after confirmation/review. |
 | `run_worktree_agent` | Create/use a worktree and run `pi -p` there. |
 | `run_subagent` | Run an isolated non-interactive `pi -p` subagent. |
+| `run_subagents` | Run several isolated `pi -p` subagents in parallel, optionally on different models. |
 | `mcporter_list` | Discover MCP servers/tools through `mcporter`. |
 | `mcporter_call` | Call MCP tools through `mcporter`. |
 | `mcporter_resource` | List/read MCP resources through `mcporter`. |
@@ -149,10 +157,10 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
 ## Forge/statusline integrations
 
-`repo-status.ts` installs a footer that keeps normal extension status text on the left and aligns repo/forge/CI status on the right, for example:
+`repo-status.ts` installs a footer with active model + context usage on the left and repo/forge/CI status on the right. Ponytail extension chatter is filtered out. Example:
 
 ```text
- main ±2 |  #12 |  CI
+anthropic/claude-sonnet-4-5 · ctx 37%         main ±2 |  #12 |  CI
 ```
 
 Colour mapping:
@@ -245,7 +253,7 @@ extensions/mcporter.ts        # mcporter MCP bridge
 extensions/github.ts           # GitHub PR/CI tools via gh
 extensions/sourcehut.ts        # SourceHut tools via hut
 extensions/repo-status.ts      # git/forge/CI statusline
-extensions/agent-presets.ts   # presets and generic subagent
+extensions/agent-presets.ts   # presets and single/parallel subagents
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt
 .pi/*.example.json            # local config examples

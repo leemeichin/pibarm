@@ -45,6 +45,33 @@ function plain(parts: StatusPart[]): string {
   return parts.map((part) => part.text).join(" | ");
 }
 
+function formatModel(ctx: ExtensionContext): string {
+  return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no model";
+}
+
+function formatContext(ctx: ExtensionContext): string {
+  const usage = ctx.getContextUsage();
+  if (!usage || usage.percent === null) return "ctx ?";
+  return `ctx ${Math.round(usage.percent)}%`;
+}
+
+function extensionStatusesText(statuses: unknown): string {
+  const values = statuses instanceof Map
+    ? Array.from(statuses.entries())
+      .filter(([key, value]) => !/ponytail/i.test(`${key} ${value}`))
+      .map(([, value]) => value)
+    : Array.isArray(statuses)
+      ? statuses
+      : statuses == null
+        ? []
+        : typeof statuses === "string"
+          ? [statuses]
+          : typeof (statuses as { [Symbol.iterator]?: unknown })[Symbol.iterator] === "function"
+            ? Array.from(statuses as Iterable<unknown>)
+            : [statuses];
+  return values.map(String).filter((text) => text && !/ponytail/i.test(text)).join("  ");
+}
+
 async function collect(pi: ExtensionAPI) {
   const branch = (await exec(pi, "git", ["branch", "--show-current"])).stdout || "detached";
   const short = (await exec(pi, "git", ["status", "--short"])).stdout;
@@ -101,7 +128,8 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
       return {
         invalidate() {},
         render(width: number): string[] {
-          const left = footerData.getExtensionStatuses().join("  ");
+          const statusText = extensionStatusesText(footerData.getExtensionStatuses());
+          const left = theme.fg("muted", [formatModel(ctx), formatContext(ctx), statusText].filter(Boolean).join(" · "));
           const right = rightStatusParts.length > 0
             ? rightStatusParts.map((part) => theme.fg(part.tone, part.text)).join(theme.fg("dim", " | "))
             : theme.fg("dim", rightStatus);
@@ -149,4 +177,5 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
     rightStatusParts = status.rightParts;
     requestRender();
   });
+  pi.on("model_select", () => requestRender());
 }

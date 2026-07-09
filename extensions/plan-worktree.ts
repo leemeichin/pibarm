@@ -166,7 +166,7 @@ export default function planWorktree(pi: ExtensionAPI) {
       enablePlanMode(ctx);
       const task = args.trim();
       if (task) {
-        await ctx.sendUserMessage(`Plan this task. Ask clarifying questions first if needed. Do not edit files.\n\nTask: ${task}`);
+        pi.sendUserMessage(`Plan this task. Ask clarifying questions first if needed. Do not edit files.\n\nTask: ${task}`);
       }
     },
   });
@@ -269,7 +269,7 @@ export default function planWorktree(pi: ExtensionAPI) {
     parameters: ELICIT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       if (!ctx.hasUI) {
-        return { content: [{ type: "text", text: `Questions needing answers:\n${params.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}` }] };
+        return { content: [{ type: "text", text: `Questions needing answers:\n${params.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}` }], details: undefined };
       }
       const prompt = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}\nAnswer: `).join("\n\n")}`;
       const answer = await ctx.ui.editor("Answer plan questions", prompt);

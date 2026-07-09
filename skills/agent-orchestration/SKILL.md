@@ -13,6 +13,7 @@ Use this skill for complex work that benefits from explicit roles.
 - Elicitor: uses `elicit_plan_questions` to ask about scope, risks, tradeoffs, and execution location before approval.
 - Executor: implements approved changes, ideally in an isolated git worktree, runs checks, summarizes modified files.
 - Subagent: isolated research, verification, comparison, or implementation via `run_subagent`, `run_subagents`, or `run_worktree_agent`.
+- Todo tracker: use `todo_list` for prompts with multiple requested tasks; keep it short and mark items done as work completes.
 
 ## Commands
 

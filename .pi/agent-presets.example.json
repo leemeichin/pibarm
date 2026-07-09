@@ -39,6 +39,7 @@
         "run_subagent",
         "run_subagents",
         "question",
+        "todo_list",
         "repo_status",
         "github_prs",
         "github_pr_status",

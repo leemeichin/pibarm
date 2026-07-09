@@ -4,6 +4,7 @@ TL;DR pi extensions + skills for safer agent workflows:
 
 - plan first, edit later
 - ask explicit questions before executing unclear plans
+- notify when questions are waiting, with native notifications and optional Signal fallback
 - run risky/parallel work in git worktrees instead of the active repo
 - use MCP tools through `mcporter`
 - switch model/tool/thinking presets by role
@@ -111,6 +112,7 @@ Use active-checkout execution only when you really want it:
 | `github_ci_status` | List GitHub Actions runs through `gh`. |
 | `sourcehut_builds` | List SourceHut builds through `hut`. |
 | `sourcehut_tickets` | List SourceHut tickets through `hut`. |
+| `todo_list` | Track progress when one prompt contains multiple requested tasks. |
 
 ## Plan mode behavior
 
@@ -154,6 +156,24 @@ Review and cleanup:
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
+
+## Notifications and permission gates
+
+`waiting-notify.ts` sends a terminal/native notification when `question` or `elicit_plan_questions` is waiting. On macOS, if the machine has been idle for 5 minutes and `signal-cli` is available, the question tools send a Signal note-to-self prefixed with `π` and read back your next reply.
+
+Optional notification env vars:
+
+```bash
+export PI_NOTIFY_SIGNAL_TO=+15555550123           # optional; default is Signal note-to-self
+export PI_NOTIFY_SIGNAL_ACCOUNT=+15555550123      # optional
+export PI_NOTIFY_SIGNAL_ACCOUNT_FLAG=-a           # default; use -u if your signal-cli needs it
+export PI_NOTIFY_SIGNAL_CLI=/path/to/signal-cli   # optional if not on PATH
+export PI_NOTIFY_TERMINAL_NOTIFIER=/opt/homebrew/bin/terminal-notifier # optional
+export PI_NOTIFY_SIGNAL_FORCE=1                  # optional; test Signal without waiting for idle
+export PI_NOTIFY_SIGNAL_REPLY_SECONDS=600        # optional
+```
+
+`permission-gate.ts` asks before risky bash commands, writes to sensitive paths, or actions that escape the current project. In non-UI modes those actions are blocked.
 
 ## Forge/statusline integrations
 
@@ -253,6 +273,10 @@ extensions/mcporter.ts        # mcporter MCP bridge
 extensions/github.ts           # GitHub PR/CI tools via gh
 extensions/sourcehut.ts        # SourceHut tools via hut
 extensions/repo-status.ts      # git/forge/CI statusline
+extensions/waiting-notify.ts   # native/Signal notifications for pending questions
+extensions/permission-gate.ts  # confirmation gate for risky/out-of-project actions
+extensions/todo-list.ts        # compact todo tracking for multi-task prompts
+extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
 extensions/agent-presets.ts   # presets and single/parallel subagents
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt

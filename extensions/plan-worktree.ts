@@ -1,6 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { basename, dirname, join } from "node:path";
+import { askSignalWhenIdle } from "../lib/signal-question.js";
 
 const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
 const WRITE_TOOLS = new Set(["edit", "write"]);
@@ -268,10 +269,17 @@ export default function planWorktree(pi: ExtensionAPI) {
     promptGuidelines: ["Use elicit_plan_questions in plan mode before finalizing a plan when requirements, risks, scope, or execution location are unclear."],
     parameters: ELICIT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
+      const prompt = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}\nAnswer: `).join("\n\n")}`;
+      const signalAnswer = await askSignalWhenIdle(pi, `Pi needs plan answers:\n${prompt}`).catch(() => undefined);
+      if (signalAnswer) {
+        return {
+          content: [{ type: "text", text: `User answered via Signal:\n${signalAnswer.trim()}` }],
+          details: { questions: params.questions, answer: signalAnswer },
+        };
+      }
       if (!ctx.hasUI) {
         return { content: [{ type: "text", text: `Questions needing answers:\n${params.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}` }], details: undefined };
       }
-      const prompt = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}\nAnswer: `).join("\n\n")}`;
       const answer = await ctx.ui.editor("Answer plan questions", prompt);
       return {
         content: [{ type: "text", text: answer?.trim() ? `User answered:\n${answer.trim()}` : "User did not provide answers." }],

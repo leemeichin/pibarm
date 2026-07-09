@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { askSignalWhenIdle } from "../lib/signal-question.js";
 
 const OPTION = Type.Object({
   label: Type.String({ description: "Short option label shown to the user" }),
@@ -11,6 +12,18 @@ const QUESTION_PARAMS = Type.Object({
   options: Type.Optional(Type.Array(OPTION, { description: "Optional choices for the user to pick from" })),
   allowCustom: Type.Optional(Type.Boolean({ description: "Allow the user to type a custom answer. Defaults to true." })),
 });
+
+function signalPrompt(question: string, options: Array<{ label: string; description?: string }>): string {
+  const choices = options.length ? `\n\nOptions:\n${options.map((o, i) => `${i + 1}. ${o.label}${o.description ? ` — ${o.description}` : ""}`).join("\n")}` : "";
+  return `Pi question:\n${question}${choices}`;
+}
+
+function optionAnswer(answer: string, options: Array<{ label: string }>): { answer: string; index?: number } {
+  const number = /^\d+$/.test(answer) ? Number(answer) : 0;
+  if (number >= 1 && number <= options.length) return { answer: options[number - 1].label, index: number };
+  const index = options.findIndex((option) => option.label.toLowerCase() === answer.toLowerCase());
+  return index >= 0 ? { answer: options[index].label, index: index + 1 } : { answer };
+}
 
 export default function questionExtension(pi: ExtensionAPI) {
   pi.registerTool({
@@ -26,6 +39,15 @@ export default function questionExtension(pi: ExtensionAPI) {
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       const options = params.options ?? [];
       const allowCustom = params.allowCustom !== false;
+
+      const signalAnswer = await askSignalWhenIdle(pi, signalPrompt(params.question, options)).catch(() => undefined);
+      if (signalAnswer) {
+        const selected = optionAnswer(signalAnswer, options);
+        return {
+          content: [{ type: "text", text: `User answered via Signal: ${selected.answer}` }],
+          details: { question: params.question, options, answer: selected.answer, wasCustom: selected.index === undefined, index: selected.index },
+        };
+      }
 
       if (!ctx.hasUI) {
         const choices = options.length ? `\nOptions:\n${options.map((o, i) => `${i + 1}. ${o.label}${o.description ? ` — ${o.description}` : ""}`).join("\n")}` : "";

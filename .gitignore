@@ -6,3 +6,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Local/private pi config
+.pi/mcporter.json
+.pi/agent-presets.json

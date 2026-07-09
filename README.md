@@ -149,11 +149,16 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
 ## Forge/statusline integrations
 
-`repo-status.ts` updates pi's statusline on session start and after turns with a compact repo summary, for example:
+`repo-status.ts` installs a footer that keeps normal extension status text on the left and aligns repo/forge/CI status on the right, for example:
 
 ```text
  main ±2 |  #12 |  CI
 ```
+
+Colour mapping:
+
+- PR: green open, grey draft, purple/accent merged, red closed
+- CI: green pass, yellow/orange running, red failing, grey unknown
 
 It uses local CLI auth only:
 

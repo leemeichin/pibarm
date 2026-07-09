@@ -32,6 +32,8 @@ This repo manages local pi skills, extensions, prompts, and project config. Trea
 - Avoid long-running background resources in extension factories; start session-scoped resources from events/commands/tools and clean them up on shutdown.
 - Keep user-facing commands concise and documented in `README.md`.
 - When adding tools or commands, update relevant skills and preset examples.
+- Prefer `gh`/`hut` wrapper extensions for forge operations; never add API tokens to repo config.
+- For Ruby and TypeScript work, load the matching skill and run the smallest relevant check.
 
 ## Validation
 

@@ -77,6 +77,11 @@ Use active-checkout execution only when you really want it:
 | `/preset executor` | Apply executor model/tool/thinking preset. |
 | `/mcporter` | Show configured mcporter command templates. |
 | `/mcporter <args...>` | Run raw mcporter args from inside pi. |
+| `/repo-status` | Show git/forge/CI status and update pi statusline. |
+| `/gh-prs` | List open GitHub PRs. |
+| `/gh-ci` | List recent GitHub Actions runs. |
+| `/srht-builds` | List recent SourceHut builds via `hut`. |
+| `/hut <args...>` | Run raw SourceHut `hut` args. |
 
 ## Tools exposed to the agent
 
@@ -92,6 +97,12 @@ Use active-checkout execution only when you really want it:
 | `mcporter_list` | Discover MCP servers/tools through `mcporter`. |
 | `mcporter_call` | Call MCP tools through `mcporter`. |
 | `mcporter_resource` | List/read MCP resources through `mcporter`. |
+| `repo_status` | Summarize branch, dirty files, forge, PR, and CI status. |
+| `github_prs` | List GitHub PRs through `gh`. |
+| `github_pr_status` | Inspect current/selected PR review and check status. |
+| `github_ci_status` | List GitHub Actions runs through `gh`. |
+| `sourcehut_builds` | List SourceHut builds through `hut`. |
+| `sourcehut_tickets` | List SourceHut tickets through `hut`. |
 
 ## Plan mode behavior
 
@@ -134,6 +145,22 @@ Review and cleanup:
 ```
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
+
+
+## Forge/statusline integrations
+
+`repo-status.ts` updates pi's statusline on session start and after turns with a compact repo summary, for example:
+
+```text
+git:main ±2 | PR #12 | ci:ok
+```
+
+It uses local CLI auth only:
+
+- GitHub: `gh` (`gh auth login`)
+- SourceHut: `hut`
+
+No tokens are stored in this repo.
 
 ## Mcporter
 
@@ -196,6 +223,10 @@ Available skill commands:
 - `/skill:mcporter`
 - `/skill:agent-orchestration`
 - `/skill:model-presets`
+- `/skill:ruby`
+- `/skill:typescript`
+- `/skill:pr-review`
+- `/skill:ci-triage`
 
 ## Files
 
@@ -206,6 +237,9 @@ SECURITY.md                   # local security policy
 extensions/plan-worktree.ts   # plan mode, elicitation, worktrees
 extensions/question.ts        # single-question user prompt tool
 extensions/mcporter.ts        # mcporter MCP bridge
+extensions/github.ts           # GitHub PR/CI tools via gh
+extensions/sourcehut.ts        # SourceHut tools via hut
+extensions/repo-status.ts      # git/forge/CI statusline
 extensions/agent-presets.ts   # presets and generic subagent
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt

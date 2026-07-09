@@ -11,7 +11,13 @@
         "mcporter_resource",
         "elicit_plan_questions",
         "question",
-        "create_git_worktree"
+        "create_git_worktree",
+        "repo_status",
+        "github_prs",
+        "github_pr_status",
+        "github_ci_status",
+        "sourcehut_builds",
+        "sourcehut_tickets"
       ]
     },
     "executor": {
@@ -31,7 +37,13 @@
         "remove_git_worktree",
         "run_worktree_agent",
         "run_subagent",
-        "question"
+        "question",
+        "repo_status",
+        "github_prs",
+        "github_pr_status",
+        "github_ci_status",
+        "sourcehut_builds",
+        "sourcehut_tickets"
       ]
     },
     "subagent": {

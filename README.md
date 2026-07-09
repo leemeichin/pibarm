@@ -152,7 +152,7 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 `repo-status.ts` updates pi's statusline on session start and after turns with a compact repo summary, for example:
 
 ```text
-git:main ±2 | PR #12 | ci:ok
+🌿 main ±2 | PR #12 | ✅ CI
 ```
 
 It uses local CLI auth only:

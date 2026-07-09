@@ -1,0 +1,26 @@
+{
+  "name": "pibarm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pi skills and extensions for MCP CLI wrappers, agent orchestration, model presets, planning, execution, and subagents.",
+  "keywords": ["pi-package", "pi", "agent-skills", "mcp"],
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "list": "find extensions skills prompts -maxdepth 3 -type f | sort"
+  },
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills"],
+    "prompts": ["./prompts"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

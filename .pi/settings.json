@@ -10,6 +10,7 @@
   ],
   "enableSkillCommands": true,
   "packages": [
-    "git:github.com/DietrichGebert/ponytail"
+    "git:github.com/DietrichGebert/ponytail",
+    "npm:pi-lens"
   ]
 }

@@ -17,12 +17,12 @@ function parseForge(remote: string): Forge {
 }
 
 function checkSummary(checks: any[]): string {
-  if (!Array.isArray(checks) || checks.length === 0) return "❔ CI";
+  if (!Array.isArray(checks) || checks.length === 0) return " CI";
   const bad = checks.find((c) => ["FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED"].includes(c.conclusion));
-  if (bad) return "❌ CI";
+  if (bad) return " CI";
   const pending = checks.find((c) => c.status && c.status !== "COMPLETED");
-  if (pending) return "⏳ CI";
-  return "✅ CI";
+  if (pending) return " CI";
+  return " CI";
 }
 
 async function collect(pi: ExtensionAPI) {
@@ -31,14 +31,14 @@ async function collect(pi: ExtensionAPI) {
   const dirty = short ? short.split("\n").filter(Boolean).length : 0;
   const remote = (await exec(pi, "git", ["remote", "get-url", "origin"])).stdout;
   const forge = parseForge(remote);
-  const parts = [`🌿 ${branch}${dirty ? ` ±${dirty}` : ""}`];
+  const parts = [` ${branch}${dirty ? ` ±${dirty}` : ""}`];
   const details: Record<string, unknown> = { branch, dirty, forge };
 
   if (forge === "github") {
     const pr = await exec(pi, "gh", ["pr", "view", "--json", "number,isDraft,statusCheckRollup,url"], 15000);
     if (pr.code === 0 && pr.stdout) {
       const parsed = JSON.parse(pr.stdout);
-      parts.push(`PR #${parsed.number}${parsed.isDraft ? " draft" : ""}`);
+      parts.push(` #${parsed.number}${parsed.isDraft ? " draft" : ""}`);
       parts.push(checkSummary(parsed.statusCheckRollup));
       details.github = parsed;
     } else {
@@ -46,14 +46,14 @@ async function collect(pi: ExtensionAPI) {
       if (run.code === 0 && run.stdout) {
         const parsed = JSON.parse(run.stdout)[0];
         if (parsed) {
-          const status = parsed.status !== "completed" ? "⏳ CI" : parsed.conclusion === "success" ? "✅ CI" : "❌ CI";
+          const status = parsed.status !== "completed" ? " CI" : parsed.conclusion === "success" ? " CI" : " CI";
           parts.push(status);
           details.githubRun = parsed;
         }
       }
     }
   } else if (forge === "sourcehut") {
-    parts.push("🛖 sr.ht");
+    parts.push(" sr.ht");
   }
 
   return { status: parts.join(" | "), details };

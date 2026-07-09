@@ -11,14 +11,15 @@ Use this workflow for non-trivial or risky code changes.
 
 1. Enter plan mode with `/plan <task>`.
 2. Inspect only. Do not edit files.
-3. Ask clarifying questions with `elicit_plan_questions` when scope, risks, acceptance criteria, or execution location are unclear.
+3. Ask one focused question with `question`, or multiple clarifying questions with `elicit_plan_questions`, when scope, risks, acceptance criteria, or execution location are unclear.
 4. Produce a concise plan with validation steps and risks.
 5. Wait for approval.
 6. Prefer executing with `/execute-plan worktree <name>` so changes happen in a sibling git worktree, not the active checkout.
 
 ## Tools
 
-- `elicit_plan_questions`: ask the user questions before finalizing/executing a plan.
+- `question`: ask one focused user question with optional choices.
+- `elicit_plan_questions`: ask the user multiple questions before finalizing/executing a plan.
 - `create_git_worktree`: create a sibling worktree and branch.
 - `summarize_worktree_diff`: review status/diff from a worktree.
 - `remove_git_worktree`: remove a worktree after confirmation/review.

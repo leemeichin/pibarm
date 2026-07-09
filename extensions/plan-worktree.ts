@@ -2,7 +2,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { Type } from "typebox";
 import { basename, dirname, join } from "node:path";
 
-const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "elicit_plan_questions", "create_git_worktree"];
+const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
 const WRITE_TOOLS = new Set(["edit", "write"]);
 
 const ELICIT_PARAMS = Type.Object({
@@ -358,7 +358,7 @@ export default function planWorktree(pi: ExtensionAPI) {
       message: {
         customType: "pibarm-plan-mode",
         display: false,
-        content: `PLAN MODE IS ACTIVE.\n- Do not modify files.\n- Prefer reading, inspection, mcporter discovery, and analysis.\n- If requirements are unclear, call elicit_plan_questions before presenting the final plan.\n- Present the final answer as a concise plan with risks, open questions, and validation steps.\n- Recommend whether execution should happen in a git worktree.`,
+        content: `PLAN MODE IS ACTIVE.\n- Do not modify files.\n- Prefer reading, inspection, mcporter discovery, and analysis.\n- If one decision is needed, call question. If multiple requirements are unclear, call elicit_plan_questions before presenting the final plan.\n- Present the final answer as a concise plan with risks, open questions, and validation steps.\n- Recommend whether execution should happen in a git worktree.`,
       },
     };
   });

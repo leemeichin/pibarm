@@ -10,6 +10,7 @@
         "mcporter_list",
         "mcporter_resource",
         "elicit_plan_questions",
+        "question",
         "create_git_worktree"
       ]
     },
@@ -29,7 +30,8 @@
         "summarize_worktree_diff",
         "remove_git_worktree",
         "run_worktree_agent",
-        "run_subagent"
+        "run_subagent",
+        "question"
       ]
     },
     "subagent": {

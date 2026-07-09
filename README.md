@@ -69,7 +69,8 @@ Use active-checkout execution only when you really want it:
 
 | Tool | Purpose |
 |---|---|
-| `elicit_plan_questions` | Ask you questions before finalizing/executing a plan. |
+| `elicit_plan_questions` | Ask several planning questions before finalizing/executing a plan. |
+| `question` | Ask one focused question with optional choices. |
 | `create_git_worktree` | Create an isolated sibling git worktree and branch. |
 | `summarize_worktree_diff` | Summarize status/diff for a worktree. |
 | `remove_git_worktree` | Remove an isolated worktree after confirmation/review. |
@@ -187,6 +188,7 @@ Available skill commands:
 
 ```text
 extensions/plan-worktree.ts   # plan mode, elicitation, worktrees
+extensions/question.ts        # single-question user prompt tool
 extensions/mcporter.ts        # mcporter MCP bridge
 extensions/agent-presets.ts   # presets and generic subagent
 skills/*/SKILL.md             # progressive-disclosure workflows

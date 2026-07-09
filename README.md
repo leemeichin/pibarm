@@ -27,6 +27,19 @@ Use from another project:
 pi install path/to/pibarm
 ```
 
+
+## External pi packages
+
+This project also asks pi to load external packages from `.pi/settings.json`:
+
+- `git:github.com/DietrichGebert/ponytail`
+
+Pi installs missing project packages automatically on startup after the project is trusted. To reconcile/update packages later:
+
+```bash
+pi update --extensions
+```
+
 ## Main workflow
 
 ```text

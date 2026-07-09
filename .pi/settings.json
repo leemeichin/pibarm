@@ -1,6 +1,15 @@
 {
-  "extensions": ["../extensions"],
-  "skills": ["../skills"],
-  "prompts": ["../prompts"],
-  "enableSkillCommands": true
+  "extensions": [
+    "../extensions"
+  ],
+  "skills": [
+    "../skills"
+  ],
+  "prompts": [
+    "../prompts"
+  ],
+  "enableSkillCommands": true,
+  "packages": [
+    "git:github.com/DietrichGebert/ponytail"
+  ]
 }

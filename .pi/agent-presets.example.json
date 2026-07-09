@@ -1,0 +1,40 @@
+{
+  "presets": {
+    "planner": {
+      "provider": "anthropic",
+      "model": "claude-opus-4-1",
+      "thinkingLevel": "high",
+      "tools": [
+        "read",
+        "bash",
+        "mcporter_list",
+        "mcporter_resource",
+        "elicit_plan_questions",
+        "create_git_worktree"
+      ]
+    },
+    "executor": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5",
+      "thinkingLevel": "medium",
+      "tools": [
+        "read",
+        "bash",
+        "edit",
+        "write",
+        "mcporter_list",
+        "mcporter_call",
+        "mcporter_resource",
+        "create_git_worktree",
+        "summarize_worktree_diff",
+        "remove_git_worktree",
+        "run_worktree_agent",
+        "run_subagent"
+      ]
+    },
+    "subagent": {
+      "model": "anthropic/claude-haiku-4-5",
+      "thinkingLevel": "low"
+    }
+  }
+}

@@ -188,21 +188,25 @@ export default function planWorktree(pi: ExtensionAPI) {
     },
   });
 
+  async function executeCapturedPlan(ctx: ExtensionContext, worktreeName?: string) {
+    if (!lastPlan) {
+      ctx.ui.notify("No captured plan yet. Use /plan first.", "warning");
+      return;
+    }
+    disablePlanMode(ctx);
+    if (worktreeName) {
+      const wt = await createWorktree(pi, ctx.cwd, worktreeName);
+      pi.sendUserMessage(`Execute the approved plan in the isolated git worktree at ${wt.path}. Make all file changes under that path, not the active repo.\n\nApproved plan:\n${lastPlan}`);
+      return;
+    }
+    pi.sendUserMessage(`Execute the approved plan in the active checkout.\n\nApproved plan:\n${lastPlan}`);
+  }
+
   pi.registerCommand("execute-plan", {
     description: "Execute the last approved plan; add 'worktree <name>' to isolate changes",
     handler: async (args, ctx) => {
-      if (!lastPlan) {
-        ctx.ui.notify("No captured plan yet. Use /plan first.", "warning");
-        return;
-      }
       const match = /^worktree\s+(.+)/i.exec(args.trim());
-      disablePlanMode(ctx);
-      if (match) {
-        const wt = await createWorktree(pi, ctx.cwd, match[1]);
-        await ctx.sendUserMessage(`Execute the approved plan in the isolated git worktree at ${wt.path}. Make all file changes under that path, not the active repo.\n\nApproved plan:\n${lastPlan}`);
-      } else {
-        await ctx.sendUserMessage(`Execute the approved plan in the active checkout.\n\nApproved plan:\n${lastPlan}`);
-      }
+      await executeCapturedPlan(ctx, match?.[1]);
     },
   });
 
@@ -382,9 +386,9 @@ export default function planWorktree(pi: ExtensionAPI) {
       if (refinement?.trim()) pi.sendUserMessage(refinement.trim(), { deliverAs: "followUp" });
     } else if (choice?.includes("worktree")) {
       const name = await ctx.ui.input("Worktree name", "plan-work");
-      if (name?.trim()) pi.sendUserMessage(`/execute-plan worktree ${name.trim()}`, { deliverAs: "followUp" });
+      if (name?.trim()) await executeCapturedPlan(ctx, name.trim());
     } else if (choice?.includes("active")) {
-      pi.sendUserMessage("/execute-plan", { deliverAs: "followUp" });
+      await executeCapturedPlan(ctx);
     }
   });
 

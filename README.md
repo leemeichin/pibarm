@@ -90,6 +90,12 @@ Use active-checkout execution only when you really want it:
 | `/gh-ci` | List recent GitHub Actions runs. |
 | `/srht-builds` | List recent SourceHut builds via `hut`. |
 | `/hut <args...>` | Run raw SourceHut `hut` args. |
+| `/matrix <task>` | Start a tmux Matrix with scout/planner panes. |
+| `/matrix-attach` | Open the Matrix tmux session in a WezTerm `matrix` workspace. |
+| `/matrix-spawn <role> <task>` | Spawn one parent-controlled Matrix agent pane. |
+| `/matrix-send <role> <message>` | Send a message to a Matrix agent pane. |
+| `/matrix-capture [role]` | Capture recent output from Matrix panes. |
+| `/matrix-kill [role\|all]` | Kill one Matrix pane or the whole session. |
 
 ## Tools exposed to the agent
 
@@ -113,6 +119,12 @@ Use active-checkout execution only when you really want it:
 | `sourcehut_builds` | List SourceHut builds through `hut`. |
 | `sourcehut_tickets` | List SourceHut tickets through `hut`. |
 | `todo_list` | Track progress when one prompt contains multiple requested tasks. |
+| `matrix_spawn` | Spawn a parent-controlled pi agent in a tmux Matrix pane. |
+| `matrix_attach` | Open the Matrix tmux session in WezTerm. |
+| `matrix_send` | Send a message to a Matrix pane. |
+| `matrix_capture` | Capture recent output from Matrix panes. |
+| `matrix_list` | List known Matrix panes. |
+| `matrix_kill` | Kill Matrix panes or the whole session. |
 
 ## Plan mode behavior
 
@@ -156,6 +168,26 @@ Review and cleanup:
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
+
+## Matrix tmux agents
+
+`matrix.ts` is tmux-first orchestration for visible parent-controlled agents. WezTerm attachment is optional via `/matrix-attach`.
+
+```text
+/matrix investigate flaky tests
+/matrix-attach
+/matrix-spawn worker fix the failing test
+/matrix-capture worker
+/matrix-kill all
+```
+
+Defaults:
+
+- `scout` and `planner` use read-focused toolsets
+- `worker` uses normal tools
+- `worktree: true` on `matrix_spawn` creates an isolated branch/worktree when the agent needs separate branch work
+- same-branch/distributed work uses the current checkout
+- sessions are killed on pi exit unless `PI_MATRIX_KEEP_ON_EXIT=1`
 
 ## Notifications and permission gates
 
@@ -252,6 +284,7 @@ Presets can set:
 
 Available skill commands:
 
+- `/skill:pr-open`
 - `/skill:plan-worktree`
 - `/skill:mcporter`
 - `/skill:agent-orchestration`
@@ -277,8 +310,10 @@ extensions/waiting-notify.ts   # native/Signal notifications for pending questio
 extensions/permission-gate.ts  # confirmation gate for risky/out-of-project actions
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
+extensions/matrix.ts           # tmux Matrix parent-controlled agent panes
 extensions/agent-presets.ts   # presets and single/parallel subagents
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt
+prompts/pr-open.md            # newline-safe PR opening prompt
 .pi/*.example.json            # local config examples
 ```

@@ -14,28 +14,25 @@ TL;DR pi extensions + skills for safer agent workflows:
 
 ## Quick start
 
-From this repo:
-
-```bash
-cp .pi/mcporter.example.json .pi/mcporter.json
-cp .pi/agent-presets.example.json .pi/agent-presets.json
-pi
-```
-
-Trust the project when prompted. Pi loads project resources from `.pi/settings.json`.
-
-Development uses Bun:
-
-```bash
-bun install
-bun run check
-```
-
 Use from another project:
 
 ```bash
 pi install git@github.com:leemeichin/pibarm.git
 ```
+
+Pi installs the package and loads its extensions/skills on startup after you trust the project.
+
+For local development or to customize config, clone this repo and run setup:
+
+```bash
+git clone git@github.com:leemeichin/pibarm.git
+cd pibarm
+bun install
+bun run setup
+pi
+```
+
+`bun run setup` copies missing local config examples and runs the setup doctor. Use `bun run doctor` later to re-check your environment.
 
 
 ## External pi packages
@@ -49,6 +46,34 @@ Pi installs missing project packages automatically on startup after the project 
 ```bash
 pi update --extensions
 ```
+
+## Setup doctor and external tools
+
+`pibarm` itself is a Pi package, but some features shell out to local CLIs. Run:
+
+```bash
+bun run doctor
+```
+
+Required for core usage:
+
+- `pi` — loads this package and runs subagents
+- `git` — repo status and worktrees
+- `bash` — inline shell, watcher scripts, and subagent wrappers
+
+Feature-specific tools:
+
+| Tool | Enables | Install/auth hint |
+|---|---|---|
+| `bun` | local development checks | `curl -fsSL https://bun.sh/install \| bash` |
+| `gh` | GitHub PR/CI tools and statusline PR checks | `brew install gh && gh auth login` |
+| `hut` | SourceHut build/ticket tools | `brew install hut && hut init` |
+| `mcporter` | MCP bridge tools | install/configure `mcporter`, then edit `.pi/mcporter.json` |
+| `wezterm` | Matrix visible agent panes | `brew install --cask wezterm` |
+| `signal-cli` | optional Signal note-to-self fallback | `brew install signal-cli` and set `PI_NOTIFY_SIGNAL_*` if needed |
+| `terminal-notifier` | optional native macOS notifications | `brew install terminal-notifier` |
+
+The TUI uses Nerd Font glyphs for the statusline, Matrix/task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
 
 ## Main workflow
 
@@ -377,5 +402,6 @@ extensions/agent-presets.ts   # presets and single/parallel subagents
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt
 prompts/pr-open.md            # newline-safe PR opening prompt
+scripts/doctor.mjs            # onboarding/setup doctor for local CLI dependencies
 .pi/*.example.json            # local config examples
 ```

@@ -35,6 +35,32 @@ const ROLE_DEFAULTS: Record<string, { model: string; tools?: string[] }> = {
 
 type AgentPane = { role: string; pane: string; cwd: string; model: string; tools?: string[]; worktree?: string };
 
+const MATRIX_HELP = `Matrix is a tmux-backed cockpit for visible parent-controlled agents.
+
+When to use it:
+- use Matrix when you want to watch/steer multiple agents in panes
+- use run_subagent/run_subagents for headless one-shot checks
+- use worktrees for separate branch/risky worker changes
+- use the current checkout for same-branch distributed work
+
+Common flow:
+1. /matrix-attach
+2. /matrix-spawn scout map the relevant code
+3. /matrix-spawn planner propose a small safe plan
+4. /matrix-capture
+5. /matrix-spawn worker implement the approved plan
+6. /matrix-kill all
+
+Commands:
+/matrix <task>                 start scout + planner
+/matrix-attach                 open WezTerm workspace "matrix"
+/matrix-spawn <role> <task>    spawn scout/planner/worker/reviewer
+/matrix-send <role> <message>  steer a pane
+/matrix-capture [role]         read recent pane output
+/matrix-kill [role|all]        clean up
+
+Prior art: pi-cmux is worth checking if you use cmux. It provides polished terminal splits, notifications, sidebars, continuation, and review handoff. Matrix stays tmux/WezTerm-native and parent-controlled.`;
+
 function sh(value: string): string {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
 }
@@ -170,6 +196,11 @@ export default function matrixExtension(pi: ExtensionAPI) {
     ctx.ui.setStatus("matrix", panes.size ? `matrix ${panes.size} agents` : undefined);
     return `Killed ${pane.role}.`;
   }
+
+  pi.registerCommand("matrix-help", {
+    description: "Explain Matrix tmux/WezTerm agent orchestration",
+    handler: async (_args, ctx) => ctx.ui.notify(MATRIX_HELP, "info"),
+  });
 
   pi.registerCommand("matrix", {
     description: "Start a tmux Matrix with scout and planner agents for a task",

@@ -90,6 +90,7 @@ Use active-checkout execution only when you really want it:
 | `/gh-ci` | List recent GitHub Actions runs. |
 | `/srht-builds` | List recent SourceHut builds via `hut`. |
 | `/hut <args...>` | Run raw SourceHut `hut` args. |
+| `/matrix-help` | Explain when/how to use Matrix and its prior art. |
 | `/matrix <task>` | Start a tmux Matrix with scout/planner panes. |
 | `/matrix-attach` | Open the Matrix tmux session in a WezTerm `matrix` workspace. |
 | `/matrix-spawn <role> <task>` | Spawn one parent-controlled Matrix agent pane. |
@@ -171,7 +172,7 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
 ## Matrix tmux agents
 
-`matrix.ts` is tmux-first orchestration for visible parent-controlled agents. WezTerm attachment is optional via `/matrix-attach`.
+`matrix.ts` is tmux-first orchestration for visible parent-controlled agents. WezTerm attachment is optional via `/matrix-attach`. Use `/matrix-help` inside Pi for the quick operating guide.
 
 ```text
 /matrix investigate flaky tests
@@ -188,6 +189,8 @@ Defaults:
 - `worktree: true` on `matrix_spawn` creates an isolated branch/worktree when the agent needs separate branch work
 - same-branch/distributed work uses the current checkout
 - sessions are killed on pi exit unless `PI_MATRIX_KEEP_ON_EXIT=1`
+
+Prior art checked: [`pi-cmux`](https://www.npmjs.com/package/pi-cmux) is the closest popular pi package. It provides cmux splits, notifications, sidebar/status, continuation, worktree handoff, and review sessions. Matrix stays smaller and tmux/WezTerm-native; consider `pi-cmux` if you move to cmux.
 
 ## Notifications and permission gates
 
@@ -285,6 +288,7 @@ Presets can set:
 Available skill commands:
 
 - `/skill:pr-open`
+- `/skill:matrix`
 - `/skill:plan-worktree`
 - `/skill:mcporter`
 - `/skill:agent-orchestration`

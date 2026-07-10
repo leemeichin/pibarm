@@ -3,6 +3,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { Type } from "typebox";
 import { basename, join } from "node:path";
 import { selectAgentModelRef, type ModelSelection } from "../lib/current-model.js";
+import { finishAgentTask, removeAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 
 const WORKSPACE_PREFIX = "matrix";
 
@@ -278,9 +279,11 @@ export default function matrixExtension(pi: ExtensionAPI) {
     const paneId = result.stdout;
     lastPane = paneId;
     panes.set(role, { role, pane: paneId, workspace, cwd, model, modelSelection, tools, worktree, placement: place, logPath, statusPath });
+    upsertAgentTask({ id: `matrix:${role}`, label: `matrix ${role}`, status: "running", session: workspace });
     await wezterm(pi, ["set-tab-title", "--pane-id", paneId, `matrix-${role}`]).catch(() => undefined);
     await wezterm(pi, ["activate-pane", "--pane-id", paneId]).catch(() => undefined);
     ctx.ui.setStatus("matrix", `matrix ${panes.size} agents`);
+    updateTaskWidget(ctx);
     return panes.get(role)!;
   }
 
@@ -344,6 +347,7 @@ export default function matrixExtension(pi: ExtensionAPI) {
         continue;
       }
       blocks.push(`## ${pane.role} (exited ${status})\n${await readLog(pane, 200)}`);
+      finishAgentTask(`matrix:${pane.role}`, status === 0 ? "done" : "failed", status === 0 ? undefined : `exit ${status}`);
       if (killDone) await wezterm(pi, ["kill-pane", "--pane-id", pane.pane]).catch(() => undefined);
       panes.delete(pane.role);
     }
@@ -352,6 +356,7 @@ export default function matrixExtension(pi: ExtensionAPI) {
       lastPane = await resolveTargetPane(pi, workspaceName(ctx), "", panes);
     }
     updateStatus(ctx);
+    updateTaskWidget(ctx);
     return `${stillRunning.length ? `Timed out waiting for: ${stillRunning.join(", ")}\n\n` : ""}${blocks.join("\n\n---\n\n")}`;
   }
 
@@ -361,17 +366,21 @@ export default function matrixExtension(pi: ExtensionAPI) {
       for (const pane of panes.values()) ids.add(pane.pane);
       for (const pane of await allMatrixPanes(pi)) ids.add(String(pane.pane_id));
       for (const paneId of ids) await wezterm(pi, ["kill-pane", "--pane-id", paneId]).catch(() => undefined);
+      for (const pane of panes.values()) removeAgentTask(`matrix:${pane.role}`);
       panes.clear();
       lastPane = "";
       ctx.ui.setStatus("matrix", undefined);
+      updateTaskWidget(ctx);
       return "Matrix panes killed.";
     }
     const pane = paneFor(role);
     if (!pane) return `Unknown Matrix agent: ${role}`;
     await wezterm(pi, ["kill-pane", "--pane-id", pane.pane]).catch(() => undefined);
     panes.delete(pane.role);
+    removeAgentTask(`matrix:${pane.role}`);
     if (lastPane === pane.pane) lastPane = await resolveTargetPane(pi, workspaceName(ctx), "", panes);
     updateStatus(ctx);
+    updateTaskWidget(ctx);
     return `Killed ${pane.role}.`;
   }
 

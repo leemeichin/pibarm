@@ -3,6 +3,7 @@ import { Type } from "typebox";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { selectAgentModelRef } from "../lib/current-model.js";
+import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 
 interface Preset {
   provider?: string;
@@ -42,6 +43,10 @@ function splitModel(provider: string | undefined, model: string | undefined): { 
   const slash = model.indexOf("/");
   if (slash > 0) return { provider: model.slice(0, slash), id: model.slice(slash + 1) };
   return { provider, id: model };
+}
+
+function modelLabel(model: string | undefined) {
+  return model?.split("/").pop()?.replace(/^claude-/, "") ?? "default";
 }
 
 async function runPiPrompt(pi: ExtensionAPI, prompt: string, model: string | undefined, signal: AbortSignal | undefined, timeoutMs: number) {
@@ -103,7 +108,12 @@ export default function agentPresets(pi: ExtensionAPI) {
     parameters: SUBAGENT_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       const modelSelection = selectAgentModelRef(ctx, params.model, params.prompt);
+      const taskId = `subagent:${_toolCallId}`;
+      upsertAgentTask({ id: taskId, label: "subagent", status: "running", session: modelLabel(modelSelection.model) });
+      updateTaskWidget(ctx);
       const result = await runPiPrompt(pi, params.prompt, modelSelection.model, signal, params.timeoutMs ?? 120000);
+      finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : `exit ${result.code}`);
+      updateTaskWidget(ctx);
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
       return {
         content: [{ type: "text", text: text || `(pi exited ${result.code})` }],
@@ -129,9 +139,15 @@ export default function agentPresets(pi: ExtensionAPI) {
       }
 
       const results = await Promise.all(params.jobs.map(async (job, index) => {
+        const name = job.name ?? `job-${index + 1}`;
         const modelSelection = selectAgentModelRef(ctx, job.model, job.prompt);
+        const taskId = `subagent:${_toolCallId}:${index}`;
+        upsertAgentTask({ id: taskId, label: `sub ${name}`, status: "running", session: modelLabel(modelSelection.model) });
+        updateTaskWidget(ctx);
         const result = await runPiPrompt(pi, job.prompt, modelSelection.model, signal, job.timeoutMs ?? params.timeoutMs ?? 120000);
-        return { name: job.name ?? `job-${index + 1}`, model: modelSelection.model, modelSelection, result };
+        finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : `exit ${result.code}`);
+        updateTaskWidget(ctx);
+        return { name, model: modelSelection.model, modelSelection, result };
       }));
       const text = results.map(({ name, model, result }) => {
         const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");

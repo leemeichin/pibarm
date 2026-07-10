@@ -4,6 +4,7 @@ import { Type } from "typebox";
 import { join } from "node:path";
 import { askSignalWhenIdle } from "../lib/signal-question.js";
 import { selectAgentModelRef } from "../lib/current-model.js";
+import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 
 const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
 const WRITE_TOOLS = new Set(["edit", "write"]);
@@ -55,6 +56,10 @@ function slugify(input: string): string {
 
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+
+function modelLabel(model: string | undefined) {
+  return model?.split("/").pop()?.replace(/^claude-/, "") ?? "default";
 }
 
 function isReadOnlyCommand(command: string): boolean {
@@ -367,11 +372,16 @@ export default function planWorktree(pi: ExtensionAPI) {
     async execute(_id, params, signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");
       const modelSelection = selectAgentModelRef(ctx, params.model, params.task);
+      const taskId = `worktree-agent:${params.name}`;
+      upsertAgentTask({ id: taskId, label: `wt ${params.name}`, status: "running", session: modelLabel(modelSelection.model) });
+      updateTaskWidget(ctx);
       const piArgs = ["-p"];
       if (modelSelection.model) piArgs.push("--model", modelSelection.model);
       piArgs.push(params.task);
       const command = `cd ${shellQuote(wt.path)} && pi ${piArgs.map(shellQuote).join(" ")}`;
       const result = await pi.exec("bash", ["-lc", command], { signal, timeout: params.timeoutMs ?? 600000 });
+      finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : `exit ${result.code}`);
+      updateTaskWidget(ctx);
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
       return { content: [{ type: "text", text: text || `(subagent exited ${result.code})` }], details: { worktree: wt, modelSelection, result }, isError: result.code !== 0 };
     },

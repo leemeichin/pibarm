@@ -120,7 +120,7 @@ Use active-checkout execution only when you really want it:
 | `github_ci_status` | List GitHub Actions runs through `gh`. |
 | `sourcehut_builds` | List SourceHut builds through `hut`. |
 | `sourcehut_tickets` | List SourceHut tickets through `hut`. |
-| `todo_list` | Track progress when one prompt contains multiple requested tasks. |
+| `todo_list` | Track progress when one prompt contains multiple requested tasks in the shared task widget. |
 | `matrix_spawn` | Spawn a parent-controlled pi agent in a WezTerm Matrix pane. |
 | `matrix_attach` | Open the Matrix WezTerm workspace. |
 | `matrix_send` | Send a message to a still-running Matrix WezTerm pane. |
@@ -128,6 +128,10 @@ Use active-checkout execution only when you really want it:
 | `matrix_join` | Wait for Matrix agents to finish, capture logs, and clean up panes. |
 | `matrix_list` | List known Matrix agents and untracked Matrix workspace panes. |
 | `matrix_kill` | Kill Matrix WezTerm panes. |
+
+## Task widget
+
+`todo-list.ts`, headless subagents, worktree agents, and Matrix agents share one compact widget below the editor/above the status line. It renders horizontal pills such as `[○1 inspect auth] [⏳ matrix scout@matrix-app-ab12] [✓ sub reviewer@gpt-5-mini]` so delegated work stays visually connected to the parent session/workspace without a tall vertical list.
 
 ## Plan mode behavior
 

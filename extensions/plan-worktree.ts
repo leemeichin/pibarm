@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Editor, type EditorTheme, Key, matchesKey, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { join } from "node:path";
 import { askSignalWhenIdle } from "../lib/signal-question.js";
@@ -9,32 +10,554 @@ import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-
 const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
 const WRITE_TOOLS = new Set(["edit", "write"]);
 
-const ELICIT_PARAMS = Type.Object({
-  questions: Type.Array(Type.String(), { description: "Specific questions to ask before finalizing or executing a plan" }),
-  context: Type.Optional(Type.String({ description: "Short context explaining why these answers are needed" })),
-  edit: Type.Optional(Type.Boolean({ description: "Use one editable answer buffer for all questions when UI is available. Defaults to true." })),
+const PLAN_OPTION = Type.Union([
+  Type.String(),
+  Type.Object({
+    label: Type.String({ description: "Option label shown to the user" }),
+    value: Type.Optional(Type.Unknown({ description: "Optional machine-readable value returned in details" })),
+    description: Type.Optional(Type.String({ description: "Optional detail shown under the option" })),
+    preview: Type.Optional(Type.String({ description: "Optional preview shown when this option is highlighted" })),
+  }),
+]);
+
+const PLAN_QUESTION = Type.Object({
+  id: Type.Optional(Type.String({ description: "Stable answer id" })),
+  label: Type.Optional(Type.String({ description: "Short tab label" })),
+  question: Type.Optional(Type.String({ description: "Question text" })),
+  prompt: Type.Optional(Type.String({ description: "Alias for question" })),
+  type: Type.Optional(Type.Union([
+    Type.Literal("text"),
+    Type.Literal("free_text"),
+    Type.Literal("select"),
+    Type.Literal("select_one"),
+    Type.Literal("multi"),
+    Type.Literal("select_many"),
+    Type.Literal("confirm"),
+    Type.Literal("bool"),
+    Type.Literal("boolean"),
+    Type.Literal("number"),
+  ], { description: "Input type. Defaults to free_text." })),
+  options: Type.Optional(Type.Array(PLAN_OPTION, { description: "Options for select/select_many/confirm inputs" })),
+  default: Type.Optional(Type.Unknown({ description: "Default answer/value" })),
+  min: Type.Optional(Type.Number({ description: "Minimum number value" })),
+  max: Type.Optional(Type.Number({ description: "Maximum number value" })),
+  placeholder: Type.Optional(Type.String({ description: "Placeholder/help text for text inputs" })),
+  preview: Type.Optional(Type.String({ description: "Preview of the intended action or consequences" })),
+  actionPreview: Type.Optional(Type.String({ description: "Alias for preview" })),
+  notes: Type.Optional(Type.Boolean({ description: "Enable per-question notes. Defaults to true." })),
+  allowCustom: Type.Optional(Type.Boolean({ description: "Allow custom text for select_one/select_many. Defaults to false." })),
 });
 
-function parseNumberedAnswers(questions: string[], text: string) {
-  const answers = questions.map((question) => ({ question, answer: "" }));
+const ELICIT_PARAMS = Type.Object({
+  questions: Type.Array(Type.Union([Type.String(), PLAN_QUESTION]), { description: "Specific questions to ask before finalizing or executing a plan. Strings become free_text questions; objects may request select_one/select_many/confirm/boolean/number/free_text." }),
+  context: Type.Optional(Type.String({ description: "Short context explaining why these answers are needed" })),
+  edit: Type.Optional(Type.Boolean({ description: "Use a rich tabbed multi-question UI when available. Defaults to true." })),
+});
+
+type PlanQuestionType = "free_text" | "select_one" | "select_many" | "confirm" | "boolean" | "number";
+
+interface PlanOption {
+  label: string;
+  value: unknown;
+  description?: string;
+  preview?: string;
+  custom?: boolean;
+}
+
+interface PlanQuestion {
+  id: string;
+  label: string;
+  question: string;
+  type: PlanQuestionType;
+  options: PlanOption[];
+  default?: unknown;
+  min?: number;
+  max?: number;
+  placeholder?: string;
+  preview?: string;
+  notes: boolean;
+  allowCustom: boolean;
+}
+
+interface RichPlanAnswer {
+  id: string;
+  question: string;
+  answer: string;
+  value: unknown;
+  notes?: string;
+  wasCustom?: boolean;
+  index?: number;
+}
+
+interface PlanAnswerState {
+  answer: string;
+  value: unknown;
+  notes: string;
+  selected: number[];
+  wasCustom?: boolean;
+  index?: number;
+}
+
+const NF = {
+  border: "─",
+  empty: "󰄱",
+  done: "󰄲",
+  dot: "󰄮",
+  text: "󰦨",
+  select: "󰕣",
+  multi: "󰄲",
+  confirm: "󰔡",
+  number: "󰎠",
+  note: "󰎚",
+  preview: "󰈙",
+  submit: "󰄬",
+  cursor: "",
+};
+
+function normalizeQuestionType(type: unknown, options: PlanOption[]): PlanQuestionType {
+  switch (type) {
+    case "select": return "select_one";
+    case "multi": return "select_many";
+    case "bool": return "boolean";
+    case "text": return "free_text";
+    case "free_text":
+    case "select_one":
+    case "select_many":
+    case "confirm":
+    case "boolean":
+    case "number":
+      return type;
+    default:
+      return options.length > 0 ? "select_one" : "free_text";
+  }
+}
+
+function normalizePlanOption(option: unknown): PlanOption {
+  if (typeof option === "string") return { label: option, value: option };
+  const raw = option as { label?: unknown; value?: unknown; description?: unknown; preview?: unknown };
+  const label = String(raw.label ?? raw.value ?? "Option");
+  return {
+    label,
+    value: raw.value ?? label,
+    description: typeof raw.description === "string" ? raw.description : undefined,
+    preview: typeof raw.preview === "string" ? raw.preview : undefined,
+  };
+}
+
+function normalizePlanQuestions(input: Array<string | Record<string, unknown>>): PlanQuestion[] {
+  return input.map((item, index) => {
+    if (typeof item === "string") {
+      return {
+        id: `q${index + 1}`,
+        label: `Q${index + 1}`,
+        question: item,
+        type: "free_text",
+        options: [],
+        notes: true,
+        allowCustom: false,
+      };
+    }
+    const raw = item;
+    const options = Array.isArray(raw.options) ? raw.options.map(normalizePlanOption) : [];
+    const type = normalizeQuestionType(raw.type, options);
+    const question = String(raw.question ?? raw.prompt ?? raw.label ?? `Question ${index + 1}`);
+    const defaultOptions = type === "confirm" || type === "boolean"
+      ? (options.length ? options : [{ label: "Yes", value: true }, { label: "No", value: false }])
+      : options;
+    return {
+      id: String(raw.id ?? `q${index + 1}`),
+      label: String(raw.label ?? `Q${index + 1}`),
+      question,
+      type,
+      options: defaultOptions,
+      default: raw.default,
+      min: typeof raw.min === "number" ? raw.min : undefined,
+      max: typeof raw.max === "number" ? raw.max : undefined,
+      placeholder: typeof raw.placeholder === "string" ? raw.placeholder : undefined,
+      preview: typeof raw.preview === "string" ? raw.preview : typeof raw.actionPreview === "string" ? raw.actionPreview : undefined,
+      notes: raw.notes !== false,
+      allowCustom: raw.allowCustom === true,
+    };
+  });
+}
+
+function initialAnswer(question: PlanQuestion): PlanAnswerState {
+  const state: PlanAnswerState = { answer: "", value: "", notes: "", selected: [] };
+  if (question.default === undefined) return state;
+  if (question.type === "select_many" && Array.isArray(question.default)) {
+    const defaults = question.default;
+    state.selected = question.options.flatMap((option, index) => defaults.includes(option.value) || defaults.includes(option.label) ? [index] : []);
+    state.answer = state.selected.map((i) => question.options[i]?.label).filter(Boolean).join(", ");
+    state.value = state.selected.map((i) => question.options[i]?.value);
+    return state;
+  }
+  const selectedIndex = question.options.findIndex((option) => option.value === question.default || option.label === question.default);
+  if (selectedIndex >= 0) {
+    const option = question.options[selectedIndex]!;
+    state.selected = [selectedIndex];
+    state.answer = option.label;
+    state.value = option.value;
+    state.index = selectedIndex + 1;
+    return state;
+  }
+  state.answer = String(question.default);
+  state.value = question.default;
+  return state;
+}
+
+function parseNumberedAnswers(questions: PlanQuestion[], text: string): RichPlanAnswer[] {
+  const answers = questions.map((question) => ({ id: question.id, question: question.question, answer: "", value: "" }));
   let currentIndex = -1;
   for (const line of text.split("\n")) {
     const numbered = line.match(/^\s*(\d+)[.)]?\s*(.*)$/);
     if (numbered) {
       currentIndex = Number(numbered[1]) - 1;
       const rest = numbered[2]?.trim() ?? "";
-      if (answers[currentIndex] && rest && rest !== questions[currentIndex] && !questions[currentIndex].startsWith(rest)) {
-        answers[currentIndex].answer = rest.replace(/^Answer:\s*/i, "");
+      if (answers[currentIndex] && rest && rest !== questions[currentIndex]!.question && !questions[currentIndex]!.question.startsWith(rest)) {
+        answers[currentIndex]!.answer = rest.replace(/^Answer:\s*/i, "");
+        answers[currentIndex]!.value = answers[currentIndex]!.answer;
       }
       continue;
     }
     const answerLine = line.match(/^\s*(?:Answer:)?\s*(.+?)\s*$/i);
-    if (currentIndex >= 0 && answers[currentIndex] && answerLine?.[1] && !answers[currentIndex].answer) {
-      answers[currentIndex].answer = answerLine[1].trim();
+    if (currentIndex >= 0 && answers[currentIndex] && answerLine?.[1] && !answers[currentIndex]!.answer) {
+      answers[currentIndex]!.answer = answerLine[1].trim();
+      answers[currentIndex]!.value = answers[currentIndex]!.answer;
     }
   }
-  if (questions.length === 1 && !answers[0]!.answer) answers[0]!.answer = text.trim();
+  if (questions.length === 1 && !answers[0]!.answer) {
+    answers[0]!.answer = text.trim();
+    answers[0]!.value = answers[0]!.answer;
+  }
   return answers;
+}
+
+async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQuestion[], context?: string) {
+  const result = await ctx.ui.custom<{ answers: RichPlanAnswer[]; cancelled: boolean }>((tui, theme, _kb, done) => {
+    let current = 0;
+    let optionIndex = 0;
+    let noteMode = false;
+    let customMode = false;
+    let cached: string[] | undefined;
+    const states = questions.map(initialAnswer);
+    const editorTheme: EditorTheme = {
+      borderColor: (s) => theme.fg("accent", s),
+      selectList: {
+        selectedPrefix: (t) => theme.fg("accent", t),
+        selectedText: (t) => theme.fg("accent", t),
+        description: (t) => theme.fg("muted", t),
+        scrollInfo: (t) => theme.fg("dim", t),
+        noMatch: (t) => theme.fg("warning", t),
+      },
+    };
+    const editor = new Editor(tui, editorTheme);
+    editor.setText(states[0]?.answer ?? "");
+
+    function questionIcon(question: PlanQuestion) {
+      if (question.type === "select_many") return NF.multi;
+      if (question.type === "select_one") return NF.select;
+      if (question.type === "confirm" || question.type === "boolean") return NF.confirm;
+      if (question.type === "number") return NF.number;
+      return NF.text;
+    }
+
+    function refresh() {
+      cached = undefined;
+      tui.requestRender();
+    }
+
+    function currentQuestion() {
+      return questions[current];
+    }
+
+    function currentState() {
+      return states[current];
+    }
+
+    function saveEditor() {
+      const question = currentQuestion();
+      const state = currentState();
+      if (!question || !state) return;
+      const text = editor.getText().trim();
+      if (noteMode) {
+        state.notes = text;
+      } else if (customMode) {
+        state.answer = text;
+        state.value = text;
+        state.wasCustom = true;
+        state.index = undefined;
+      } else if (question.type === "free_text") {
+        state.answer = text;
+        state.value = text;
+      } else if (question.type === "number") {
+        const value = text === "" ? undefined : Number(text);
+        state.answer = text;
+        state.value = Number.isFinite(value) ? value : text;
+      }
+    }
+
+    function loadEditor() {
+      const question = currentQuestion();
+      const state = currentState();
+      if (!question || !state) return;
+      if (noteMode) editor.setText(state.notes);
+      else if (customMode) editor.setText(state.wasCustom ? state.answer : "");
+      else editor.setText(String(state.answer ?? ""));
+    }
+
+    function goto(index: number) {
+      saveEditor();
+      current = Math.max(0, Math.min(questions.length, index));
+      optionIndex = 0;
+      noteMode = false;
+      customMode = false;
+      if (current < questions.length) loadEditor();
+      refresh();
+    }
+
+    function answerFromSelection(question: PlanQuestion, state: PlanAnswerState) {
+      const selected = state.selected.map((i) => question.options[i]).filter((o): o is PlanOption => Boolean(o));
+      state.answer = selected.map((option) => option.label).join(", ");
+      state.value = question.type === "select_many" ? selected.map((option) => option.value) : selected[0]?.value;
+      state.index = question.type === "select_many" ? undefined : state.selected[0] === undefined ? undefined : state.selected[0] + 1;
+      state.wasCustom = false;
+    }
+
+    function finalAnswers(): RichPlanAnswer[] {
+      saveEditor();
+      return questions.map((question, index) => {
+        const state = states[index]!;
+        return {
+          id: question.id,
+          question: question.question,
+          answer: state.answer,
+          value: state.value,
+          notes: state.notes || undefined,
+          wasCustom: state.wasCustom,
+          index: state.index,
+        };
+      });
+    }
+
+    function submit() {
+      done({ answers: finalAnswers(), cancelled: false });
+    }
+
+    function advance() {
+      if (current < questions.length - 1) goto(current + 1);
+      else goto(questions.length);
+    }
+
+    editor.onSubmit = () => {
+      saveEditor();
+      if (noteMode || customMode) {
+        noteMode = false;
+        customMode = false;
+        loadEditor();
+        refresh();
+        return;
+      }
+      advance();
+    };
+
+    function toggleNoteMode() {
+      const question = currentQuestion();
+      if (!question?.notes) return;
+      saveEditor();
+      noteMode = !noteMode;
+      customMode = false;
+      loadEditor();
+      refresh();
+    }
+
+    function nudgeNumber(delta: number) {
+      const question = currentQuestion();
+      const state = currentState();
+      if (!question || !state || question.type !== "number") return false;
+      saveEditor();
+      const base = typeof state.value === "number" && Number.isFinite(state.value) ? state.value : Number(state.answer) || 0;
+      const next = Math.max(question.min ?? Number.NEGATIVE_INFINITY, Math.min(question.max ?? Number.POSITIVE_INFINITY, base + delta));
+      state.answer = String(next);
+      state.value = next;
+      editor.setText(state.answer);
+      refresh();
+      return true;
+    }
+
+    function selectCurrentOption(advanceOnSelect: boolean) {
+      const question = currentQuestion();
+      const state = currentState();
+      if (!question || !state) return;
+      if (question.allowCustom && optionIndex === question.options.length) {
+        saveEditor();
+        customMode = true;
+        noteMode = false;
+        loadEditor();
+        refresh();
+        return;
+      }
+      if (!question.options[optionIndex]) return;
+      if (question.type === "select_many") {
+        state.selected = state.selected.includes(optionIndex)
+          ? state.selected.filter((i) => i !== optionIndex)
+          : [...state.selected, optionIndex].sort((a, b) => a - b);
+        answerFromSelection(question, state);
+        refresh();
+        return;
+      }
+      state.selected = [optionIndex];
+      answerFromSelection(question, state);
+      refresh();
+      if (advanceOnSelect) advance();
+    }
+
+    function handleInput(data: string) {
+      if (matchesKey(data, Key.escape)) {
+        if (noteMode || customMode) {
+          noteMode = false;
+          customMode = false;
+          loadEditor();
+          refresh();
+          return;
+        }
+        return done({ answers: finalAnswers(), cancelled: true });
+      }
+      if (matchesKey(data, Key.tab) || matchesKey(data, Key.right)) return goto((current + 1) % (questions.length + 1));
+      if (matchesKey(data, Key.shift("tab")) || matchesKey(data, Key.left)) return goto((current - 1 + questions.length + 1) % (questions.length + 1));
+      if (current === questions.length) {
+        if (matchesKey(data, Key.enter)) submit();
+        return;
+      }
+      if (data === "n" || data === "N") return toggleNoteMode();
+      const question = currentQuestion();
+      if (!question) return;
+      if (noteMode || customMode || question.type === "free_text" || question.type === "number") {
+        if (question.type === "number" && !noteMode && !customMode) {
+          if (matchesKey(data, Key.up)) return void nudgeNumber(1);
+          if (matchesKey(data, Key.down)) return void nudgeNumber(-1);
+        }
+        editor.handleInput(data);
+        refresh();
+        return;
+      }
+      const optionCount = question.options.length + (question.allowCustom ? 1 : 0);
+      if (matchesKey(data, Key.up)) {
+        optionIndex = Math.max(0, optionIndex - 1);
+        refresh();
+        return;
+      }
+      if (matchesKey(data, Key.down)) {
+        optionIndex = Math.min(Math.max(0, optionCount - 1), optionIndex + 1);
+        refresh();
+        return;
+      }
+      if (/^[1-9]$/.test(data)) {
+        const index = Number(data) - 1;
+        if (index >= 0 && index < optionCount) {
+          optionIndex = index;
+          selectCurrentOption(question.type !== "select_many");
+        }
+        return;
+      }
+      if (matchesKey(data, Key.space) && question.type === "select_many") return selectCurrentOption(false);
+      if (matchesKey(data, Key.enter)) {
+        if (question.type === "select_many") {
+          if (states[current]!.selected.length > 0) return advance();
+          return selectCurrentOption(false);
+        }
+        selectCurrentOption(true);
+      }
+    }
+
+    function addWrapped(lines: string[], prefix: string, text: string, width: number) {
+      const prefixWidth = visibleWidth(prefix);
+      const wrapped = wrapTextWithAnsi(text, Math.max(1, width - prefixWidth));
+      for (let i = 0; i < wrapped.length; i++) lines.push(`${i === 0 ? prefix : " ".repeat(prefixWidth)}${wrapped[i]}`);
+    }
+
+    function renderOptions(lines: string[], width: number, question: PlanQuestion, state: PlanAnswerState) {
+      const options = question.allowCustom ? [...question.options, { label: "Other / custom", value: "", custom: true }] : question.options;
+      options.forEach((option, index) => {
+        const selected = state.selected.includes(index) || (option.custom && state.wasCustom);
+        const active = index === optionIndex;
+        const box = question.type === "select_many" ? (selected ? NF.done : NF.empty) : (selected ? NF.dot : " ");
+        const prefix = active ? theme.fg("accent", `${NF.cursor} `) : "  ";
+        const label = `${box} ${index + 1}. ${option.label}${option.custom && customMode ? " 󰏫" : ""}`;
+        addWrapped(lines, prefix, theme.fg(active ? "accent" : selected ? "success" : "text", label), width);
+        if (option.description) addWrapped(lines, "     ", theme.fg("muted", option.description), width);
+      });
+    }
+
+    function render(width: number) {
+      if (cached) return cached;
+      const w = Math.max(24, width);
+      const lines: string[] = [];
+      lines.push(theme.fg("accent", NF.border.repeat(w)));
+      const tabs = questions.map((question, i) => {
+        const answered = states[i]?.answer || states[i]?.selected.length;
+        const label = ` ${answered ? NF.done : NF.empty} ${question.label} `;
+        return i === current ? theme.bg("selectedBg", theme.fg("text", label)) : theme.fg(answered ? "success" : "muted", label);
+      });
+      const submitLabel = ` ${NF.submit} Submit `;
+      tabs.push(current === questions.length ? theme.bg("selectedBg", theme.fg("text", submitLabel)) : theme.fg("success", submitLabel));
+      addWrapped(lines, " ", tabs.join(" "), w);
+      lines.push("");
+      if (context) {
+        addWrapped(lines, " ", theme.fg("muted", context), w);
+        lines.push("");
+      }
+      if (current === questions.length) {
+        addWrapped(lines, " ", theme.fg("accent", theme.bold(`${NF.submit} Review answers`)), w);
+        lines.push("");
+        questions.forEach((question, i) => {
+          const state = states[i]!;
+          addWrapped(lines, " ", theme.fg("muted", `${question.label}: `) + question.question, w);
+          addWrapped(lines, "   ", state.answer ? theme.fg("text", state.answer) : theme.fg("warning", "(blank)"), w);
+          if (state.notes) addWrapped(lines, "   ", theme.fg("muted", `${NF.note} ${state.notes}`), w);
+        });
+        lines.push("");
+        addWrapped(lines, " ", theme.fg("success", "Enter to submit"), w);
+      } else {
+        const question = currentQuestion()!;
+        const state = currentState()!;
+        addWrapped(lines, " ", theme.fg("accent", `${questionIcon(question)} ${question.label}  ${theme.fg("muted", `${current + 1}/${questions.length}`)}`), w);
+        addWrapped(lines, " ", question.question, w);
+        if (question.preview) {
+          lines.push("");
+          addWrapped(lines, " ", theme.fg("muted", `${NF.preview} Preview: ${question.preview}`), w);
+        }
+        const highlighted = question.options[optionIndex];
+        if (highlighted?.preview) addWrapped(lines, " ", theme.fg("muted", `${NF.preview} Option: ${highlighted.preview}`), w);
+        lines.push("");
+        if (noteMode) {
+          addWrapped(lines, " ", theme.fg("muted", `${NF.note} Notes:`), w);
+          for (const line of editor.render(Math.max(1, w - 2))) lines.push(` ${line}`);
+        } else if (customMode) {
+          addWrapped(lines, " ", theme.fg("muted", "Custom answer:"), w);
+          for (const line of editor.render(Math.max(1, w - 2))) lines.push(` ${line}`);
+        } else if (question.type === "free_text" || question.type === "number") {
+          const label = question.type === "number" ? `${NF.number} Number:` : `${NF.text} Answer:`;
+          addWrapped(lines, " ", theme.fg("muted", question.placeholder ? `${label} ${question.placeholder}` : label), w);
+          for (const line of editor.render(Math.max(1, w - 2))) lines.push(` ${line}`);
+        } else {
+          renderOptions(lines, w, question, state);
+        }
+      }
+      lines.push("");
+      const help = current === questions.length
+        ? "Enter submit • Tab/←→ navigate • Esc cancel"
+        : "Tab/←→ navigate • ↑↓ select/nudge • Space multi-toggle • Enter next/select • n notes • Esc cancel";
+      addWrapped(lines, " ", theme.fg("dim", help), w);
+      lines.push(theme.fg("accent", NF.border.repeat(w)));
+      cached = lines;
+      return lines;
+    }
+
+    return { render, invalidate: () => { cached = undefined; }, handleInput };
+  });
+
+  if (result.cancelled) return undefined;
+  return result.answers;
 }
 
 const WORKTREE_PARAMS = Type.Object({
@@ -361,38 +884,43 @@ export default function planWorktree(pi: ExtensionAPI) {
     promptGuidelines: ["Use elicit_plan_questions in plan mode before finalizing a plan when requirements, risks, scope, or execution location are unclear."],
     parameters: ELICIT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
-      const prompt = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
+      const questions = normalizePlanQuestions(params.questions as Array<string | Record<string, unknown>>);
+      const prompt = `${params.context ? `${params.context}\n\n` : ""}${questions.map((q, i) => {
+        const options = q.options.length ? ` [${q.options.map((o) => o.label).join(" / ")}]` : "";
+        return `${i + 1}. ${q.question}${options}`;
+      }).join("\n")}`;
       const signalAnswer = await askSignalWhenIdle(pi, `Pi needs plan answers:\n${prompt}`).catch(() => undefined);
       if (signalAnswer) {
-        const answers = parseNumberedAnswers(params.questions, signalAnswer);
+        const answers = parseNumberedAnswers(questions, signalAnswer);
         return {
           content: [{ type: "text", text: `User answered via Signal:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` }],
-          details: { questions: params.questions, answers, answer: signalAnswer },
+          details: { questions, answers, answer: signalAnswer },
         };
       }
       if (!ctx.hasUI) {
         return { content: [{ type: "text", text: `Questions needing answers:\n${prompt}` }], details: undefined };
       }
 
-      if (params.edit !== false) {
-        const draft = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}\n   Answer: `).join("\n\n")}`;
-        const edited = await ctx.ui.editor("Answer planning questions", draft);
-        const answers = parseNumberedAnswers(params.questions, edited ?? "");
+      if (params.edit !== false && ctx.mode === "tui") {
+        const answers = await askTabbedPlanQuestions(ctx, questions, params.context);
+        if (!answers) {
+          return { content: [{ type: "text", text: "User cancelled the planning questions." }], details: { questions, answers: [], answer: null } };
+        }
         return {
-          content: [{ type: "text", text: answers.some((a) => a.answer) ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` : "User did not provide answers." }],
-          details: { questions: params.questions, answers, answer: edited ?? "" },
+          content: [{ type: "text", text: answers.some((a) => a.answer) ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}${a.notes ? ` — note: ${a.notes}` : ""}`).join("\n")}` : "User did not provide answers." }],
+          details: { questions, answers, answer: answers.map((a, i) => `${i + 1}. ${a.answer}`).join("\n") },
         };
       }
 
       const answers = [];
-      for (let i = 0; i < params.questions.length; i++) {
+      for (let i = 0; i < questions.length; i++) {
         const prefix = params.context ? `${params.context}\n\n` : "";
-        const answer = await ctx.ui.input(`${prefix}${i + 1}/${params.questions.length}: ${params.questions[i]}`, "");
-        answers.push({ question: params.questions[i], answer: answer?.trim() ?? "" });
+        const answer = await ctx.ui.input(`${prefix}${i + 1}/${questions.length}: ${questions[i]!.question}`, "");
+        answers.push({ id: questions[i]!.id, question: questions[i]!.question, answer: answer?.trim() ?? "", value: answer?.trim() ?? "" });
       }
       return {
         content: [{ type: "text", text: answers.some((a) => a.answer) ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` : "User did not provide answers." }],
-        details: { questions: params.questions, answers, answer: answers.map((a, i) => `${i + 1}. ${a.answer}`).join("\n") },
+        details: { questions, answers, answer: answers.map((a, i) => `${i + 1}. ${a.answer}`).join("\n") },
       };
     },
   });

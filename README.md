@@ -1,3 +1,5 @@
+![pibarm banner](assets/readme-banner.png)
+
 # pibarm
 
 TL;DR pi extensions + skills for safer agent workflows:

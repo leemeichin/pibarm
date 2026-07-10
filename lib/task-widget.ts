@@ -65,7 +65,7 @@ export function taskSummaryLines() {
   const lines = [];
   if (todos.length) {
     lines.push("Todos:");
-    lines.push(...todos.map((todo, i) => `  ${todo.done ? "󰄲" : "󰄱"} ${i + 1}. ${todo.text}`));
+    lines.push(...todos.map((todo, i) => `  ${todo.done ? "✓" : "○"} ${i + 1}. ${todo.text}`));
   }
   if (agents.length) {
     lines.push("Agents:");
@@ -99,13 +99,13 @@ export function updateTaskWidget(ctx: ExtensionContext) {
 
 function renderTaskPills(items: TodoItem[], agents: AgentTask[]) {
   const allPills = [
-    ...items.map((todo, index) => `${todo.done ? "󰄲" : "󰄱"}${index + 1} ${shorten(todo.text, 34)}`),
-    ...agents.map((task) => `${statusIcon(task.status)} ${shorten(task.label, 24)}${task.session ? `@${shorten(task.session, 18)}` : ""}${task.detail ? ` ${shorten(task.detail, 16)}` : ""}`),
-  ].map((text) => `[${text}]`);
+    ...items.map((todo, index) => pill(`${todo.done ? "✓" : "○"} ${index + 1} · ${shorten(todo.text, 34)}`)),
+    ...agents.map((task) => pill(`${statusIcon(task.status)} ${shorten(task.label, 24)}${task.session ? ` · ${shorten(task.session, 18)}` : ""}${task.detail ? ` · ${shorten(task.detail, 16)}` : ""}`)),
+  ];
   const maxPills = 10;
   const visible = allPills.slice(0, maxPills);
   const hidden = allPills.length - visible.length;
-  const pills = hidden > 0 ? [...visible, `[󰁕 ${hidden} more]`] : visible;
+  const pills = hidden > 0 ? [...visible, pill(`+${hidden} more`)] : visible;
 
   const lines: string[] = [];
   let line = "";
@@ -121,10 +121,14 @@ function renderTaskPills(items: TodoItem[], agents: AgentTask[]) {
   return lines;
 }
 
+function pill(text: string) {
+  return `‹ ${text} ›`;
+}
+
 function statusIcon(status: AgentTaskStatus) {
-  if (status === "running") return "󰔟";
-  if (status === "failed") return "󰅖";
-  return "󰄲";
+  if (status === "running") return "●";
+  if (status === "failed") return "!";
+  return "✓";
 }
 
 function shorten(text: string, max: number) {

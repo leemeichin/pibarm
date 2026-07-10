@@ -139,7 +139,7 @@ Use active-checkout execution only when you really want it:
 
 ## Task widget
 
-`todo-list.ts`, headless subagents, worktree agents, watcher agents, and Matrix agents share one compact widget below the editor/above the status line. It renders horizontal Nerd Font pills such as `[󰄱1 inspect auth] [󰔟 matrix scout@matrix-app-ab12] [󰄲 sub reviewer@gpt-5-mini]` so delegated work stays visually connected to the parent session/workspace without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
+`todo-list.ts`, headless subagents, worktree agents, watcher agents, and Matrix agents share one compact widget below the editor/above the status line. It renders clean horizontal pills such as `‹ ○ 1 · inspect auth › ‹ ● matrix scout · matrix-app › ‹ ✓ sub reviewer · gpt-5-mini ›` so delegated work stays visually connected to the parent session/workspace without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
 
 ## Watcher agents
 

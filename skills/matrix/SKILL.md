@@ -1,6 +1,6 @@
 ---
 name: matrix
-description: Use parent-controlled tmux/WezTerm Matrix panes for visible multi-agent orchestration. Use when the user asks for Matrix, tmux panes, visible subagents, or multi-agent cockpit workflows.
+description: Use parent-controlled WezTerm Matrix panes for visible multi-agent orchestration. Use when the user asks for Matrix, WezTerm panes/tabs/splits, visible subagents, or multi-agent cockpit workflows.
 ---
 
 # Matrix
@@ -53,6 +53,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 
 - same branch/distributed work: no worktree
 - separate branch or risky changes: `matrix_spawn` with `worktree: true`
+- use `matrix_spawn.placement` for `right`, `down`, `tab`, or `window` when placement matters
 
 5. Clean up:
 
@@ -73,4 +74,3 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 - Always capture pane output before summarizing or acting on it.
 - Do not run multiple writing workers in the same checkout unless files are clearly disjoint.
 - Kill panes after completion unless the user asks to keep them.
-- Use `PI_MATRIX_KEEP_ON_EXIT=1` only when you intentionally want sessions to outlive Pi.

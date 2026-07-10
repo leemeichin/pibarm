@@ -43,6 +43,10 @@ async function confirm(ctx: any, title: string, body: string) {
 }
 
 export default function permissionGate(pi: ExtensionAPI) {
+  // Disabled by default: the current heuristic is too noisy. Re-enable with
+  // PI_PERMISSION_GATE=1 until the gate can remember approvals and support yolo mode.
+  if (process.env.PI_PERMISSION_GATE !== "1") return;
+
   pi.on("tool_call", async (event, ctx) => {
     if (event.toolName === "bash") {
       const command = String((event.input as { command?: unknown }).command ?? "");

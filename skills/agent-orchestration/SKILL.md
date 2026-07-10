@@ -14,7 +14,7 @@ Use this skill for complex work that benefits from explicit roles.
 - Executor: implements approved changes, ideally in an isolated git worktree, runs checks, summarizes modified files.
 - Subagent: isolated research, verification, comparison, or implementation via `run_subagent`, `run_subagents`, or `run_worktree_agent`.
 - Todo tracker: use `todo_list` for prompts with multiple requested tasks; keep it short and mark items done as work completes.
-- Matrix: use `matrix_*` tools when the user wants visible tmux/WezTerm panes controlled by the parent Pi.
+- Matrix: use `matrix_*` tools when the user wants visible WezTerm panes/tabs/splits controlled by the parent Pi.
 
 ## Commands
 
@@ -24,8 +24,8 @@ Use this skill for complex work that benefits from explicit roles.
 - `/plan <task>` enters read-only plan mode and asks for a plan.
 - `/plan-mode` toggles read-only plan mode.
 - `/execute-plan` executes the last captured plan in the active checkout.
-- `/execute-plan worktree <name>` executes the last captured plan in a separate git worktree.
-- `/matrix <task>` starts a tmux Matrix with parent-controlled scout/planner panes.
+- `/execute-plan worktree <name>` executes the last captured plan in a repo-local git worktree.
+- `/matrix <task>` starts a WezTerm Matrix with parent-controlled scout/planner panes.
 
 ## Delegation Guidance
 
@@ -38,7 +38,7 @@ Use `run_worktree_agent` when the subtask may modify files or should not affect 
 
 Subagent prompts must include all necessary context. Do not assume the subagent can see the active conversation.
 
-For Matrix/tmux orchestration:
+For Matrix/WezTerm orchestration:
 
 - use worktrees for separate branch work
 - use the current checkout for same-branch distributed work

@@ -1,3 +1,4 @@
+import { basename } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
@@ -45,14 +46,25 @@ function plain(parts: StatusPart[]): string {
   return parts.map((part) => part.text).join(" | ");
 }
 
-function formatModel(ctx: ExtensionContext): string {
-  return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no model";
+function modelLabel(ctx: ExtensionContext): string {
+  if (!ctx.model) return "no model";
+  const id = ctx.model.id
+    .replace(/^claude-/, "")
+    .replace(/^gpt-/, "gpt ")
+    .replace(/-/g, " ")
+    .replace(/\b(sonnet|haiku|opus)\b/i, (m) => m[0]!.toUpperCase() + m.slice(1));
+  return `${ctx.model.provider}/${id}`;
 }
 
-function formatContext(ctx: ExtensionContext): string {
+function contextLabel(ctx: ExtensionContext): string {
   const usage = ctx.getContextUsage();
   if (!usage || usage.percent === null) return "ctx ?";
   return `ctx ${Math.round(usage.percent)}%`;
+}
+
+function thinkingLabel(pi: ExtensionAPI): string | undefined {
+  const level = pi.getThinkingLevel();
+  return level && level !== "off" ? `think ${level}` : undefined;
 }
 
 function extensionStatusesText(statuses: unknown): string {
@@ -78,7 +90,7 @@ async function collect(pi: ExtensionAPI) {
   const dirty = short ? short.split("\n").filter(Boolean).length : 0;
   const remote = (await exec(pi, "git", ["remote", "get-url", "origin"])).stdout;
   const forge = parseForge(remote);
-  const rightParts: StatusPart[] = [{ text: ` ${branch}${dirty ? ` ±${dirty}` : ""}`, tone: dirty ? "warning" : "dim" }];
+  const rightParts: StatusPart[] = [{ text: ` ${branch}${dirty ? ` ±${dirty}` : ""}`, tone: dirty ? "warning" : "success" }];
   const details: Record<string, unknown> = { branch, dirty, forge };
 
   if (forge === "github") {
@@ -117,6 +129,12 @@ async function refresh(pi: ExtensionAPI, ctx: ExtensionContext, requestRender: (
   }
 }
 
+function renderSegments(parts: StatusPart[], theme: ExtensionContext["ui"]["theme"]): string {
+  return parts
+    .map((part, index) => `${index ? theme.fg("dim", "") : ""}${theme.fg(part.tone, ` ${part.text} `)}`)
+    .join("");
+}
+
 export default function repoStatusExtension(pi: ExtensionAPI) {
   let rightStatus = "";
   let rightStatusParts: StatusPart[] = [];
@@ -129,9 +147,18 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
         invalidate() {},
         render(width: number): string[] {
           const statusText = extensionStatusesText(footerData.getExtensionStatuses());
-          const left = theme.fg("muted", [formatModel(ctx), formatContext(ctx), statusText].filter(Boolean).join(" · "));
+          const leftParts: StatusPart[] = [
+            { text: ` ${basename(ctx.cwd)}`, tone: "accent" },
+            { text: modelLabel(ctx), tone: "muted" },
+            { text: contextLabel(ctx), tone: "warning" },
+          ];
+          const thinking = thinkingLabel(pi);
+          if (thinking) leftParts.push({ text: thinking, tone: "accent" });
+          if (statusText) leftParts.push({ text: statusText, tone: "dim" });
+
+          const left = renderSegments(leftParts, theme);
           const right = rightStatusParts.length > 0
-            ? rightStatusParts.map((part) => theme.fg(part.tone, part.text)).join(theme.fg("dim", " | "))
+            ? renderSegments(rightStatusParts, theme)
             : theme.fg("dim", rightStatus);
           const pad = " ".repeat(Math.max(1, width - visibleWidth(left) - visibleWidth(right)));
           return [truncateToWidth(left + pad + right, width)];
@@ -139,6 +166,7 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
       };
     });
   }
+
   pi.registerTool({
     name: "repo_status",
     label: "Repo Status",
@@ -178,4 +206,5 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
     requestRender();
   });
   pi.on("model_select", () => requestRender());
+  pi.on("thinking_level_select", () => requestRender());
 }

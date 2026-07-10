@@ -1,6 +1,7 @@
+import { mkdir } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { basename, dirname, join } from "node:path";
+import { join } from "node:path";
 import { askSignalWhenIdle } from "../lib/signal-question.js";
 
 const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
@@ -10,6 +11,18 @@ const ELICIT_PARAMS = Type.Object({
   questions: Type.Array(Type.String(), { description: "Specific questions to ask before finalizing or executing a plan" }),
   context: Type.Optional(Type.String({ description: "Short context explaining why these answers are needed" })),
 });
+
+function parseNumberedAnswers(questions: string[], text: string) {
+  const answers = questions.map((question) => ({ question, answer: "" }));
+  for (const line of text.split("\n")) {
+    const match = line.match(/^\s*(\d+)[.)]?\s*(.*)$/);
+    if (!match) continue;
+    const index = Number(match[1]) - 1;
+    if (answers[index]) answers[index].answer = match[2]?.trim() ?? "";
+  }
+  if (questions.length === 1 && !answers[0]!.answer) answers[0]!.answer = text.trim();
+  return answers;
+}
 
 const WORKTREE_PARAMS = Type.Object({
   name: Type.String({ description: "Short slug/name for the worktree and branch" }),
@@ -80,10 +93,9 @@ async function createWorktree(pi: ExtensionAPI, cwd: string, name: string, baseR
   const root = await gitRoot(pi);
 
   const slug = slugify(name);
-  const parent = dirname(root);
-  const repo = basename(root);
-  const path = join(parent, `${repo}-worktree-${slug}`);
+  const path = join(root, ".pi", "wt", slug);
   const branch = `pibarm/${slug}`;
+  await mkdir(join(root, ".pi", "wt"), { recursive: true });
   const result = await pi.exec("git", ["-C", root, "worktree", "add", "-b", branch, path, baseRef], { timeout: 30000 });
   if (result.code !== 0 && /already exists|is already checked out/i.test(result.stderr ?? "")) {
     return { root, path, branch, reused: true, stdout: result.stdout, stderr: result.stderr };
@@ -269,21 +281,28 @@ export default function planWorktree(pi: ExtensionAPI) {
     promptGuidelines: ["Use elicit_plan_questions in plan mode before finalizing a plan when requirements, risks, scope, or execution location are unclear."],
     parameters: ELICIT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
-      const prompt = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}\nAnswer: `).join("\n\n")}`;
+      const prompt = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
       const signalAnswer = await askSignalWhenIdle(pi, `Pi needs plan answers:\n${prompt}`).catch(() => undefined);
       if (signalAnswer) {
+        const answers = parseNumberedAnswers(params.questions, signalAnswer);
         return {
-          content: [{ type: "text", text: `User answered via Signal:\n${signalAnswer.trim()}` }],
-          details: { questions: params.questions, answer: signalAnswer },
+          content: [{ type: "text", text: `User answered via Signal:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` }],
+          details: { questions: params.questions, answers, answer: signalAnswer },
         };
       }
       if (!ctx.hasUI) {
-        return { content: [{ type: "text", text: `Questions needing answers:\n${params.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}` }], details: undefined };
+        return { content: [{ type: "text", text: `Questions needing answers:\n${prompt}` }], details: undefined };
       }
-      const answer = await ctx.ui.editor("Answer plan questions", prompt);
+
+      const answers = [];
+      for (let i = 0; i < params.questions.length; i++) {
+        const prefix = params.context ? `${params.context}\n\n` : "";
+        const answer = await ctx.ui.input(`${prefix}${i + 1}/${params.questions.length}: ${params.questions[i]}`, "");
+        answers.push({ question: params.questions[i], answer: answer?.trim() ?? "" });
+      }
       return {
-        content: [{ type: "text", text: answer?.trim() ? `User answered:\n${answer.trim()}` : "User did not provide answers." }],
-        details: { questions: params.questions, answer },
+        content: [{ type: "text", text: answers.some((a) => a.answer) ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` : "User did not provide answers." }],
+        details: { questions: params.questions, answers, answer: answers.map((a, i) => `${i + 1}. ${a.answer}`).join("\n") },
       };
     },
   });

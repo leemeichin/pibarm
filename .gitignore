@@ -1,6 +1,7 @@
 node_modules/
 .pi/npm/
 .pi/git/
+.pi/wt/
 *.log
 .DS_Store
 .env

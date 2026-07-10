@@ -60,7 +60,7 @@ you approve/refine the plan
   ↓
 /execute-plan worktree <name>
   ↓
-changes happen in a sibling git worktree, not your active checkout
+changes happen in a repo-local git worktree, not your active checkout
 ```
 
 Use active-checkout execution only when you really want it:
@@ -77,7 +77,7 @@ Use active-checkout execution only when you really want it:
 | `/plan-mode` | Toggle read-only plan mode manually. |
 | `/plan-show` | Show the last captured plan and parsed steps. |
 | `/execute-plan` | Execute the last captured plan in the active checkout. |
-| `/execute-plan worktree <name>` | Execute the last captured plan in a new sibling git worktree. |
+| `/execute-plan worktree <name>` | Execute the last captured plan in a new repo-local git worktree. |
 | `/worktrees` | List git worktrees for this repo. |
 | `/worktree-diff <path>` | Show status + diff stat for a worktree. |
 | `/worktree-remove [--force] <path>` | Remove a worktree after review/merge/abandoning it. |
@@ -92,12 +92,12 @@ Use active-checkout execution only when you really want it:
 | `/srht-builds` | List recent SourceHut builds via `hut`. |
 | `/hut <args...>` | Run raw SourceHut `hut` args. |
 | `/matrix-help` | Explain when/how to use Matrix and its prior art. |
-| `/matrix <task>` | Start a tmux Matrix with scout/planner panes. |
-| `/matrix-attach` | Open the Matrix tmux session in a WezTerm `matrix` workspace. |
-| `/matrix-spawn <role> <task>` | Spawn one parent-controlled Matrix agent pane. |
-| `/matrix-send <role> <message>` | Send a message to a Matrix agent pane. |
-| `/matrix-capture [role]` | Capture recent output from Matrix panes. |
-| `/matrix-kill [role\|all]` | Kill one Matrix pane or the whole session. |
+| `/matrix <task>` | Start a WezTerm Matrix with scout/planner panes. |
+| `/matrix-attach` | Open a WezTerm `matrix` workspace window. |
+| `/matrix-spawn <role> <task>` | Spawn one parent-controlled Matrix agent in a WezTerm pane. |
+| `/matrix-send <role> <message>` | Send a message to a Matrix WezTerm pane. |
+| `/matrix-capture [role]` | Capture recent output from Matrix WezTerm panes. |
+| `/matrix-kill [role\|all]` | Kill known Matrix WezTerm panes. |
 
 ## Tools exposed to the agent
 
@@ -105,7 +105,7 @@ Use active-checkout execution only when you really want it:
 |---|---|
 | `elicit_plan_questions` | Ask several planning questions before finalizing/executing a plan. |
 | `question` | Ask one focused question with optional choices. |
-| `create_git_worktree` | Create an isolated sibling git worktree and branch. |
+| `create_git_worktree` | Create an isolated repo-local git worktree and branch. |
 | `summarize_worktree_diff` | Summarize status/diff for a worktree. |
 | `remove_git_worktree` | Remove an isolated worktree after confirmation/review. |
 | `run_worktree_agent` | Create/use a worktree and run `pi -p` there. |
@@ -121,12 +121,12 @@ Use active-checkout execution only when you really want it:
 | `sourcehut_builds` | List SourceHut builds through `hut`. |
 | `sourcehut_tickets` | List SourceHut tickets through `hut`. |
 | `todo_list` | Track progress when one prompt contains multiple requested tasks. |
-| `matrix_spawn` | Spawn a parent-controlled pi agent in a tmux Matrix pane. |
-| `matrix_attach` | Open the Matrix tmux session in WezTerm. |
-| `matrix_send` | Send a message to a Matrix pane. |
-| `matrix_capture` | Capture recent output from Matrix panes. |
-| `matrix_list` | List known Matrix panes. |
-| `matrix_kill` | Kill Matrix panes or the whole session. |
+| `matrix_spawn` | Spawn a parent-controlled pi agent in a WezTerm Matrix pane. |
+| `matrix_attach` | Open the Matrix WezTerm workspace. |
+| `matrix_send` | Send a message to a Matrix WezTerm pane. |
+| `matrix_capture` | Capture recent output from Matrix WezTerm panes. |
+| `matrix_list` | List known Matrix WezTerm panes. |
+| `matrix_kill` | Kill Matrix WezTerm panes. |
 
 ## Plan mode behavior
 
@@ -146,10 +146,10 @@ After a plan is captured, pi prompts you to:
 
 ## Worktrees
 
-`/execute-plan worktree feature-x` creates a sibling checkout like:
+`/execute-plan worktree feature-x` creates a repo-local checkout like:
 
 ```text
-../<repo>-worktree-feature-x
+.pi/wt/feature-x
 ```
 
 with branch:
@@ -158,22 +158,22 @@ with branch:
 pibarm/feature-x
 ```
 
-The agent is instructed to make changes under that worktree path, preserving your active checkout.
+The agent is instructed to make changes under that worktree path, preserving your active checkout. `.pi/wt/` is gitignored.
 
 Review and cleanup:
 
 ```text
 /worktrees
-/worktree-diff ../<repo>-worktree-feature-x
-/worktree-remove ../<repo>-worktree-feature-x
+/worktree-diff .pi/wt/feature-x
+/worktree-remove .pi/wt/feature-x
 ```
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
 
-## Matrix tmux agents
+## Matrix WezTerm agents
 
-`matrix.ts` is tmux-first orchestration for visible parent-controlled agents. WezTerm attachment is optional via `/matrix-attach`. Use `/matrix-help` inside Pi for the quick operating guide.
+`matrix.ts` is WezTerm-native orchestration for visible parent-controlled agents. It opens agents in WezTerm tabs/splits and keeps only lightweight pane tracking in Pi. Use `/matrix-help` inside Pi for the quick operating guide.
 
 ```text
 /matrix investigate flaky tests
@@ -188,10 +188,11 @@ Defaults:
 - `scout` and `planner` use read-focused toolsets
 - `worker` uses normal tools
 - `worktree: true` on `matrix_spawn` creates an isolated branch/worktree when the agent needs separate branch work
+- `placement` on `matrix_spawn` can be `right`, `down`, `tab`, or `window`
 - same-branch/distributed work uses the current checkout
-- sessions are killed on pi exit unless `PI_MATRIX_KEEP_ON_EXIT=1`
+- `/matrix-kill` closes known agent panes when you are done
 
-[`pi-cmux`](https://www.npmjs.com/package/pi-cmux) is also loaded for cmux-native splits, notifications, sidebar/status, continuation, worktree handoff, and review sessions. Matrix stays smaller and tmux/WezTerm-native.
+[`pi-cmux`](https://www.npmjs.com/package/pi-cmux) is also loaded for cmux-native splits, notifications, sidebar/status, continuation, worktree handoff, and review sessions. Matrix stays smaller and WezTerm-native.
 
 ## Notifications and permission gates
 
@@ -209,14 +210,14 @@ export PI_NOTIFY_SIGNAL_FORCE=1                  # optional; test Signal without
 export PI_NOTIFY_SIGNAL_REPLY_SECONDS=600        # optional
 ```
 
-`permission-gate.ts` asks before risky bash commands, writes to sensitive paths, or actions that escape the current project. In non-UI modes those actions are blocked.
+`permission-gate.ts` is disabled by default because the current heuristic is too intrusive. Set `PI_PERMISSION_GATE=1` to temporarily re-enable risky bash/write prompts while the smarter gate is redesigned.
 
 ## Forge/statusline integrations
 
-`repo-status.ts` installs a footer with active model + context usage on the left and repo/forge/CI status on the right. Ponytail extension chatter is filtered out. Example:
+`repo-status.ts` installs a colorful powerline-style footer with project/model/context/thinking on the left and repo/forge/CI status on the right. Ponytail extension chatter is filtered out. Example:
 
 ```text
-anthropic/claude-sonnet-4-5 · ctx 37%         main ±2 |  #12 |  CI
+  pibarm  anthropic/Sonnet 4 5  ctx 37%         main ±2   #12   CI
 ```
 
 Colour mapping:
@@ -312,10 +313,10 @@ extensions/github.ts           # GitHub PR/CI tools via gh
 extensions/sourcehut.ts        # SourceHut tools via hut
 extensions/repo-status.ts      # git/forge/CI statusline
 extensions/waiting-notify.ts   # native/Signal notifications for pending questions
-extensions/permission-gate.ts  # confirmation gate for risky/out-of-project actions
+extensions/permission-gate.ts  # opt-in confirmation gate for risky/out-of-project actions
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
-extensions/matrix.ts           # tmux Matrix parent-controlled agent panes
+extensions/matrix.ts           # WezTerm Matrix parent-controlled agent panes
 extensions/agent-presets.ts   # presets and single/parallel subagents
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt

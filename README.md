@@ -114,6 +114,8 @@ Use active-checkout execution only when you really want it:
 /execute-plan
 ```
 
+Agent command execution is shell-first and fail-fast: prefer direct Unix tools, use `set -euo pipefail` for multi-step mutations, and reserve small Python snippets for cases where shell would be brittle or unsafe.
+
 ## Commands
 
 | Command | What it does |

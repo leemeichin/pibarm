@@ -9,6 +9,22 @@ type Forge = "github" | "sourcehut" | "git";
 type Tone = "dim" | "muted" | "success" | "warning" | "error" | "accent";
 type StatusPart = { text: string; tone: Tone };
 
+const CATPPUCCIN: Record<Tone, { fg: string; bg: string }> = {
+  accent: { fg: "#11111b", bg: "#cba6f7" },
+  success: { fg: "#11111b", bg: "#a6e3a1" },
+  warning: { fg: "#11111b", bg: "#f9e2af" },
+  error: { fg: "#11111b", bg: "#f38ba8" },
+  muted: { fg: "#cdd6f4", bg: "#313244" },
+  dim: { fg: "#a6adc8", bg: "#1e1e2e" },
+};
+
+function sgr(hex: string, bg = false) {
+  const match = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+  if (!match) return "";
+  const [, r, g, b] = match;
+  return `\x1b[${bg ? 48 : 38};2;${parseInt(r!, 16)};${parseInt(g!, 16)};${parseInt(b!, 16)}m`;
+}
+
 async function exec(pi: ExtensionAPI, command: string, args: string[], timeout = 10000) {
   const result = await pi.exec(command, args, { timeout });
   return { stdout: result.stdout?.trim() ?? "", stderr: result.stderr?.trim() ?? "", code: result.code };
@@ -129,10 +145,13 @@ async function refresh(pi: ExtensionAPI, ctx: ExtensionContext, requestRender: (
   }
 }
 
-function renderSegments(parts: StatusPart[], theme: ExtensionContext["ui"]["theme"]): string {
+function renderSegments(parts: StatusPart[]): string {
   return parts
-    .map((part, index) => `${index ? theme.fg("dim", "") : ""}${theme.fg(part.tone, ` ${part.text} `)}`)
-    .join("");
+    .map((part) => {
+      const colors = CATPPUCCIN[part.tone];
+      return `${sgr(colors.bg, true)}${sgr(colors.fg)} ${part.text} \x1b[0m`;
+    })
+    .join("  ");
 }
 
 export default function repoStatusExtension(pi: ExtensionAPI) {
@@ -156,9 +175,9 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
           if (thinking) leftParts.push({ text: thinking, tone: "accent" });
           if (statusText) leftParts.push({ text: statusText, tone: "dim" });
 
-          const left = renderSegments(leftParts, theme);
+          const left = renderSegments(leftParts);
           const right = rightStatusParts.length > 0
-            ? renderSegments(rightStatusParts, theme)
+            ? renderSegments(rightStatusParts)
             : theme.fg("dim", rightStatus);
           const pad = " ".repeat(Math.max(1, width - visibleWidth(left) - visibleWidth(right)));
           return [truncateToWidth(left + pad + right, width)];

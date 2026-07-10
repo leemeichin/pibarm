@@ -26,6 +26,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 /matrix-send <role> <message>
 /matrix-capture [role]
 /matrix-join [role|all]
+/matrix-list
 /matrix-kill [role|all]
 ```
 
@@ -55,7 +56,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 - same branch/distributed work: no worktree
 - separate branch or risky changes: `matrix_spawn` with `worktree: true`
 - use `matrix_spawn.placement` for `right`, `down`, or `tab` when placement matters
-- Matrix uses a project/session-specific workspace name, opens/focuses it automatically, reuses one workspace window where possible, logs to `.pi/matrix/`, shows agent pills in the shared task widget, and panes exit when done
+- Matrix uses a project/session-specific workspace name, opens/focuses a visible WezTerm client automatically, reuses one workspace window where possible, prints a visible start/log banner, logs to `.pi/matrix/`, shows agent pills in the shared task widget, and panes exit when done
 
 5. Clean up:
 

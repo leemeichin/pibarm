@@ -13,17 +13,23 @@ Use this workflow for non-trivial or risky code changes.
 2. Inspect only. Do not edit files.
 3. Ask one focused question with `question`, or multiple clarifying questions with `elicit_plan_questions`, when scope, risks, acceptance criteria, or execution location are unclear.
 4. Produce a concise plan with validation steps and risks.
-5. Wait for approval.
-6. Prefer executing with `/execute-plan worktree <name>` so changes happen in a repo-local git worktree, not the active checkout.
+5. Wait for approval. If the user gives feedback, refine the captured plan and require approval again.
+6. Prefer executing with `/approve-plan worktree <name>` or `/execute-plan worktree <name>` so changes happen in a repo-local git worktree, not the active checkout.
 
 ## Tools
 
 - `question`: ask one focused user question with optional choices; may use Signal note-to-self while the laptop is idle.
-- `elicit_plan_questions`: ask the user multiple questions before finalizing/executing a plan; may use Signal note-to-self while the laptop is idle.
+- `elicit_plan_questions`: ask the user multiple questions before finalizing/executing a plan; uses one editable answer buffer in the UI and may use Signal note-to-self while the laptop is idle.
 - `create_git_worktree`: create a repo-local worktree and branch.
 - `summarize_worktree_diff`: review status/diff from a worktree.
 - `remove_git_worktree`: remove a worktree after confirmation/review.
 - `run_worktree_agent`: create a repo-local worktree and run `pi -p` there; defaults to the current active model unless `model` is set, and may use a lighter authenticated model for simple-scope tasks.
+
+## Commands
+
+- `/plan-show`: show the captured plan, status, and parsed steps.
+- `/refine-plan <feedback>`: revise the captured plan and require approval again.
+- `/approve-plan [active|worktree <name>]`: approve and execute the captured plan.
 
 ## Rules
 

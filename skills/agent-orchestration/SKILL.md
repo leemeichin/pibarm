@@ -14,6 +14,7 @@ Use this skill for complex work that benefits from explicit roles.
 - Executor: implements approved changes, ideally in an isolated git worktree, runs checks, summarizes modified files.
 - Subagent: isolated research, verification, comparison, or implementation via `run_subagent`, `run_subagents`, or `run_worktree_agent`.
 - Todo tracker: use `todo_list` for prompts with multiple requested tasks; keep it short and mark items done as work completes. Todos and delegated agents appear together as horizontal pills in the shared task widget.
+- Watcher: use `watch_agent` when the user wants a sibling task to monitor a PR, review comments, checks, or external state while the parent Pi session continues.
 - Matrix: use `matrix_*` tools when the user wants visible WezTerm panes/tabs/splits controlled by the parent Pi.
 
 ## Commands
@@ -23,6 +24,8 @@ Use this skill for complex work that benefits from explicit roles.
 - `/preset executor` switches to the executor model/tools.
 - `/plan <task>` enters read-only plan mode and asks for a plan.
 - `/plan-mode` toggles read-only plan mode.
+- `/approve-plan [active|worktree <name>]` approves and executes the captured plan.
+- `/refine-plan <feedback>` revises the captured plan and requires approval again.
 - `/execute-plan` executes the last captured plan in the active checkout.
 - `/execute-plan worktree <name>` executes the last captured plan in a repo-local git worktree.
 - `/matrix <task>` starts a WezTerm Matrix with parent-controlled scout/planner panes.
@@ -36,7 +39,7 @@ Use `run_worktree_agent` when the subtask may modify files or should not affect 
 - run planner/reviewer/verifier subagents in parallel
 - produce a focused checklist
 
-Subagent prompts must include all necessary context. Do not assume the subagent can see the active conversation. Subagents default to the current active model unless a `model` is set explicitly; simple-scope tasks may be downgraded to a lighter authenticated model by the parent-side heuristic.
+Subagent and watcher prompts must include all necessary context. Do not assume they can see the active conversation. Subagents default to the current active model unless a `model` is set explicitly; simple-scope tasks may be downgraded to a lighter authenticated model by the parent-side heuristic. For PR follow-up, prefer `watch_agent` with a PR number/URL and explicit instructions about when it may comment or push changes.
 
 For Matrix/WezTerm orchestration:
 

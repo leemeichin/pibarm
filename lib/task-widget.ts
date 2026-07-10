@@ -60,6 +60,20 @@ export function clearAgentTasks() {
   agentTasks.clear();
 }
 
+export function taskSummaryLines() {
+  const agents = Array.from(agentTasks.values());
+  const lines = [];
+  if (todos.length) {
+    lines.push("Todos:");
+    lines.push(...todos.map((todo, i) => `  ${todo.done ? "󰄲" : "󰄱"} ${i + 1}. ${todo.text}`));
+  }
+  if (agents.length) {
+    lines.push("Agents:");
+    lines.push(...agents.map((task) => `  ${statusIcon(task.status)} ${task.label}${task.session ? ` @ ${task.session}` : ""}${task.detail ? ` (${task.detail})` : ""}`));
+  }
+  return lines;
+}
+
 export function updateTaskWidget(ctx: ExtensionContext) {
   const agents = Array.from(agentTasks.values());
   if (!todos.length && !agents.length) {
@@ -84,10 +98,14 @@ export function updateTaskWidget(ctx: ExtensionContext) {
 }
 
 function renderTaskPills(items: TodoItem[], agents: AgentTask[]) {
-  const pills = [
-    ...items.map((todo, index) => `${todo.done ? "✓" : "○"}${index + 1} ${shorten(todo.text, 34)}`),
+  const allPills = [
+    ...items.map((todo, index) => `${todo.done ? "󰄲" : "󰄱"}${index + 1} ${shorten(todo.text, 34)}`),
     ...agents.map((task) => `${statusIcon(task.status)} ${shorten(task.label, 24)}${task.session ? `@${shorten(task.session, 18)}` : ""}${task.detail ? ` ${shorten(task.detail, 16)}` : ""}`),
   ].map((text) => `[${text}]`);
+  const maxPills = 10;
+  const visible = allPills.slice(0, maxPills);
+  const hidden = allPills.length - visible.length;
+  const pills = hidden > 0 ? [...visible, `[󰁕 ${hidden} more]`] : visible;
 
   const lines: string[] = [];
   let line = "";
@@ -104,9 +122,9 @@ function renderTaskPills(items: TodoItem[], agents: AgentTask[]) {
 }
 
 function statusIcon(status: AgentTaskStatus) {
-  if (status === "running") return "⏳";
-  if (status === "failed") return "✗";
-  return "✓";
+  if (status === "running") return "󰔟";
+  if (status === "failed") return "󰅖";
+  return "󰄲";
 }
 
 function shorten(text: string, max: number) {

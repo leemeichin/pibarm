@@ -1,7 +1,7 @@
 import { StringEnum } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { addTodos, clearAgentTasks, clearTodos, getTodos, markTodoDone, setTodos, todoLines, todoSummary, updateTaskWidget } from "../lib/task-widget.js";
+import { addTodos, clearAgentTasks, clearTodos, getTodos, markTodoDone, setTodos, taskSummaryLines, todoLines, todoSummary, updateTaskWidget } from "../lib/task-widget.js";
 
 const TODO_PARAMS = Type.Object({
   action: StringEnum(["set", "add", "done", "list", "clear"] as const),
@@ -16,6 +16,14 @@ function looksMultiAsk(prompt: string): boolean {
 }
 
 export default function todoListExtension(pi: ExtensionAPI) {
+  pi.registerCommand("tasks", {
+    description: "Show all todo and delegated agent tasks from the shared task widget",
+    handler: async (_args, ctx) => {
+      const lines = taskSummaryLines();
+      ctx.ui.notify(lines.length ? lines.join("\n") : "No active task widget items.", "info");
+    },
+  });
+
   pi.registerTool({
     name: "todo_list",
     label: "Todo List",

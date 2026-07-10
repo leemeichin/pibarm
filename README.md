@@ -75,12 +75,17 @@ Use active-checkout execution only when you really want it:
 |---|---|
 | `/plan <task>` | Enter read-only plan mode and ask for a plan. |
 | `/plan-mode` | Toggle read-only plan mode manually. |
-| `/plan-show` | Show the last captured plan and parsed steps. |
+| `/plan-show` | Show the last captured plan, status, and parsed steps. |
+| `/approve-plan [active\|worktree <name>]` | Approve and execute the captured plan. |
+| `/refine-plan <feedback>` | Revise the captured plan and require approval again. |
 | `/execute-plan` | Execute the last captured plan in the active checkout. |
 | `/execute-plan worktree <name>` | Execute the last captured plan in a new repo-local git worktree. |
 | `/worktrees` | List git worktrees for this repo. |
 | `/worktree-diff <path>` | Show status + diff stat for a worktree. |
 | `/worktree-remove [--force] <path>` | Remove a worktree after review/merge/abandoning it. |
+| `/tasks` | Show all todo and delegated agent task widget items. |
+| `/watchers` | List active watcher sibling agents. |
+| `/watcher-stop [name]` | Stop watcher sibling agents. |
 | `/preset` | List configured role presets. |
 | `/preset planner` | Apply planner model/tool/thinking preset. |
 | `/preset executor` | Apply executor model/tool/thinking preset. |
@@ -93,11 +98,13 @@ Use active-checkout execution only when you really want it:
 | `/hut <args...>` | Run raw SourceHut `hut` args. |
 | `/matrix-help` | Explain when/how to use Matrix and its prior art. |
 | `/matrix <task>` | Start a WezTerm Matrix with scout/planner panes. |
-| `/matrix-attach` | Open a WezTerm `matrix` workspace window. |
-| `/matrix-spawn <role> <task>` | Spawn one parent-controlled Matrix agent in a WezTerm pane. |
-| `/matrix-send <role> <message>` | Send a message to a Matrix WezTerm pane. |
-| `/matrix-capture [role]` | Capture recent output from Matrix WezTerm panes. |
-| `/matrix-kill [role\|all]` | Kill known Matrix WezTerm panes. |
+| `/matrix-attach` | Open/focus the session-specific Matrix workspace window. |
+| `/matrix-spawn <role> <task>` | Spawn one Matrix agent in a WezTerm pane. |
+| `/matrix-send <role> <message>` | Send a message to a still-running Matrix pane. |
+| `/matrix-capture [role]` | Capture recent output from Matrix panes/logs. |
+| `/matrix-join [role\|all]` | Wait for Matrix agents, capture logs, and clean up panes. |
+| `/matrix-list` | List Matrix agents and panes for this session. |
+| `/matrix-kill [role\|all]` | Kill Matrix panes. |
 
 ## Tools exposed to the agent
 
@@ -111,6 +118,7 @@ Use active-checkout execution only when you really want it:
 | `run_worktree_agent` | Create/use a worktree and run `pi -p` there; simple tasks may use a lighter available model. |
 | `run_subagent` | Run an isolated non-interactive `pi -p` subagent; simple tasks may use a lighter available model. |
 | `run_subagents` | Run several isolated `pi -p` subagents in parallel; simple jobs may use lighter available models unless set. |
+| `watch_agent` | Start/list/stop a sibling watcher agent for PR reviews, checks, or external state changes. |
 | `mcporter_list` | Discover MCP servers/tools through `mcporter`. |
 | `mcporter_call` | Call MCP tools through `mcporter`. |
 | `mcporter_resource` | List/read MCP resources through `mcporter`. |
@@ -131,7 +139,17 @@ Use active-checkout execution only when you really want it:
 
 ## Task widget
 
-`todo-list.ts`, headless subagents, worktree agents, and Matrix agents share one compact widget below the editor/above the status line. It renders horizontal pills such as `[○1 inspect auth] [⏳ matrix scout@matrix-app-ab12] [✓ sub reviewer@gpt-5-mini]` so delegated work stays visually connected to the parent session/workspace without a tall vertical list.
+`todo-list.ts`, headless subagents, worktree agents, watcher agents, and Matrix agents share one compact widget below the editor/above the status line. It renders horizontal Nerd Font pills such as `[󰄱1 inspect auth] [󰔟 matrix scout@matrix-app-ab12] [󰄲 sub reviewer@gpt-5-mini]` so delegated work stays visually connected to the parent session/workspace without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
+
+## Watcher agents
+
+`watch_agent` starts a sibling watcher that polls external state and runs a headless Pi task only when the observed state changes. The primary use case is PR follow-up while the parent Pi session remains active:
+
+```text
+watch_agent(action=start, pr="123", task="Watch for review comments and failed checks; respond only when useful")
+```
+
+It writes logs under `.pi/watchers/`, appears in the shared task widget, and can be stopped with `/watcher-stop [name]` or `watch_agent(action=stop, name="...")`.
 
 ## Plan mode behavior
 
@@ -144,10 +162,12 @@ When plan mode is active:
 
 After a plan is captured, pi prompts you to:
 
-- ask/refine before executing
 - approve execution in a worktree
 - approve execution in the active checkout
-- stay in plan mode
+- refine the plan, then require approval again
+- keep the plan for later
+
+You can also use `/approve-plan [active|worktree <name>]` or `/refine-plan <feedback>` after the prompt. Refinements preserve the current captured plan as context and replace it only when a revised plan is captured.
 
 ## Worktrees
 
@@ -191,9 +211,9 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 Defaults:
 
 - spawned agents use the current active model unless `model` is set explicitly; simple-scope tasks may use a lighter authenticated model
-- agents run non-interactively in WezTerm, write logs under `.pi/matrix/`, and panes exit when tasks finish
+- agents run non-interactively in WezTerm, print a visible start/log banner, write logs under `.pi/matrix/`, and panes exit when tasks finish
 - `matrix_join` waits for completion, returns logs, and cleans up pane tracking
-- Matrix uses a project/session-specific workspace name like `matrix-<project>-<session>` to avoid cross-session conflicts, opens/focuses it automatically, and splits that window unless `placement: "tab"` is explicit
+- Matrix uses a project/session-specific workspace name like `matrix-<project>-<session>` to avoid cross-session conflicts, opens/focuses a visible WezTerm client automatically, and splits that window unless `placement: "tab"` is explicit
 - `scout` and `planner` use read-focused toolsets
 - `worker` uses normal tools
 - `worktree: true` on `matrix_spawn` creates an isolated branch/worktree when the agent needs separate branch work

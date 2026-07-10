@@ -12,15 +12,26 @@ const WRITE_TOOLS = new Set(["edit", "write"]);
 const ELICIT_PARAMS = Type.Object({
   questions: Type.Array(Type.String(), { description: "Specific questions to ask before finalizing or executing a plan" }),
   context: Type.Optional(Type.String({ description: "Short context explaining why these answers are needed" })),
+  edit: Type.Optional(Type.Boolean({ description: "Use one editable answer buffer for all questions when UI is available. Defaults to true." })),
 });
 
 function parseNumberedAnswers(questions: string[], text: string) {
   const answers = questions.map((question) => ({ question, answer: "" }));
+  let currentIndex = -1;
   for (const line of text.split("\n")) {
-    const match = line.match(/^\s*(\d+)[.)]?\s*(.*)$/);
-    if (!match) continue;
-    const index = Number(match[1]) - 1;
-    if (answers[index]) answers[index].answer = match[2]?.trim() ?? "";
+    const numbered = line.match(/^\s*(\d+)[.)]?\s*(.*)$/);
+    if (numbered) {
+      currentIndex = Number(numbered[1]) - 1;
+      const rest = numbered[2]?.trim() ?? "";
+      if (answers[currentIndex] && rest && rest !== questions[currentIndex] && !questions[currentIndex].startsWith(rest)) {
+        answers[currentIndex].answer = rest.replace(/^Answer:\s*/i, "");
+      }
+      continue;
+    }
+    const answerLine = line.match(/^\s*(?:Answer:)?\s*(.+?)\s*$/i);
+    if (currentIndex >= 0 && answers[currentIndex] && answerLine?.[1] && !answers[currentIndex].answer) {
+      answers[currentIndex].answer = answerLine[1].trim();
+    }
   }
   if (questions.length === 1 && !answers[0]!.answer) answers[0]!.answer = text.trim();
   return answers;
@@ -147,18 +158,56 @@ async function summarizeWorktree(pi: ExtensionAPI, path: string, statOnly = fals
   };
 }
 
+type PlanStatus = "captured" | "refining" | "approved";
+
 export default function planWorktree(pi: ExtensionAPI) {
   let planMode = false;
   let toolsBeforePlan: string[] | undefined;
   let lastPlan = "";
   let planSteps: string[] = [];
+  let planStatus: PlanStatus = "captured";
+  let planCapturedAt = 0;
 
   function updatePlanWidget(ctx: ExtensionContext) {
-    if (!planMode || planSteps.length === 0) {
+    if (!planMode || !lastPlan) {
       ctx.ui.setWidget("pibarm-plan-steps", undefined);
       return;
     }
-    ctx.ui.setWidget("pibarm-plan-steps", planSteps.map((step, index) => `${index + 1}. ${step}`));
+    const status = planStatus === "approved" ? "approved" : planStatus === "refining" ? "refining" : "pending approval";
+    const steps = planSteps.length ? planSteps.map((step, index) => `${index + 1}. ${step}`) : [lastPlan.split("\n").find(Boolean) ?? "Captured plan"];
+    ctx.ui.setWidget("pibarm-plan-steps", [`Plan ${status}:`, ...steps]);
+  }
+
+  function persistPlan(status: PlanStatus = planStatus) {
+    if (!lastPlan) return;
+    pi.appendEntry("pibarm-plan", { plan: lastPlan, steps: planSteps, status, capturedAt: planCapturedAt || Date.now() });
+  }
+
+  function capturePlan(ctx: ExtensionContext, text: string) {
+    lastPlan = text;
+    planSteps = extractPlanSteps(text);
+    planStatus = "captured";
+    planCapturedAt = Date.now();
+    updatePlanWidget(ctx);
+    persistPlan("captured");
+  }
+
+  function markPlanApproved(ctx: ExtensionContext) {
+    planStatus = "approved";
+    persistPlan("approved");
+    updatePlanWidget(ctx);
+  }
+
+  async function refineCapturedPlan(ctx: ExtensionContext, feedback: string) {
+    if (!lastPlan) {
+      ctx.ui.notify("No captured plan to refine. Use /plan first.", "warning");
+      return;
+    }
+    enablePlanMode(ctx);
+    planStatus = "refining";
+    persistPlan("refining");
+    updatePlanWidget(ctx);
+    pi.sendUserMessage(`Revise the captured plan based on the feedback below. Keep plan mode active, do not edit files, and return a complete revised plan that can be approved afterwards.\n\nCurrent captured plan:\n${lastPlan}\n\nFeedback/refinement request:\n${feedback}`, { deliverAs: "followUp" });
   }
 
   function enablePlanMode(ctx: ExtensionContext) {
@@ -203,7 +252,7 @@ export default function planWorktree(pi: ExtensionAPI) {
         return;
       }
       const steps = planSteps.length ? `\n\nParsed steps:\n${planSteps.map((step, i) => `${i + 1}. ${step}`).join("\n")}` : "";
-      ctx.ui.notify(`${lastPlan}${steps}`, "info");
+      ctx.ui.notify(`Status: ${planStatus}\n\n${lastPlan}${steps}\n\nNext: /approve-plan [active|worktree <name>] or /refine-plan <feedback>`, "info");
     },
   });
 
@@ -212,6 +261,7 @@ export default function planWorktree(pi: ExtensionAPI) {
       ctx.ui.notify("No captured plan yet. Use /plan first.", "warning");
       return;
     }
+    markPlanApproved(ctx);
     disablePlanMode(ctx);
     if (worktreeName) {
       const wt = await createWorktree(pi, ctx.cwd, worktreeName);
@@ -221,11 +271,35 @@ export default function planWorktree(pi: ExtensionAPI) {
     pi.sendUserMessage(`Execute the approved plan in the active checkout.\n\nApproved plan:\n${lastPlan}`);
   }
 
+  async function approvePlanCommand(args: string, ctx: ExtensionContext) {
+    const trimmed = args.trim();
+    if (!trimmed || /^active$/i.test(trimmed)) {
+      await executeCapturedPlan(ctx);
+      return;
+    }
+    const match = /^(?:worktree\s+)?(.+)/i.exec(trimmed);
+    if (match?.[1]) await executeCapturedPlan(ctx, match[1].trim());
+  }
+
   pi.registerCommand("execute-plan", {
     description: "Execute the last approved plan; add 'worktree <name>' to isolate changes",
     handler: async (args, ctx) => {
       const match = /^worktree\s+(.+)/i.exec(args.trim());
       await executeCapturedPlan(ctx, match?.[1]);
+    },
+  });
+
+  pi.registerCommand("approve-plan", {
+    description: "Approve and execute the captured plan: /approve-plan [active|worktree <name>|<worktree-name>]",
+    handler: async (args, ctx) => approvePlanCommand(args, ctx),
+  });
+
+  pi.registerCommand("refine-plan", {
+    description: "Refine the captured plan and require re-approval: /refine-plan <feedback>",
+    handler: async (args, ctx) => {
+      const feedback = args.trim() || await ctx.ui.editor("Refine captured plan", "Describe what should change before approval:\n");
+      if (feedback?.trim()) await refineCapturedPlan(ctx, feedback.trim());
+      else ctx.ui.notify("Plan retained unchanged. Use /approve-plan or /refine-plan when ready.", "info");
     },
   });
 
@@ -298,6 +372,16 @@ export default function planWorktree(pi: ExtensionAPI) {
       }
       if (!ctx.hasUI) {
         return { content: [{ type: "text", text: `Questions needing answers:\n${prompt}` }], details: undefined };
+      }
+
+      if (params.edit !== false) {
+        const draft = `${params.context ? `${params.context}\n\n` : ""}${params.questions.map((q, i) => `${i + 1}. ${q}\n   Answer: `).join("\n\n")}`;
+        const edited = await ctx.ui.editor("Answer planning questions", draft);
+        const answers = parseNumberedAnswers(params.questions, edited ?? "");
+        return {
+          content: [{ type: "text", text: answers.some((a) => a.answer) ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` : "User did not provide answers." }],
+          details: { questions: params.questions, answers, answer: edited ?? "" },
+        };
       }
 
       const answers = [];
@@ -397,11 +481,12 @@ export default function planWorktree(pi: ExtensionAPI) {
 
   pi.on("before_agent_start", async () => {
     if (!planMode) return;
+    const pending = lastPlan ? `\n- A captured plan is ${planStatus}; if the user gives feedback, revise the full plan and require approval again before execution.\n- Current captured plan:\n${lastPlan}` : "";
     return {
       message: {
         customType: "pibarm-plan-mode",
         display: false,
-        content: `PLAN MODE IS ACTIVE.\n- Do not modify files.\n- Prefer reading, inspection, mcporter discovery, and analysis.\n- If one decision is needed, call question. If multiple requirements are unclear, call elicit_plan_questions before presenting the final plan.\n- Present the final answer as a concise plan with risks, open questions, and validation steps.\n- Recommend whether execution should happen in a git worktree.`,
+        content: `PLAN MODE IS ACTIVE.\n- Do not modify files.\n- Prefer reading, inspection, mcporter discovery, and analysis.\n- If one decision is needed, call question. If multiple requirements are unclear, call elicit_plan_questions before presenting the final plan.\n- Present the final answer as a concise plan with risks, open questions, and validation steps.\n- Recommend whether execution should happen in a git worktree.${pending}`,
       },
     };
   });
@@ -410,33 +495,36 @@ export default function planWorktree(pi: ExtensionAPI) {
     if (!planMode || !ctx.hasUI) return;
     const text = assistantText(event.messages as any[]);
     if (!looksLikePlan(text)) return;
-    lastPlan = text;
-    planSteps = extractPlanSteps(text);
-    updatePlanWidget(ctx);
-    pi.appendEntry("pibarm-plan", { plan: lastPlan, steps: planSteps, capturedAt: Date.now() });
+    capturePlan(ctx, text);
     const choice = await ctx.ui.select("Plan captured. What next?", [
-      "Ask/refine before executing",
       "Approve: execute in a git worktree",
       "Approve: execute in active checkout",
-      "Stay in plan mode",
+      "Refine plan, then re-approve",
+      "Keep plan for later",
     ]);
-    if (choice?.startsWith("Ask")) {
-      const refinement = await ctx.ui.editor("Questions/refinements for the plan", "Ask any follow-up questions or changes you want before execution:\n");
-      if (refinement?.trim()) pi.sendUserMessage(refinement.trim(), { deliverAs: "followUp" });
+    if (choice?.startsWith("Refine")) {
+      const refinement = await ctx.ui.editor("Refine captured plan", "Describe what should change before approval:\n");
+      if (refinement?.trim()) await refineCapturedPlan(ctx, refinement.trim());
+      else ctx.ui.notify("Plan retained unchanged. Use /approve-plan or /refine-plan when ready.", "info");
     } else if (choice?.includes("worktree")) {
       const name = await ctx.ui.input("Worktree name", "plan-work");
       if (name?.trim()) await executeCapturedPlan(ctx, name.trim());
+      else ctx.ui.notify("Plan retained. Use /approve-plan worktree <name> when ready.", "info");
     } else if (choice?.includes("active")) {
       await executeCapturedPlan(ctx);
+    } else {
+      ctx.ui.notify("Plan retained. Use /approve-plan or /refine-plan when ready.", "info");
     }
   });
 
   pi.on("session_start", async (_event, ctx) => {
     const restored = ctx.sessionManager.getEntries()
       .filter((entry: { type: string; customType?: string }) => entry.type === "custom" && entry.customType === "pibarm-plan")
-      .pop() as { data?: { plan?: string; steps?: string[] } } | undefined;
+      .pop() as { data?: { plan?: string; steps?: string[]; status?: PlanStatus; capturedAt?: number } } | undefined;
     if (restored?.data?.plan) lastPlan = restored.data.plan;
     if (restored?.data?.steps) planSteps = restored.data.steps;
+    if (restored?.data?.status) planStatus = restored.data.status;
+    if (restored?.data?.capturedAt) planCapturedAt = restored.data.capturedAt;
     updatePlanWidget(ctx);
   });
 }

@@ -56,6 +56,25 @@ async function runPiPrompt(pi: ExtensionAPI, prompt: string, model: string | und
   return pi.exec("pi", args, { signal, timeout: timeoutMs });
 }
 
+function detectPrRefs(text: string): string[] {
+  const refs = new Set<string>();
+  for (const match of text.matchAll(/https:\/\/github\.com\/[^\s)]+\/[^\s)]+\/pull\/(\d+)/g)) refs.add(match[0]);
+  for (const match of text.matchAll(/\bPR\s*#?(\d+)\b|pull request\s*#?(\d+)\b/gi)) refs.add(match[1] ?? match[2]);
+  return [...refs];
+}
+
+async function offerPrWatcher(pi: ExtensionAPI, ctx: any, output: string, source: string) {
+  const refs = detectPrRefs(output);
+  if (!refs.length) return;
+  const pr = refs[0];
+  const prompt = `Subagent ${source} appears to have opened or mentioned PR ${pr}. Watch it for review comments/checks?`;
+  if (ctx.hasUI) {
+    const ok = await ctx.ui.confirm("Watch PR?", prompt);
+    if (!ok) return;
+  }
+  pi.sendUserMessage(`Start watch_agent for PR ${pr}. Watch for review comments, failed checks, requested changes, and actionable CI updates while this parent session remains active.`, { deliverAs: "followUp" });
+}
+
 async function applyPreset(pi: ExtensionAPI, ctx: any, name: string): Promise<boolean> {
   const file = await loadPresets(ctx.cwd);
   const preset = file.presets[name];
@@ -115,6 +134,7 @@ export default function agentPresets(pi: ExtensionAPI) {
       finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : `exit ${result.code}`);
       updateTaskWidget(ctx);
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
+      await offerPrWatcher(pi, ctx, text, "run_subagent");
       return {
         content: [{ type: "text", text: text || `(pi exited ${result.code})` }],
         details: { modelSelection, result },
@@ -153,6 +173,7 @@ export default function agentPresets(pi: ExtensionAPI) {
         const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
         return `## ${name}${model ? ` (${model})` : ""}\n${output || `(pi exited ${result.code})`}`;
       }).join("\n\n---\n\n");
+      await offerPrWatcher(pi, ctx, text, "run_subagents");
       return {
         content: [{ type: "text", text }],
         details: { results },

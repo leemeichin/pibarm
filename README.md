@@ -255,13 +255,15 @@ export PI_NOTIFY_SIGNAL_REPLY_SECONDS=600        # optional
 
 `permission-gate.ts` is disabled by default because the current heuristic is too intrusive. Set `PI_PERMISSION_GATE=1` to temporarily re-enable risky bash/write prompts while the smarter gate is redesigned.
 
-## Inline shell
+## Inline shell and easter eggs
 
 Type `!<command>` as a prompt to run a local shell command immediately and show the output in the transcript, without invoking the model. `!!` is left to Pi's built-in bash handling.
 
 ```text
 !git status --short
 ```
+
+`ar-kid.ts` is a small local easter egg: prompts containing `ar kid` ask the model to answer in a warm Manchester/Bolton dialect. If the entire prompt is exactly `alright ar kid`, Pi echoes `alright ar kid` locally without invoking the model.
 
 ## Forge/statusline integrations
 
@@ -366,6 +368,7 @@ extensions/repo-status.ts      # git/forge/CI statusline
 extensions/waiting-notify.ts   # native/Signal notifications for pending questions
 extensions/permission-gate.ts  # opt-in confirmation gate for risky/out-of-project actions
 extensions/inline-shell.ts     # run !-prefixed local shell commands inline
+extensions/ar-kid.ts           # Manchester/Bolton dialect easter egg
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/watch-agent.ts      # sibling watcher agents for PRs/checks/external state
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit

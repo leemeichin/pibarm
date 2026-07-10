@@ -41,6 +41,7 @@ pi install path/to/pibarm
 This project also asks pi to load external packages from `.pi/settings.json`:
 
 - `git:github.com/DietrichGebert/ponytail`
+- `npm:pi-cmux` for cmux notifications, splits, sidebar/status, continuation, worktree handoff, and review sessions
 
 Pi installs missing project packages automatically on startup after the project is trusted. To reconcile/update packages later:
 
@@ -190,7 +191,7 @@ Defaults:
 - same-branch/distributed work uses the current checkout
 - sessions are killed on pi exit unless `PI_MATRIX_KEEP_ON_EXIT=1`
 
-Prior art checked: [`pi-cmux`](https://www.npmjs.com/package/pi-cmux) is the closest popular pi package. It provides cmux splits, notifications, sidebar/status, continuation, worktree handoff, and review sessions. Matrix stays smaller and tmux/WezTerm-native; consider `pi-cmux` if you move to cmux.
+[`pi-cmux`](https://www.npmjs.com/package/pi-cmux) is also loaded for cmux-native splits, notifications, sidebar/status, continuation, worktree handoff, and review sessions. Matrix stays smaller and tmux/WezTerm-native.
 
 ## Notifications and permission gates
 

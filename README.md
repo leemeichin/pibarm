@@ -222,10 +222,10 @@ Type `!<command>` as a prompt to run a local shell command immediately and show 
 
 ## Forge/statusline integrations
 
-`repo-status.ts` installs a Catppuccin-style footer with project/model/context/thinking on the left and repo/forge/CI status on the right. Ponytail extension chatter is filtered out. Example:
+`repo-status.ts` installs a colorful powerline-style footer with project/model/context/thinking on the left and repo/forge/CI status on the right. Ponytail extension chatter is filtered out. Example:
 
 ```text
-  pibarm    anthropic/Sonnet 4 5    ctx 37%         main ±2     #12     CI
+  pibarm  anthropic/Sonnet 4 5  ctx 37%         main ±2   #12   CI
 ```
 
 Colour mapping:

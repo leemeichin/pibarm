@@ -83,7 +83,6 @@ async function main() {
   commandCheck("hut", { install: "brew install hut && hut init", detail: "SourceHut build/ticket tools" });
   commandCheck("mcporter", { install: "install/configure mcporter, then edit .pi/mcporter.json", detail: "MCP bridge tools" });
   commandCheck("wezterm", { install: "brew install --cask wezterm", detail: "Matrix visible agent panes" });
-  commandCheck(process.env.PI_NOTIFY_SIGNAL_CLI || "signal-cli", { install: "brew install signal-cli and set PI_NOTIFY_SIGNAL_* as needed", detail: "optional Signal note-to-self fallback" });
   commandCheck(process.env.PI_NOTIFY_TERMINAL_NOTIFIER || "terminal-notifier", { install: "brew install terminal-notifier", detail: "optional native macOS notifications" });
 
   await copyExample(".pi/mcporter.example.json", ".pi/mcporter.json");

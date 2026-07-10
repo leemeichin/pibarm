@@ -6,7 +6,7 @@ TL;DR pi extensions + skills for safer agent workflows:
 
 - plan first, edit later
 - ask explicit questions before executing unclear plans
-- notify when questions are waiting, with native notifications and optional Signal fallback
+- notify locally when questions are waiting
 - run risky/parallel work in git worktrees instead of the active repo
 - use MCP tools through `mcporter`
 - switch model/tool/thinking presets by role
@@ -66,14 +66,33 @@ Feature-specific tools:
 | Tool | Enables | Install/auth hint |
 |---|---|---|
 | `bun` | local development checks | `curl -fsSL https://bun.sh/install \| bash` |
-| `gh` | GitHub PR/CI tools and statusline PR checks | `brew install gh && gh auth login` |
-| `hut` | SourceHut build/ticket tools | `brew install hut && hut init` |
+| `gh` | GitHub-backed `forge_*` tools and statusline PR checks | `brew install gh && gh auth login` |
+| `hut` | SourceHut-backed `forge_*` tools | `brew install hut && hut init` |
 | `mcporter` | MCP bridge tools | install/configure `mcporter`, then edit `.pi/mcporter.json` |
 | `wezterm` | Matrix visible agent panes | `brew install --cask wezterm` |
-| `signal-cli` | optional Signal note-to-self fallback | `brew install signal-cli` and set `PI_NOTIFY_SIGNAL_*` if needed |
 | `terminal-notifier` | optional native macOS notifications | `brew install terminal-notifier` |
 
 The TUI uses Nerd Font glyphs for the statusline, Matrix/task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
+
+## Obsidian export
+
+Configure Obsidian export in Pi settings. Global settings live at `~/.pi/agent/settings.json`; project overrides live at `.pi/settings.json`. Pi merges nested settings, so projects can override only `basePath` while using the global vault.
+
+```json
+{
+  "pibarm": {
+    "obsidian": {
+      "vault": "path/to/obsidian/vault",
+      "basePath": "Pi",
+      "autoSync": true,
+      "debounceMs": 2000,
+      "includeAttachments": true
+    }
+  }
+}
+```
+
+Use `/obsidian-status` to verify the resolved config and `/obsidian-export` to write the current session note. When `autoSync` is true, pibarm debounces session exports after turns and compaction. The vault path is local user config; do not commit vault folders or private `.pi/forge.json`/settings overrides to this repo.
 
 ## Main workflow
 
@@ -118,10 +137,12 @@ Use active-checkout execution only when you really want it:
 | `/mcporter` | Show configured mcporter command templates. |
 | `/mcporter <args...>` | Run raw mcporter args from inside pi. |
 | `/repo-status` | Show git/forge/CI status and update pi statusline. |
-| `/gh-prs` | List open GitHub PRs. |
-| `/gh-ci` | List recent GitHub Actions runs. |
-| `/srht-builds` | List recent SourceHut builds via `hut`. |
-| `/hut <args...>` | Run raw SourceHut `hut` args. |
+| `/forge [github\|sourcehut\|auto]` | Show, set, or reset the remembered forge for this repo. |
+| `/forge-prs` | List PRs/patches using the detected/configured forge. |
+| `/forge-ci` | List CI/builds using the detected/configured forge. |
+| `/forge-tickets` | List issues/tickets using the detected/configured forge. |
+| `/obsidian-status` | Show Obsidian export settings resolved from Pi settings. |
+| `/obsidian-export` | Export the current session to the configured Obsidian vault. |
 | `/matrix-help` | Explain when/how to use Matrix and its prior art. |
 | `/matrix <task>` | Start a WezTerm Matrix with scout/planner panes. |
 | `/matrix-attach` | Open/focus the session-specific Matrix workspace window. |
@@ -142,18 +163,18 @@ Use active-checkout execution only when you really want it:
 | `summarize_worktree_diff` | Summarize status/diff for a worktree. |
 | `remove_git_worktree` | Remove an isolated worktree after confirmation/review. |
 | `run_worktree_agent` | Create/use a worktree and run `pi -p` there; simple tasks may use a lighter available model. |
-| `run_subagent` | Run an isolated non-interactive `pi -p` subagent; simple tasks may use a lighter available model. |
-| `run_subagents` | Run several isolated `pi -p` subagents in parallel; simple jobs may use lighter available models unless set. |
+| `run_subagent` | Run an isolated non-interactive `pi -p` subagent; simple tasks may use a lighter available model. Defaults to a 10 minute timeout unless `timeoutMs` is set. |
+| `run_subagents` | Run several isolated `pi -p` subagents in parallel; simple jobs may use lighter available models unless set. Defaults to a 10 minute timeout unless `timeoutMs` is set. |
 | `watch_agent` | Start/list/stop a sibling watcher agent for PR reviews, checks, or external state changes. |
 | `mcporter_list` | Discover MCP servers/tools through `mcporter`. |
 | `mcporter_call` | Call MCP tools through `mcporter`. |
 | `mcporter_resource` | List/read MCP resources through `mcporter`. |
 | `repo_status` | Summarize branch, dirty files, forge, PR, and CI status. |
-| `github_prs` | List GitHub PRs through `gh`. |
-| `github_pr_status` | Inspect current/selected PR review and check status. |
-| `github_ci_status` | List GitHub Actions runs through `gh`. |
-| `sourcehut_builds` | List SourceHut builds through `hut`. |
-| `sourcehut_tickets` | List SourceHut tickets through `hut`. |
+| `forge_status` | Detect/show the configured forge for the current repository. |
+| `forge_prs` | List PRs/patches using the detected/configured forge. |
+| `forge_pr_status` | Inspect current/selected PR/patch review and check status. |
+| `forge_ci_status` | List CI/builds using the detected/configured forge. |
+| `forge_tickets` | List issues/tickets using the detected/configured forge. |
 | `todo_list` | Track progress when one prompt contains multiple requested tasks in the shared task widget. |
 | `matrix_spawn` | Spawn a parent-controlled pi agent in a WezTerm Matrix pane. |
 | `matrix_attach` | Open the Matrix WezTerm workspace. |
@@ -264,18 +285,14 @@ Defaults:
 
 ## Notifications and permission gates
 
-`waiting-notify.ts` sends a terminal/native notification when `question` or `elicit_plan_questions` is waiting. On macOS, if the machine has been idle for 5 minutes and `signal-cli` is available, the question tools send a Signal note-to-self prefixed with `π` and read back your next reply.
+`waiting-notify.ts` sends a local terminal/native notification when `question` or `elicit_plan_questions` is waiting. It uses Kitty's notification escape when running in Kitty, `terminal-notifier` when `PI_NOTIFY_TERMINAL_NOTIFIER` is set, and otherwise falls back to the common iTerm2-style terminal notification escape.
 
 Optional notification env vars:
 
 ```bash
-export PI_NOTIFY_SIGNAL_TO=+15555550123           # optional; default is Signal note-to-self
-export PI_NOTIFY_SIGNAL_ACCOUNT=+15555550123      # optional
-export PI_NOTIFY_SIGNAL_ACCOUNT_FLAG=-a           # default; use -u if your signal-cli needs it
-export PI_NOTIFY_SIGNAL_CLI=/path/to/signal-cli   # optional if not on PATH
 export PI_NOTIFY_TERMINAL_NOTIFIER=/opt/homebrew/bin/terminal-notifier # optional
-export PI_NOTIFY_SIGNAL_FORCE=1                  # optional; test Signal without waiting for idle
-export PI_NOTIFY_SIGNAL_REPLY_SECONDS=600        # optional
+export PI_NOTIFY_COOLDOWN_SECONDS=60                                   # optional
+export PI_NOTIFY_INCLUDE_QUESTION=1                                    # optional; include question args in notification body
 ```
 
 `permission-gate.ts` is disabled by default because the current heuristic is too intrusive. Set `PI_PERMISSION_GATE=1` to temporarily re-enable risky bash/write prompts while the smarter gate is redesigned.
@@ -308,7 +325,7 @@ It uses local CLI auth only:
 - GitHub: `gh` (`gh auth login`)
 - SourceHut: `hut`
 
-No tokens are stored in this repo.
+No tokens are stored in this repo. Forge tools detect GitHub vs SourceHut from `origin`; when detection is unclear, `/forge` asks once and remembers the answer in ignored local config `.pi/forge.json`.
 
 ## Mcporter
 
@@ -387,10 +404,10 @@ SECURITY.md                   # local security policy
 extensions/plan-worktree.ts   # plan mode, elicitation, worktrees
 extensions/question.ts        # single-question user prompt tool
 extensions/mcporter.ts        # mcporter MCP bridge
-extensions/github.ts           # GitHub PR/CI tools via gh
-extensions/sourcehut.ts        # SourceHut tools via hut
+extensions/forge.ts            # forge-aware GitHub/SourceHut tools
+extensions/obsidian.ts         # Obsidian session export commands/autosync
 extensions/repo-status.ts      # git/forge/CI statusline
-extensions/waiting-notify.ts   # native/Signal notifications for pending questions
+extensions/waiting-notify.ts   # local terminal/native notifications for pending questions
 extensions/permission-gate.ts  # opt-in confirmation gate for risky/out-of-project actions
 extensions/inline-shell.ts     # run !-prefixed local shell commands inline
 extensions/ar-kid.ts           # Manchester/Bolton dialect easter egg
@@ -399,6 +416,8 @@ extensions/watch-agent.ts      # sibling watcher agents for PRs/checks/external 
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
 extensions/matrix.ts           # WezTerm Matrix parent-controlled agent panes
 extensions/agent-presets.ts   # presets and single/parallel subagents
+lib/pibarm-settings.ts        # merged Pi settings helper for pibarm namespace
+lib/obsidian-export.ts        # Obsidian Markdown session exporter
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt
 prompts/pr-open.md            # newline-safe PR opening prompt

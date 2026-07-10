@@ -11,3 +11,4 @@ node_modules/
 # Local/private pi config
 .pi/mcporter.json
 .pi/agent-presets.json
+.pi/forge.json

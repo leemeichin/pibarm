@@ -8,11 +8,12 @@ description: Triage GitHub Actions or SourceHut CI/build failures. Use when aske
 ## Flow
 
 1. Use `repo_status` for branch/PR/CI summary.
-2. Use `github_ci_status` or `sourcehut_builds` for recent runs.
-3. Fetch logs with the forge CLI if needed (`gh run view --log`, `hut builds ...`).
-4. Identify the first real failure, not downstream noise.
-5. Map failure to the smallest local reproduction command.
-6. Suggest or make the minimal fix after approval.
+2. Use `forge_ci_status` for recent runs/builds.
+3. If forge detection is unclear, use `/forge` or `forge_status`; pibarm asks once and remembers the choice.
+4. Fetch logs with the forge CLI if needed (`gh run view --log`, `hut builds ...`).
+5. Identify the first real failure, not downstream noise.
+6. Map failure to the smallest local reproduction command.
+7. Suggest or make the minimal fix after approval.
 
 ## Notes
 

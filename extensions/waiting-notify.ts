@@ -1,8 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { macIdleSeconds } from "../lib/signal-question.js";
 
 const QUESTION_TOOLS = new Set(["question", "elicit_plan_questions"]);
-const DEFAULT_IDLE_SECONDS = 300;
 const DEFAULT_COOLDOWN_SECONDS = 60;
 
 async function nativeNotify(pi: ExtensionAPI, title: string, body: string) {
@@ -36,10 +34,6 @@ export default function waitingNotify(pi: ExtensionAPI) {
     const body = process.env.PI_NOTIFY_INCLUDE_QUESTION === "1"
       ? `${event.toolName}: ${JSON.stringify(event.args).slice(0, 180)}`
       : "A question is waiting for your input.";
-
-    const idleSeconds = await macIdleSeconds(pi).catch(() => undefined);
-    const idleThreshold = Number(process.env.PI_NOTIFY_SIGNAL_IDLE_SECONDS ?? DEFAULT_IDLE_SECONDS);
-    if (idleSeconds !== undefined && idleSeconds >= idleThreshold) return;
 
     await nativeNotify(pi, title, body).catch(() => undefined);
   });

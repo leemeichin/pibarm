@@ -16,6 +16,13 @@ interface PresetFile {
   presets: Record<string, Preset>;
 }
 
+const DEFAULT_SUBAGENT_TIMEOUT_MS = 600000;
+
+function agentExitDetail(code: number | null | undefined, timeoutMs: number) {
+  if (code === 143) return `exit 143 (SIGTERM; likely timeout/cancel after ${Math.round(timeoutMs / 1000)}s)`;
+  return `exit ${code}`;
+}
+
 const SUBAGENT_PARAMS = Type.Object({
   prompt: Type.String({ description: "Self-contained prompt for the subagent" }),
   model: Type.Optional(Type.String({ description: "Optional pi model pattern. Defaults to the current active model, with a lighter available model for simple tasks." })),
@@ -130,8 +137,9 @@ export default function agentPresets(pi: ExtensionAPI) {
       const taskId = `subagent:${_toolCallId}`;
       upsertAgentTask({ id: taskId, label: "subagent", status: "running", session: modelLabel(modelSelection.model) });
       updateTaskWidget(ctx);
-      const result = await runPiPrompt(pi, params.prompt, modelSelection.model, signal, params.timeoutMs ?? 120000);
-      finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : `exit ${result.code}`);
+      const timeoutMs = params.timeoutMs ?? DEFAULT_SUBAGENT_TIMEOUT_MS;
+      const result = await runPiPrompt(pi, params.prompt, modelSelection.model, signal, timeoutMs);
+      finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : agentExitDetail(result.code, timeoutMs));
       updateTaskWidget(ctx);
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
       await offerPrWatcher(pi, ctx, text, "run_subagent");
@@ -164,8 +172,9 @@ export default function agentPresets(pi: ExtensionAPI) {
         const taskId = `subagent:${_toolCallId}:${index}`;
         upsertAgentTask({ id: taskId, label: `sub ${name}`, status: "running", session: modelLabel(modelSelection.model) });
         updateTaskWidget(ctx);
-        const result = await runPiPrompt(pi, job.prompt, modelSelection.model, signal, job.timeoutMs ?? params.timeoutMs ?? 120000);
-        finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : `exit ${result.code}`);
+        const timeoutMs = job.timeoutMs ?? params.timeoutMs ?? DEFAULT_SUBAGENT_TIMEOUT_MS;
+        const result = await runPiPrompt(pi, job.prompt, modelSelection.model, signal, timeoutMs);
+        finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : agentExitDetail(result.code, timeoutMs));
         updateTaskWidget(ctx);
         return { name, model: modelSelection.model, modelSelection, result };
       }));

@@ -3,7 +3,6 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { Editor, type EditorTheme, Key, matchesKey, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { join } from "node:path";
-import { askSignalWhenIdle } from "../lib/signal-question.js";
 import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 
@@ -889,14 +888,6 @@ export default function planWorktree(pi: ExtensionAPI) {
         const options = q.options.length ? ` [${q.options.map((o) => o.label).join(" / ")}]` : "";
         return `${i + 1}. ${q.question}${options}`;
       }).join("\n")}`;
-      const signalAnswer = await askSignalWhenIdle(pi, `Pi needs plan answers:\n${prompt}`).catch(() => undefined);
-      if (signalAnswer) {
-        const answers = parseNumberedAnswers(questions, signalAnswer);
-        return {
-          content: [{ type: "text", text: `User answered via Signal:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` }],
-          details: { questions, answers, answer: signalAnswer },
-        };
-      }
       if (!ctx.hasUI) {
         return { content: [{ type: "text", text: `Questions needing answers:\n${prompt}` }], details: undefined };
       }

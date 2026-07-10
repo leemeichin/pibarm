@@ -13,11 +13,11 @@
         "question",
         "create_git_worktree",
         "repo_status",
-        "github_prs",
-        "github_pr_status",
-        "github_ci_status",
-        "sourcehut_builds",
-        "sourcehut_tickets"
+        "forge_status",
+        "forge_prs",
+        "forge_pr_status",
+        "forge_ci_status",
+        "forge_tickets"
       ]
     },
     "executor": {
@@ -47,11 +47,11 @@
         "matrix_list",
         "matrix_kill",
         "repo_status",
-        "github_prs",
-        "github_pr_status",
-        "github_ci_status",
-        "sourcehut_builds",
-        "sourcehut_tickets"
+        "forge_status",
+        "forge_prs",
+        "forge_pr_status",
+        "forge_ci_status",
+        "forge_tickets"
       ]
     },
     "subagent": {

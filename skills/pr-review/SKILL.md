@@ -7,9 +7,9 @@ description: Review GitHub PRs or SourceHut patchsets with forge CLI tools, loca
 
 ## Flow
 
-1. Identify forge and branch with `repo_status`.
-2. For GitHub, use `github_pr_status` and `github_ci_status` before reviewing.
-3. For SourceHut, use `sourcehut_builds` and `hut`/local git as available.
+1. Identify forge and branch with `repo_status` or `forge_status`.
+2. Use `forge_pr_status` and `forge_ci_status` before reviewing.
+3. If forge detection is unclear, use `/forge` or `forge_status`; pibarm asks once and remembers the choice.
 4. Inspect the diff locally with `git diff`/`git show`.
 5. Run the smallest relevant checks.
 6. Report only actionable findings, with file paths.

@@ -18,8 +18,8 @@ Use this workflow for non-trivial or risky code changes.
 
 ## Tools
 
-- `question`: ask one focused user question with optional choices; may use Signal note-to-self while the laptop is idle.
-- `elicit_plan_questions`: ask the user multiple questions before finalizing/executing a plan; supports rich tabbed TUI inputs (`free_text`, `select_one`, `select_many`, `confirm`/`boolean`, `number`) with optional notes/previews, and may use Signal note-to-self while the laptop is idle.
+- `question`: ask one focused user question with optional choices.
+- `elicit_plan_questions`: ask the user multiple questions before finalizing/executing a plan; supports rich tabbed TUI inputs (`free_text`, `select_one`, `select_many`, `confirm`/`boolean`, `number`) with optional notes/previews.
 - `create_git_worktree`: create a repo-local worktree and branch.
 - `summarize_worktree_diff`: review status/diff from a worktree.
 - `remove_git_worktree`: remove a worktree after confirmation/review.

@@ -3,6 +3,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { Type } from "typebox";
 import { join } from "node:path";
 import { askSignalWhenIdle } from "../lib/signal-question.js";
+import { selectAgentModelRef } from "../lib/current-model.js";
 
 const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
 const WRITE_TOOLS = new Set(["edit", "write"]);
@@ -32,7 +33,7 @@ const WORKTREE_PARAMS = Type.Object({
 const WORKTREE_AGENT_PARAMS = Type.Object({
   task: Type.String({ description: "Self-contained task for the subagent to run in an isolated git worktree" }),
   name: Type.String({ description: "Short slug/name for the worktree and branch" }),
-  model: Type.Optional(Type.String({ description: "Optional pi model pattern for the subagent" })),
+  model: Type.Optional(Type.String({ description: "Optional pi model pattern for the subagent. Defaults to the current active model, with a lighter available model for simple tasks." })),
   baseRef: Type.Optional(Type.String({ description: "Git ref to branch from. Defaults to HEAD" })),
   timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds" })),
 });
@@ -365,13 +366,14 @@ export default function planWorktree(pi: ExtensionAPI) {
     parameters: WORKTREE_AGENT_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");
+      const modelSelection = selectAgentModelRef(ctx, params.model, params.task);
       const piArgs = ["-p"];
-      if (params.model) piArgs.push("--model", params.model);
+      if (modelSelection.model) piArgs.push("--model", modelSelection.model);
       piArgs.push(params.task);
       const command = `cd ${shellQuote(wt.path)} && pi ${piArgs.map(shellQuote).join(" ")}`;
       const result = await pi.exec("bash", ["-lc", command], { signal, timeout: params.timeoutMs ?? 600000 });
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
-      return { content: [{ type: "text", text: text || `(subagent exited ${result.code})` }], details: { worktree: wt, result }, isError: result.code !== 0 };
+      return { content: [{ type: "text", text: text || `(subagent exited ${result.code})` }], details: { worktree: wt, modelSelection, result }, isError: result.code !== 0 };
     },
   });
 

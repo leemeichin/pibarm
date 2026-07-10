@@ -25,6 +25,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 /matrix-spawn <role> <task>
 /matrix-send <role> <message>
 /matrix-capture [role]
+/matrix-join [role|all]
 /matrix-kill [role|all]
 ```
 
@@ -43,17 +44,18 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 /matrix-spawn planner propose the smallest safe plan
 ```
 
-3. Capture before acting:
+3. Join before acting; this waits for completion, returns logs, and cleans up panes:
 
 ```text
-/matrix-capture
+/matrix-join
 ```
 
 4. Spawn workers only when the work is clear:
 
 - same branch/distributed work: no worktree
 - separate branch or risky changes: `matrix_spawn` with `worktree: true`
-- use `matrix_spawn.placement` for `right`, `down`, `tab`, or `window` when placement matters
+- use `matrix_spawn.placement` for `right`, `down`, or `tab` when placement matters
+- Matrix uses a project/session-specific workspace name, opens/focuses it automatically, reuses one workspace window where possible, logs to `.pi/matrix/`, and panes exit when done
 
 5. Clean up:
 
@@ -63,14 +65,15 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 
 ## Roles
 
-- `scout`: read-focused recon, cheap model
-- `planner`: read-only plan/risk pass
-- `worker`: implementation, can write
-- `reviewer`: read-focused review/check pass
+- `scout`: read-focused recon; defaults to current model, with a lighter authenticated model for simple-scope tasks
+- `planner`: read-only plan/risk pass; defaults to current model, with a lighter authenticated model for simple-scope tasks
+- `worker`: implementation, can write; defaults to current model, with a lighter authenticated model for simple-scope tasks
+- `reviewer`: read-focused review/check pass; defaults to current model, with a lighter authenticated model for simple-scope tasks
 
 ## Rules
 
 - Parent Pi remains the source of truth.
-- Always capture pane output before summarizing or acting on it.
+- Use `matrix_join` after spawning agents so completion, logs, and cleanup are synchronized.
+- Use `matrix_send` only while a Matrix agent is still active.
 - Do not run multiple writing workers in the same checkout unless files are clearly disjoint.
-- Kill panes after completion unless the user asks to keep them.
+- Use `matrix_kill all` to force-clean tracked and untracked Matrix workspace panes.

@@ -36,11 +36,11 @@ Use `run_worktree_agent` when the subtask may modify files or should not affect 
 - run planner/reviewer/verifier subagents in parallel
 - produce a focused checklist
 
-Subagent prompts must include all necessary context. Do not assume the subagent can see the active conversation.
+Subagent prompts must include all necessary context. Do not assume the subagent can see the active conversation. Subagents default to the current active model unless a `model` is set explicitly; simple-scope tasks may be downgraded to a lighter authenticated model by the parent-side heuristic.
 
 For Matrix/WezTerm orchestration:
 
 - use worktrees for separate branch work
 - use the current checkout for same-branch distributed work
-- capture pane output before summarizing or acting on subagent results
-- kill Matrix panes after completion unless the user asks to keep them
+- use `matrix_join` to wait for Matrix agents, collect logs, and clean up panes before summarizing results
+- use `matrix_kill all` for forced cleanup, including untracked Matrix workspace panes

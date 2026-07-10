@@ -23,7 +23,7 @@ Use this workflow for non-trivial or risky code changes.
 - `create_git_worktree`: create a repo-local worktree and branch.
 - `summarize_worktree_diff`: review status/diff from a worktree.
 - `remove_git_worktree`: remove a worktree after confirmation/review.
-- `run_worktree_agent`: create a repo-local worktree and run `pi -p` there.
+- `run_worktree_agent`: create a repo-local worktree and run `pi -p` there; defaults to the current active model unless `model` is set, and may use a lighter authenticated model for simple-scope tasks.
 
 ## Rules
 

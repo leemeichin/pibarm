@@ -2,6 +2,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { selectAgentModelRef } from "../lib/current-model.js";
 
 interface Preset {
   provider?: string;
@@ -16,7 +17,7 @@ interface PresetFile {
 
 const SUBAGENT_PARAMS = Type.Object({
   prompt: Type.String({ description: "Self-contained prompt for the subagent" }),
-  model: Type.Optional(Type.String({ description: "Optional pi model pattern, e.g. anthropic/claude-haiku-4-5" })),
+  model: Type.Optional(Type.String({ description: "Optional pi model pattern. Defaults to the current active model, with a lighter available model for simple tasks." })),
   timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds" })),
 });
 
@@ -24,7 +25,7 @@ const SUBAGENTS_PARAMS = Type.Object({
   jobs: Type.Array(Type.Object({
     name: Type.Optional(Type.String({ description: "Short label for this subagent" })),
     prompt: Type.String({ description: "Self-contained prompt for this subagent" }),
-    model: Type.Optional(Type.String({ description: "Optional pi model pattern for this subagent" })),
+    model: Type.Optional(Type.String({ description: "Optional pi model pattern for this subagent. Defaults to the current active model, with a lighter available model for simple tasks." })),
     timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds for this subagent" })),
   }), { description: "Subagent jobs to run in parallel" }),
   timeoutMs: Type.Optional(Type.Number({ description: "Default timeout per subagent in milliseconds" })),
@@ -100,12 +101,13 @@ export default function agentPresets(pi: ExtensionAPI) {
     promptSnippet: "Run an isolated pi -p subagent for research, planning, or verification",
     promptGuidelines: ["Use run_subagent only for isolated research, planning, or verification tasks with a self-contained prompt."],
     parameters: SUBAGENT_PARAMS,
-    async execute(_toolCallId, params, signal) {
-      const result = await runPiPrompt(pi, params.prompt, params.model, signal, params.timeoutMs ?? 120000);
+    async execute(_toolCallId, params, signal, _update, ctx) {
+      const modelSelection = selectAgentModelRef(ctx, params.model, params.prompt);
+      const result = await runPiPrompt(pi, params.prompt, modelSelection.model, signal, params.timeoutMs ?? 120000);
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
       return {
         content: [{ type: "text", text: text || `(pi exited ${result.code})` }],
-        details: result,
+        details: { modelSelection, result },
         isError: result.code !== 0,
       };
     },
@@ -118,7 +120,7 @@ export default function agentPresets(pi: ExtensionAPI) {
     promptSnippet: "Run multiple isolated pi -p subagents in parallel, optionally across models",
     promptGuidelines: ["Use run_subagents when the user asks to compare, delegate, or orchestrate multiple subagents across models."],
     parameters: SUBAGENTS_PARAMS,
-    async execute(_toolCallId, params, signal) {
+    async execute(_toolCallId, params, signal, _update, ctx) {
       if (params.jobs.length === 0) {
         return { content: [{ type: "text", text: "No subagent jobs provided." }], details: undefined, isError: true };
       }
@@ -127,8 +129,9 @@ export default function agentPresets(pi: ExtensionAPI) {
       }
 
       const results = await Promise.all(params.jobs.map(async (job, index) => {
-        const result = await runPiPrompt(pi, job.prompt, job.model, signal, job.timeoutMs ?? params.timeoutMs ?? 120000);
-        return { name: job.name ?? `job-${index + 1}`, model: job.model, result };
+        const modelSelection = selectAgentModelRef(ctx, job.model, job.prompt);
+        const result = await runPiPrompt(pi, job.prompt, modelSelection.model, signal, job.timeoutMs ?? params.timeoutMs ?? 120000);
+        return { name: job.name ?? `job-${index + 1}`, model: modelSelection.model, modelSelection, result };
       }));
       const text = results.map(({ name, model, result }) => {
         const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");

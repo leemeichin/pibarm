@@ -39,4 +39,4 @@ cp .pi/agent-presets.example.json .pi/agent-presets.json
 - `/plan ...` — read-only plan mode plus prompt
 - `/execute-plan` — execute the last captured plan
 - `/execute-plan worktree <name>` — execute the last captured plan in an isolated worktree
-- `run_subagents` — run parallel `pi -p` subagents; set each job's `model` for multi-model comparison
+- `run_subagents` — run parallel `pi -p` subagents; jobs default to current/heuristic model selection, set each job's `model` for multi-model comparison

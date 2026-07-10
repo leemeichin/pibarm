@@ -108,9 +108,9 @@ Use active-checkout execution only when you really want it:
 | `create_git_worktree` | Create an isolated repo-local git worktree and branch. |
 | `summarize_worktree_diff` | Summarize status/diff for a worktree. |
 | `remove_git_worktree` | Remove an isolated worktree after confirmation/review. |
-| `run_worktree_agent` | Create/use a worktree and run `pi -p` there. |
-| `run_subagent` | Run an isolated non-interactive `pi -p` subagent. |
-| `run_subagents` | Run several isolated `pi -p` subagents in parallel, optionally on different models. |
+| `run_worktree_agent` | Create/use a worktree and run `pi -p` there; simple tasks may use a lighter available model. |
+| `run_subagent` | Run an isolated non-interactive `pi -p` subagent; simple tasks may use a lighter available model. |
+| `run_subagents` | Run several isolated `pi -p` subagents in parallel; simple jobs may use lighter available models unless set. |
 | `mcporter_list` | Discover MCP servers/tools through `mcporter`. |
 | `mcporter_call` | Call MCP tools through `mcporter`. |
 | `mcporter_resource` | List/read MCP resources through `mcporter`. |
@@ -123,9 +123,10 @@ Use active-checkout execution only when you really want it:
 | `todo_list` | Track progress when one prompt contains multiple requested tasks. |
 | `matrix_spawn` | Spawn a parent-controlled pi agent in a WezTerm Matrix pane. |
 | `matrix_attach` | Open the Matrix WezTerm workspace. |
-| `matrix_send` | Send a message to a Matrix WezTerm pane. |
-| `matrix_capture` | Capture recent output from Matrix WezTerm panes. |
-| `matrix_list` | List known Matrix WezTerm panes. |
+| `matrix_send` | Send a message to a still-running Matrix WezTerm pane. |
+| `matrix_capture` | Capture recent output from Matrix WezTerm panes/logs. |
+| `matrix_join` | Wait for Matrix agents to finish, capture logs, and clean up panes. |
+| `matrix_list` | List known Matrix agents and untracked Matrix workspace panes. |
 | `matrix_kill` | Kill Matrix WezTerm panes. |
 
 ## Plan mode behavior
@@ -179,18 +180,21 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 /matrix investigate flaky tests
 /matrix-attach
 /matrix-spawn worker fix the failing test
-/matrix-capture worker
+/matrix-join worker
 /matrix-kill all
 ```
 
 Defaults:
 
+- spawned agents use the current active model unless `model` is set explicitly; simple-scope tasks may use a lighter authenticated model
+- agents run non-interactively in WezTerm, write logs under `.pi/matrix/`, and panes exit when tasks finish
+- `matrix_join` waits for completion, returns logs, and cleans up pane tracking
+- Matrix uses a project/session-specific workspace name like `matrix-<project>-<session>` to avoid cross-session conflicts, opens/focuses it automatically, and splits that window unless `placement: "tab"` is explicit
 - `scout` and `planner` use read-focused toolsets
 - `worker` uses normal tools
 - `worktree: true` on `matrix_spawn` creates an isolated branch/worktree when the agent needs separate branch work
-- `placement` on `matrix_spawn` can be `right`, `down`, `tab`, or `window`
 - same-branch/distributed work uses the current checkout
-- `/matrix-kill` closes known agent panes when you are done
+- `/matrix-kill all` also closes untracked panes left in the Matrix workspace
 
 [`pi-cmux`](https://www.npmjs.com/package/pi-cmux) is also loaded for cmux-native splits, notifications, sidebar/status, continuation, worktree handoff, and review sessions. Matrix stays smaller and WezTerm-native.
 

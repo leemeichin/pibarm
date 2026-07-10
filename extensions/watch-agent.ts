@@ -9,7 +9,9 @@ import { finishAgentTask, removeAgentTask, upsertAgentTask, updateTaskWidget } f
 const WATCH_AGENT_PARAMS = Type.Object({
   action: Type.Optional(StringEnum(["start", "stop", "list"] as const, { description: "Start, stop, or list watcher agents. Defaults to start." })),
   name: Type.Optional(Type.String({ description: "Short watcher name. Defaults to pr-watch or watch." })),
-  task: Type.Optional(Type.String({ description: "What the watcher should do when observed state changes" })),
+  task: Type.Optional(Type.String({ description: "What the watcher should do when observed state changes. Alias/legacy form of goal." })),
+  goal: Type.Optional(Type.String({ description: "Claude Code-style goal: the outcome the watcher should work toward when changes are observed." })),
+  loop: Type.Optional(Type.String({ description: "Claude Code-style loop: recurring instructions for each poll/change cycle." })),
   pr: Type.Optional(Type.String({ description: "GitHub PR number or URL to watch. Builds a gh pr view command when watchCommand is omitted." })),
   watchCommand: Type.Optional(Type.String({ description: "Shell command whose output is polled for changes" })),
   intervalSeconds: Type.Optional(Type.Number({ description: "Poll interval. Defaults to 300 seconds." })),
@@ -22,6 +24,8 @@ type WatchParams = {
   action?: "start" | "stop" | "list";
   name?: string;
   task?: string;
+  goal?: string;
+  loop?: string;
   pr?: string;
   watchCommand?: string;
   intervalSeconds?: number;
@@ -65,14 +69,15 @@ function defaultWatchCommand(pr: string | undefined) {
   return `gh pr view ${shellQuote(pr)} --json number,title,state,isDraft,reviewDecision,mergeStateStatus,statusCheckRollup,comments,reviews`;
 }
 
-function watcherPrompt(task: string, watchCommand: string) {
-  return `You are a watcher sibling agent. A parent Pi session is still active, but you are responsible for monitoring external state and responding only when useful.\n\nWatcher task:\n${task}\n\nObserved state comes from this command:\n${watchCommand}\n\nWhen observed state changes, inspect the state, decide if action is needed, and take the smallest appropriate action. If this is a pull request watcher, look for new review comments, failed checks, or requested changes. Respond via available tools/CLI only when the task explicitly calls for it; otherwise summarize what changed in your log.`;
+function watcherPrompt(goal: string, loop: string, watchCommand: string) {
+  return `You are a watcher sibling agent. A parent Pi session is still active, but you are responsible for monitoring external state and responding only when useful.\n\nGoal:\n${goal}\n\nLoop:\n${loop}\n\nObserved state comes from this command:\n${watchCommand}\n\nWhen observed state changes, run the loop instructions against the latest state and take the smallest appropriate action toward the goal. If this is a pull request watcher, look for new review comments, failed checks, or requested changes. Respond via available tools/CLI only when the goal/loop explicitly allows it; otherwise summarize what changed in your log.`;
 }
 
 async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: WatchParams) {
   const watchCommand = params.watchCommand ?? defaultWatchCommand(params.pr);
   if (!watchCommand) throw new Error("watch_agent start requires either pr or watchCommand");
-  const task = params.task ?? (params.pr ? `Watch PR ${params.pr} for review comments, failed checks, and requested changes. If safe and clearly requested, respond or update the PR; otherwise log a concise summary.` : "Watch for changes and respond if action is needed.");
+  const goal = params.goal ?? params.task ?? (params.pr ? `Watch PR ${params.pr} for review comments, failed checks, and requested changes. If safe and clearly requested, respond or update the PR; otherwise log a concise summary.` : "Watch for changes and respond if action is needed.");
+  const loop = params.loop ?? (params.pr ? "Poll the PR state. On each change, inspect reviews, comments, reviewDecision, and statusCheckRollup. Identify only new/actionable changes since the previous observation." : "Poll the watched state. On each change, inspect the latest output and decide whether action is needed.");
   const name = slug(params.name ?? (params.pr ? `pr-${params.pr}` : "watch"));
   const root = await gitRoot(pi, ctx.cwd);
   const dir = join(root, ".pi", "watchers", `${name}-${Date.now()}`);
@@ -81,13 +86,13 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
   const stopPath = join(dir, "stop");
   const scriptPath = join(dir, "watch.sh");
   const promptPath = join(dir, "prompt.md");
-  const modelSelection = selectAgentModelRef(ctx, params.model, task);
+  const modelSelection = selectAgentModelRef(ctx, params.model, `${goal}\n${loop}`);
   const piArgs = ["pi", "-p", "--no-session"];
   if (modelSelection.model) piArgs.push("--model", modelSelection.model);
   if (params.tools?.length) piArgs.push("--tools", params.tools.join(","));
   piArgs.push(`@${promptPath}`);
 
-  await writeFile(promptPath, watcherPrompt(task, watchCommand), "utf8");
+  await writeFile(promptPath, watcherPrompt(goal, loop, watchCommand), "utf8");
   const maxIterations = Math.max(0, Math.floor(params.maxIterations ?? 0));
   const interval = Math.max(15, Math.floor(params.intervalSeconds ?? 300));
   const piCommand = piArgs.map(shellQuote).join(" ");

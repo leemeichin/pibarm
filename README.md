@@ -146,10 +146,10 @@ Use active-checkout execution only when you really want it:
 `watch_agent` starts a sibling watcher that polls external state and runs a headless Pi task only when the observed state changes. The primary use case is PR follow-up while the parent Pi session remains active:
 
 ```text
-watch_agent(action=start, pr="123", task="Watch for review comments and failed checks; respond only when useful")
+watch_agent(action=start, pr="123", goal="Keep this PR moving toward approval", loop="Watch for review comments, requested changes, and failed checks; respond only when useful")
 ```
 
-It writes logs under `.pi/watchers/`, appears in the shared task widget, and can be stopped with `/watcher-stop [name]` or `watch_agent(action=stop, name="...")`.
+It accepts either legacy `task` or Claude Code-style `goal` + `loop`. It writes logs under `.pi/watchers/`, appears in the shared task widget, and can be stopped with `/watcher-stop [name]` or `watch_agent(action=stop, name="...")`.
 
 ## Plan mode behavior
 

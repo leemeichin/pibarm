@@ -212,6 +212,14 @@ export PI_NOTIFY_SIGNAL_REPLY_SECONDS=600        # optional
 
 `permission-gate.ts` is disabled by default because the current heuristic is too intrusive. Set `PI_PERMISSION_GATE=1` to temporarily re-enable risky bash/write prompts while the smarter gate is redesigned.
 
+## Inline shell
+
+Type `!<command>` as a prompt to run a local shell command immediately and show the output in the transcript, without invoking the model. `!!` is left to Pi's built-in bash handling.
+
+```text
+!git status --short
+```
+
 ## Forge/statusline integrations
 
 `repo-status.ts` installs a colorful powerline-style footer with project/model/context/thinking on the left and repo/forge/CI status on the right. Ponytail extension chatter is filtered out. Example:
@@ -314,6 +322,7 @@ extensions/sourcehut.ts        # SourceHut tools via hut
 extensions/repo-status.ts      # git/forge/CI statusline
 extensions/waiting-notify.ts   # native/Signal notifications for pending questions
 extensions/permission-gate.ts  # opt-in confirmation gate for risky/out-of-project actions
+extensions/inline-shell.ts     # run !-prefixed local shell commands inline
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
 extensions/matrix.ts           # WezTerm Matrix parent-controlled agent panes

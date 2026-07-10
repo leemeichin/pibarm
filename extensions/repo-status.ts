@@ -67,6 +67,26 @@ async function jiraTicketForBranch(pi: ExtensionAPI, branch: string) {
   return firstJiraTicket(recent.stdout);
 }
 
+function parseShortstat(stat: string): { files?: number; insertions: number; deletions: number } {
+  return {
+    files: Number(stat.match(/(\d+) files? changed/)?.[1] ?? 0) || undefined,
+    insertions: Number(stat.match(/(\d+) insertions?\(\+\)/)?.[1] ?? 0),
+    deletions: Number(stat.match(/(\d+) deletions?\(-\)/)?.[1] ?? 0),
+  };
+}
+
+async function uncommittedDiffPart(pi: ExtensionAPI, dirty: number): Promise<StatusPart | undefined> {
+  if (!dirty) return undefined;
+  const diff = await exec(pi, "git", ["diff", "--shortstat", "HEAD"], 10000);
+  const parsed = parseShortstat(diff.stdout);
+  if (parsed.insertions || parsed.deletions) {
+    const plus = parsed.insertions ? `+${parsed.insertions}` : "+0";
+    const minus = parsed.deletions ? `−${parsed.deletions}` : "−0";
+    return { text: `▰▰▰▰ ${plus} ${minus}`, tone: "warning" };
+  }
+  return { text: `▰▰▰▰ ±${dirty}`, tone: "warning" };
+}
+
 function modelLabel(ctx: ExtensionContext): string {
   if (!ctx.model) return "󰚩 no model";
   const id = ctx.model.id
@@ -114,8 +134,10 @@ async function collect(pi: ExtensionAPI) {
   const jiraTicket = await jiraTicketForBranch(pi, branch);
   const rightParts: StatusPart[] = [];
   if (jiraTicket) rightParts.push({ text: jiraTicket, tone: "accent" });
-  rightParts.push({ text: ` ${branch}${dirty ? ` ±${dirty}` : ""}`, tone: dirty ? "warning" : "success" });
-  const details: Record<string, unknown> = { branch, dirty, forge, jiraTicket };
+  rightParts.push({ text: ` ${branch}`, tone: dirty ? "warning" : "success" });
+  const diffPart = await uncommittedDiffPart(pi, dirty);
+  if (diffPart) rightParts.push(diffPart);
+  const details: Record<string, unknown> = { branch, dirty, forge, jiraTicket, uncommittedDiff: diffPart?.text };
 
   if (forge === "github") {
     const pr = await exec(pi, "gh", ["pr", "view", "--json", "number,state,isDraft,statusCheckRollup,url"], 15000);

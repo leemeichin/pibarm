@@ -141,6 +141,7 @@ Use active-checkout execution only when you really want it:
 | `/forge-prs` | List PRs/patches using the detected/configured forge. |
 | `/forge-ci` | List CI/builds using the detected/configured forge. |
 | `/forge-tickets` | List issues/tickets using the detected/configured forge. |
+| `/review [#number\|url\|branch]` | Start a PR/patch review; GitHub findings are posted inline when possible. |
 | `/obsidian-status` | Show Obsidian export settings resolved from Pi settings. |
 | `/obsidian-export` | Export the current session to the configured Obsidian vault. |
 | `/matrix-help` | Explain when/how to use Matrix and its prior art. |
@@ -405,6 +406,7 @@ extensions/plan-worktree.ts   # plan mode, elicitation, worktrees
 extensions/question.ts        # single-question user prompt tool
 extensions/mcporter.ts        # mcporter MCP bridge
 extensions/forge.ts            # forge-aware GitHub/SourceHut tools
+extensions/review.ts           # /review command for PR/patch review handoff
 extensions/obsidian.ts         # Obsidian session export commands/autosync
 extensions/repo-status.ts      # git/forge/CI statusline
 extensions/waiting-notify.ts   # local terminal/native notifications for pending questions

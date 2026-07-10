@@ -46,6 +46,27 @@ function plain(parts: StatusPart[]): string {
   return parts.map((part) => part.text).join(" | ");
 }
 
+function firstJiraTicket(text: string): string | undefined {
+  return text.match(/\b[A-Z][A-Z0-9]+-\d+\b/)?.[0];
+}
+
+async function jiraTicketForBranch(pi: ExtensionAPI, branch: string) {
+  const fromBranch = firstJiraTicket(branch);
+  if (fromBranch) return fromBranch;
+
+  const baseCandidates = ["origin/main", "origin/master", "origin/trunk", "origin/develop", "main", "master", "trunk", "develop"];
+  for (const base of baseCandidates) {
+    const mergeBase = await exec(pi, "git", ["merge-base", "HEAD", base], 5000);
+    if (mergeBase.code !== 0 || !mergeBase.stdout) continue;
+    const log = await exec(pi, "git", ["log", "--format=%s%n%b", `${mergeBase.stdout}..HEAD`], 10000);
+    const ticket = firstJiraTicket(log.stdout);
+    if (ticket) return ticket;
+  }
+
+  const recent = await exec(pi, "git", ["log", "--format=%s%n%b", "--max-count", "50", "HEAD"], 10000);
+  return firstJiraTicket(recent.stdout);
+}
+
 function modelLabel(ctx: ExtensionContext): string {
   if (!ctx.model) return "󰚩 no model";
   const id = ctx.model.id
@@ -90,8 +111,11 @@ async function collect(pi: ExtensionAPI) {
   const dirty = short ? short.split("\n").filter(Boolean).length : 0;
   const remote = (await exec(pi, "git", ["remote", "get-url", "origin"])).stdout;
   const forge = parseForge(remote);
-  const rightParts: StatusPart[] = [{ text: ` ${branch}${dirty ? ` ±${dirty}` : ""}`, tone: dirty ? "warning" : "success" }];
-  const details: Record<string, unknown> = { branch, dirty, forge };
+  const jiraTicket = await jiraTicketForBranch(pi, branch);
+  const rightParts: StatusPart[] = [];
+  if (jiraTicket) rightParts.push({ text: jiraTicket, tone: "accent" });
+  rightParts.push({ text: ` ${branch}${dirty ? ` ±${dirty}` : ""}`, tone: dirty ? "warning" : "success" });
+  const details: Record<string, unknown> = { branch, dirty, forge, jiraTicket };
 
   if (forge === "github") {
     const pr = await exec(pi, "gh", ["pr", "view", "--json", "number,state,isDraft,statusCheckRollup,url"], 15000);

@@ -34,16 +34,15 @@ bun run check
 Use from another project:
 
 ```bash
-pi install path/to/pibarm
+pi install git@github.com:leemeichin/pibarm.git
 ```
 
 
 ## External pi packages
 
-This project also asks pi to load external packages from `.pi/settings.json`:
+This project asks pi to load one external package from `.pi/settings.json`:
 
 - `git:github.com/DietrichGebert/ponytail`
-- `npm:pi-cmux` for cmux notifications, splits, sidebar/status, continuation, worktree handoff, and review sessions
 
 Pi installs missing project packages automatically on startup after the project is trusted. To reconcile/update packages later:
 
@@ -112,7 +111,7 @@ Use active-checkout execution only when you really want it:
 
 | Tool | Purpose |
 |---|---|
-| `elicit_plan_questions` | Ask several planning questions before finalizing/executing a plan. |
+| `elicit_plan_questions` | Ask several planning questions before finalizing/executing a plan, with rich TUI inputs for free text, select, multi-select, confirm/boolean, and number answers. |
 | `question` | Ask one focused question with optional choices. |
 | `create_git_worktree` | Create an isolated repo-local git worktree and branch. |
 | `summarize_worktree_diff` | Summarize status/diff for a worktree. |
@@ -138,6 +137,22 @@ Use active-checkout execution only when you really want it:
 | `matrix_join` | Wait for Matrix agents to finish, capture logs, and clean up panes. |
 | `matrix_list` | List known Matrix agents and untracked Matrix workspace panes. |
 | `matrix_kill` | Kill Matrix WezTerm panes. |
+
+## Rich planning questions
+
+`elicit_plan_questions` accepts either strings or typed question objects. Strings become free-text prompts. Objects can use `type: "free_text"`, `"select_one"`, `"select_many"`, `"confirm"`, `"boolean"`, or `"number"`, plus optional `label`, `options`, `default`, `min`, `max`, `preview`/`actionPreview`, `notes`, and `allowCustom`.
+
+```json
+{
+  "questions": [
+    { "label": "Scope", "question": "What should change?", "type": "select_many", "options": ["UI", "Tool schema", "Docs"] },
+    { "label": "Proceed", "question": "Apply schema changes?", "type": "confirm", "preview": "Keeps string questions backward-compatible." },
+    { "label": "Retries", "question": "How many retries?", "type": "number", "default": 2, "min": 0, "max": 5 }
+  ]
+}
+```
+
+The TUI is tabbed, has Nerd Font status icons, supports option descriptions/previews, and lets you add per-question notes with `n`.
 
 ## Task widget
 
@@ -222,8 +237,6 @@ Defaults:
 - same-branch/distributed work uses the current checkout
 - `/matrix-kill all` also closes untracked panes left in the Matrix workspace
 
-[`pi-cmux`](https://www.npmjs.com/package/pi-cmux) is also loaded for cmux-native splits, notifications, sidebar/status, continuation, worktree handoff, and review sessions. Matrix stays smaller and WezTerm-native.
-
 ## Notifications and permission gates
 
 `waiting-notify.ts` sends a terminal/native notification when `question` or `elicit_plan_questions` is waiting. On macOS, if the machine has been idle for 5 minutes and `signal-cli` is available, the question tools send a Signal note-to-self prefixed with `π` and read back your next reply.
@@ -252,7 +265,7 @@ Type `!<command>` as a prompt to run a local shell command immediately and show 
 
 ## Forge/statusline integrations
 
-`repo-status.ts` installs a colorful icon-first footer with project/model/context/thinking on the left and repo/forge/CI status on the right. Ponytail extension chatter is filtered out. Example:
+`repo-status.ts` installs a colorful icon-first footer with project/model/context/thinking on the left and repo/forge/CI status on the right. It includes dirty/uncommitted diff stats, detects Jira-style ticket IDs from branch names, and filters Ponytail extension chatter. Example:
 
 ```text
  pibarm · 󰚩 anthropic/Sonnet 4 5 · 󰯌 ctx 37%         main ±2 ·  #12 ·  CI
@@ -354,6 +367,7 @@ extensions/waiting-notify.ts   # native/Signal notifications for pending questio
 extensions/permission-gate.ts  # opt-in confirmation gate for risky/out-of-project actions
 extensions/inline-shell.ts     # run !-prefixed local shell commands inline
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
+extensions/watch-agent.ts      # sibling watcher agents for PRs/checks/external state
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
 extensions/matrix.ts           # WezTerm Matrix parent-controlled agent panes
 extensions/agent-presets.ts   # presets and single/parallel subagents

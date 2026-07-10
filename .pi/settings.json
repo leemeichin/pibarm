@@ -10,7 +10,6 @@
   ],
   "enableSkillCommands": true,
   "packages": [
-    "git:github.com/DietrichGebert/ponytail",
-    "npm:pi-cmux"
+    "git:github.com/DietrichGebert/ponytail"
   ]
 }

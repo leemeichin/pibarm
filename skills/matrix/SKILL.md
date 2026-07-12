@@ -45,7 +45,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 /matrix-spawn planner propose the smallest safe plan
 ```
 
-3. Join before acting; this waits for completion, returns logs, and cleans up panes:
+3. Join before acting; this waits for completion, returns logs, cleans up panes, and closes the workspace window once every tracked agent is done:
 
 ```text
 /matrix-join

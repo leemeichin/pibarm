@@ -151,7 +151,7 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `/matrix-attach` | Open/focus the session-specific Matrix workspace window. |
 | `/matrix-spawn <role> <task>` | Spawn one Matrix agent in a WezTerm pane. |
 | `/matrix-capture [role]` | Capture recent output from Matrix panes/logs. |
-| `/matrix-join [role\|all]` | Wait for Matrix agents, capture logs, and clean up panes. |
+| `/matrix-join [role\|all]` | Wait for Matrix agents, capture logs, clean up panes; closes the workspace when all are done. |
 | `/matrix-list` | List Matrix agents and panes for this session. |
 | `/matrix-kill [role\|all]` | Kill this session's Matrix panes. |
 | `/matrix-kill-orphans` | Kill Matrix panes left behind by other sessions. |
@@ -182,7 +182,7 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `matrix_spawn` | Spawn a parent-controlled pi agent in a WezTerm Matrix pane. |
 | `matrix_attach` | Open the Matrix WezTerm workspace. |
 | `matrix_capture` | Capture recent output from Matrix WezTerm panes/logs. |
-| `matrix_join` | Wait for Matrix agents to finish, capture logs, and clean up panes. |
+| `matrix_join` | Wait for Matrix agents to finish, capture logs, clean up panes, and close the finished workspace. |
 | `matrix_list` | List known Matrix agents and untracked Matrix workspace panes. |
 | `matrix_kill` | Kill Matrix WezTerm panes. |
 
@@ -277,7 +277,7 @@ Defaults:
 
 - spawned agents use the current active model unless `model` is set explicitly; simple-scope tasks may use a lighter authenticated model
 - agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/matrix/`, and panes exit when tasks finish
-- `matrix_join` waits for completion, returns logs, and cleans up pane tracking
+- `matrix_join` waits for completion, returns logs, cleans up pane tracking, and closes the workspace window once every tracked agent is done
 - Matrix uses a project/session-specific workspace name like `matrix-<project>-<session>` to avoid cross-session conflicts, opens/focuses a visible WezTerm client automatically, and splits that window unless `placement` is `tab` or `window`
 - agents run non-interactively and cannot receive input mid-run; join them and spawn a follow-up agent to give new instructions
 - `scout` and `planner` use read-focused toolsets

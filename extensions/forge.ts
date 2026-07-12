@@ -117,7 +117,12 @@ function unsupported(forge: Forge, message: string): CommandResult {
 }
 
 function toolResult(result: CommandResult) {
-  return { content: [{ type: "text" as const, text: resultText(result) }], details: result, isError: result.code !== 0 };
+  if (result.code !== 0) {
+    // Throw so failures (missing CLI, unauthenticated gh, bad repo) are
+    // flagged to the model; a returned isError is ignored.
+    throw new Error(result.stderr || result.stdout || `${result.command} exited ${result.code}`);
+  }
+  return { content: [{ type: "text" as const, text: resultText(result) }], details: result };
 }
 
 export default function forgeExtension(pi: ExtensionAPI) {

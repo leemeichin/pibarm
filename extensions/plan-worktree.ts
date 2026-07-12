@@ -5,6 +5,7 @@ import { Type } from "typebox";
 import { join } from "node:path";
 import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
+import { clipHead, clipTail } from "../lib/tool-output.js";
 
 const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
 const WRITE_TOOLS = new Set(["edit", "write"]);
@@ -676,6 +677,7 @@ async function summarizeWorktree(pi: ExtensionAPI, path: string, statOnly = fals
     status: status.stdout.trim(),
     stat: stat.stdout.trim(),
     diff: diff?.stdout.trim(),
+    stderr: [status.stderr, stat.stderr, diff?.stderr].map((err) => err?.trim()).filter(Boolean).join("\n"),
     code: Math.max(status.code ?? 0, stat.code ?? 0, diff?.code ?? 0),
   };
 }
@@ -932,18 +934,21 @@ export default function planWorktree(pi: ExtensionAPI) {
   pi.registerTool({
     name: "summarize_worktree_diff",
     label: "Summarize Worktree Diff",
-    description: "Return git status, diff stat, and optionally diff for a worktree.",
+    description: "Return git status, diff stat, and optionally diff for a worktree. Large diffs are truncated to the first ~50KB/2000 lines.",
     promptSnippet: "Summarize changes in an isolated git worktree",
     promptGuidelines: ["Use summarize_worktree_diff after worktree execution to report changed files and review the diff before merge."],
     parameters: WORKTREE_DIFF_PARAMS,
     async execute(_id, params) {
       const summary = await summarizeWorktree(pi, params.path, params.statOnly ?? false);
+      if (summary.code !== 0) {
+        throw new Error(`git failed while summarizing ${params.path} (exit ${summary.code}).${summary.stderr ? `\n${summary.stderr}` : ""}`);
+      }
       const text = [
         `Status:\n${summary.status || "(clean)"}`,
         `Diff stat:\n${summary.stat || "(none)"}`,
-        summary.diff && `Diff:\n${summary.diff}`,
+        summary.diff && `Diff:\n${clipHead(summary.diff)}`,
       ].filter(Boolean).join("\n\n");
-      return { content: [{ type: "text", text }], details: summary, isError: summary.code !== 0 };
+      return { content: [{ type: "text", text }], details: summary };
     },
   });
 
@@ -957,10 +962,12 @@ export default function planWorktree(pi: ExtensionAPI) {
     async execute(_id, params) {
       const root = await gitRoot(pi);
       const result = await pi.exec("git", ["-C", root, "worktree", "remove", ...(params.force ? ["--force"] : []), params.path], { timeout: 30000 });
+      if (result.code !== 0) {
+        throw new Error(result.stderr || result.stdout || `git worktree remove failed (exit ${result.code})`);
+      }
       return {
-        content: [{ type: "text", text: result.code === 0 ? `Removed ${params.path}` : (result.stderr || result.stdout || "remove failed") }],
+        content: [{ type: "text", text: `Removed ${params.path}` }],
         details: result,
-        isError: result.code !== 0,
       };
     },
   });
@@ -983,10 +990,14 @@ export default function planWorktree(pi: ExtensionAPI) {
       piArgs.push(params.task);
       const command = `cd ${shellQuote(wt.path)} && pi ${piArgs.map(shellQuote).join(" ")}`;
       const result = await pi.exec("bash", ["-lc", command], { signal, timeout: params.timeoutMs ?? 600000 });
-      finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : `exit ${result.code}`);
+      const failed = result.code !== 0;
+      finishAgentTask(taskId, failed ? "failed" : "done", failed ? `exit ${result.code}` : undefined);
       updateTaskWidget(ctx);
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
-      return { content: [{ type: "text", text: text || `(subagent exited ${result.code})` }], details: { worktree: wt, modelSelection, result }, isError: result.code !== 0 };
+      if (failed) {
+        throw new Error(`Worktree subagent failed (exit ${result.code}).${text ? `\n\n${clipTail(text)}` : ""}`);
+      }
+      return { content: [{ type: "text", text: clipTail(text) || "(subagent produced no output)" }], details: { worktree: wt, modelSelection, result } };
     },
   });
 

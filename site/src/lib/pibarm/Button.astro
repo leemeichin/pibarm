@@ -1,0 +1,24 @@
+---
+/**
+ * pibarm button. Mono-labelled, gently rounded, warm.
+ * Renders a <button> by default; pass `as="a"` (with href) for a link.
+ * Slots: default = label; `leading` / `trailing` = icons or adornments.
+ */
+interface Props {
+  variant?: "primary" | "secondary" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
+  as?: "button" | "a";
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { variant = "primary", size = "md", as = "button", class: className = "", ...rest } = Astro.props;
+const Tag = as;
+const cls = `pib-btn pib-btn--${variant} pib-btn--${size} ${className}`.trim();
+---
+
+<Tag class={cls} {...rest}>
+  <slot name="leading" />
+  <span><slot /></span>
+  <slot name="trailing" />
+</Tag>

@@ -1,0 +1,45 @@
+---
+/**
+ * Task widget pill: the ‹ ○ 1 · inspect auth › element pibarm renders below
+ * the editor to keep delegated work visually connected to the session.
+ * variant="term" renders the flat terminal-native form.
+ */
+interface Props {
+  status?: "todo" | "running" | "done" | "failed";
+  index?: number | string | null;
+  kind?: string | null;
+  label?: string;
+  meta?: string | null;
+  variant?: "web" | "term";
+  class?: string;
+  [key: string]: unknown;
+}
+
+const ICONS: Record<string, string> = { todo: "○", running: "●", done: "✓", failed: "!" };
+
+const {
+  status = "todo",
+  index = null,
+  kind = null,
+  label = "",
+  meta = null,
+  variant = "web",
+  class: className = "",
+  ...rest
+} = Astro.props;
+
+const bare = variant === "term" ? "pib-pill--bare" : "";
+const cls = `pib-pill pib-pill--${status} ${bare} ${className}`.replace(/\s+/g, " ").trim();
+const showSep = index != null || kind;
+---
+
+<span class={cls} {...rest}>
+  <span class="pib-pill__gl">‹</span>
+  <span class="pib-pill__ic">{ICONS[status] || "○"}</span>
+  {index != null && <span class="pib-pill__idx">{index}</span>}
+  {kind && <span class="pib-pill__kind">{kind}</span>}
+  {showSep && <span class="pib-pill__sep">·</span>}
+  <span class="pib-pill__lbl">{label}</span>
+  {meta && <><span class="pib-pill__sep">·</span><span class="pib-pill__meta">{meta}</span></>}
+  <span class="pib-pill__gl">›</span>
+</span>

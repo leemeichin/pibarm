@@ -1,0 +1,52 @@
+---
+/**
+ * Lucide icon, rendered to inline SVG at build time.
+ * Substitute for the TUI's Nerd Font glyphs (flagged in the design system).
+ * No CDN, no client JS — the SVG is emitted into the static HTML.
+ */
+import { icons } from "lucide";
+
+interface Props {
+  name: string;
+  size?: number;
+  strokeWidth?: number;
+  color?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  name,
+  size = 16,
+  strokeWidth = 2,
+  color = "currentColor",
+  class: className = "",
+  ...rest
+} = Astro.props;
+
+const toPascal = (n: string) =>
+  String(n)
+    .split(/[-_]/)
+    .map((s) => (s ? s[0].toUpperCase() + s.slice(1) : ""))
+    .join("");
+
+const node = (icons as Record<string, any>)[toPascal(name)] || (icons as Record<string, any>)[name];
+
+let inner = "";
+if (Array.isArray(node)) {
+  for (const child of node) {
+    if (!Array.isArray(child)) continue;
+    const [tag, attrs] = child;
+    const a = Object.entries(attrs || {})
+      .map(([k, v]) => `${k}="${v}"`)
+      .join(" ");
+    inner += `<${tag} ${a}></${tag}>`;
+  }
+}
+
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+
+const style = `display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;color:${color};flex:none;`;
+---
+
+<span class={`lucide ${className}`.trim()} style={style} {...rest} set:html={svg}></span>

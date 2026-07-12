@@ -1,0 +1,76 @@
+---
+import Base from "../layouts/Base.astro";
+import Button from "../lib/pibarm/Button.astro";
+import Icon from "../lib/pibarm/Icon.astro";
+import Badge from "../lib/pibarm/Badge.astro";
+import CodeBlock from "../lib/pibarm/CodeBlock.astro";
+import StatusLine from "../lib/pibarm/StatusLine.astro";
+import { FEATURES } from "../data/site.ts";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Base active="home">
+  <section class="pib-hero">
+    <div>
+      <span class="hero-eyebrow"><Icon name="sandwich" size={15} /> pi extensions + skills</span>
+      <h1 class="hero-h1">pi extensions and skills.<br />Served with gravy.</h1>
+      <p class="hero-lead">A pile of bits I bolted onto <b>pi</b>: it plans before it edits, keeps risky work in a worktree, and lets me watch agents work in WezTerm. Mostly for me — install it if you fancy.</p>
+      <div class="hero-ctas">
+        <Button variant="primary" size="lg" as="a" href={`${base}docs`}>
+          <Icon slot="leading" name="terminal" size={16} />
+          Read the docs
+        </Button>
+        <Button variant="ghost" size="lg" as="a" href={`${base}demo`}>
+          <Icon slot="leading" name="play" size={16} />
+          Watch it work
+        </Button>
+      </div>
+      <div class="hero-install">
+        <CodeBlock language="bash" code="pi install git@github.com:leemeichin/pibarm.git" />
+      </div>
+    </div>
+    <div class="hero-mascot-wrap">
+      <img class="hero-mascot" src={`${base}assets/pie-logo.png`} alt="pibarm pie mascot" />
+    </div>
+  </section>
+
+  <section style="padding:26px 0;">
+    <div class="section-head">
+      <h2>What's in the barm</h2>
+      <span class="note">extensions &amp; skills</span>
+    </div>
+    <div class="pib-feat-grid">
+      {FEATURES.map((f) => (
+        <div class="feat-card">
+          <span class="feat-icon"><Icon name={f.icon} size={20} /></span>
+          <p class="feat-eyebrow">{f.eyebrow}</p>
+          <h3 class="feat-title">{f.title}</h3>
+          <p class="feat-body">{f.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="pib-band">
+    <div>
+      <span class="band-eyebrow">The Matrix</span>
+      <h2 class="band-h2">Watch your agents work.</h2>
+      <p class="band-lead">Spawn scout, planner and worker agents in real WezTerm panes. Message them, capture their logs, join them — orchestration you can actually see.</p>
+      <Button variant="primary" as="a" href={`${base}demo`}>
+        <Icon slot="leading" name="layers" size={15} />
+        See the demo
+      </Button>
+    </div>
+    <div>
+      <StatusLine project="pibarm" model="anthropic/Sonnet 4.5" context={41} branch="fix-flaky" dirty={3} pr={{ num: 128, state: "open" }} ci="running" />
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+        <span class="band-prlabel">PR states:</span>
+        <Badge tone="success" dot>open</Badge>
+        <Badge tone="muted" dot>draft</Badge>
+        <Badge tone="merged" dot>merged</Badge>
+        <Badge tone="danger" dot>closed</Badge>
+      </div>
+    </div>
+  </section>
+</Base>

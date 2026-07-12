@@ -1,0 +1,90 @@
+/* pibarm color system
+   Warm & appetising on a bright-spring day: cream paper + cool navy ink +
+   gravy browns + an orange "dot" accent, lifted by a small set of fresh
+   spring accents. Cool navy vs. warm cream is the core brand tension. */
+:root {
+  /* ---- Soft neutral ramp (porcelain paper -> sand -> gravy -> ink) ----
+     De-beiged & lightened toward a pastel/watercolour feel: airy warm-white
+     paper, warm-grey (not golden) hairlines. */
+  --cream-50:  #FDFBF8;
+  --cream-100: #FAF6F1;  /* primary page background — soft warm porcelain */
+  --cream-200: #F3ECE4;
+  --cream-300: #E8DDD3;
+  --sand-400:  #DCCFC1;  /* hairlines on paper (warm grey, not yellow) */
+  --sand-500:  #C6B6A5;
+  --bark-600:  #9A7B54;
+  --bark-700:  #6E4A2C;  /* gravy brown — mono/warm text */
+  --bark-800:  #4E3520;
+
+  /* ---- Cool ink (the wordmark navy) ---- */
+  --navy-900:  #1D2A38;  /* display, headings, primary text */
+  --navy-800:  #263544;
+  --navy-700:  #33465A;  /* secondary text */
+  --navy-500:  #5E7183;  /* muted text on cream */
+  --paper-0:   #FFFFFF;
+
+  /* ---- Brand accent: the orange dot ---- */
+  --orange-300: #F5C08A;
+  --orange-400: #EBA359;
+  --orange-500: #E08A3C;  /* primary accent — a touch softer/warmer */
+  --orange-600: #C06A1E;  /* accent hover / press */
+  --orange-050: #FBEADA;  /* orange wash surface */
+
+  /* ---- Spring / watercolour accent set ----
+     Mid-tones stay legible for text & buttons; the *-050 washes are lifted
+     to soft, luminous pastel tints for backgrounds. */
+  --pea-500:    #79AE58;  /* fresh green */
+  --pea-600:    #578A38;
+  --pea-050:    #EAF3DE;
+  --sky-500:    #5C97B8;  /* spring sky — links / info */
+  --sky-600:    #3D7292;
+  --sky-050:    #E5F0F5;
+  --tomato-500: #D25746;  /* berry / destructive */
+  --tomato-600: #AC3728;
+  --tomato-050: #FBE7E1;
+  --mustard-500:#E8B63F;  /* warning / CI running */
+  --mustard-600:#C4901A;
+  --mustard-050:#FCF3D9;
+  --plum-500:   #8B67AA;  /* "merged" / special accent */
+  --plum-600:   #664484;
+  --plum-050:   #F1EAF7;
+
+  /* ---- Watercolour washes (soft section backgrounds) ---- */
+  --wash-peach: #FCEBDC;
+  --wash-sky:   #E8F1F6;
+  --wash-sage:  #ECF3E3;
+  --wash-blush: #FBECEA;
+  --wash-lilac: #F2ECF8;
+
+  /* ================= Semantic aliases ================= */
+  --bg-page:        var(--cream-100);
+  --bg-page-warm:   var(--cream-50);
+  --surface-card:   var(--paper-0);
+  --surface-sunken: var(--cream-200);
+  --surface-tint:   var(--orange-050);
+  --surface-code:   var(--navy-900);   /* terminals / code blocks */
+
+  --text-strong:    var(--navy-900);
+  --text-body:      var(--navy-800);
+  --text-muted:     var(--navy-500);
+  --text-gravy:     var(--bark-700);
+  --text-on-dark:   #EDE4D3;
+  --text-on-accent: #FFFFFF;
+
+  --border-hair:    var(--sand-400);
+  --border-strong:  var(--navy-900);
+  --border-tint:    var(--sand-500);
+
+  --accent:         var(--orange-500);
+  --accent-hover:   var(--orange-600);
+  --link:           var(--sky-600);
+  --link-hover:     var(--orange-600);
+
+  /* status mapping mirrors the TUI statusline */
+  --status-success: var(--pea-600);    /* CI pass / PR open */
+  --status-warning: var(--mustard-600);/* CI running */
+  --status-danger:  var(--tomato-600); /* CI fail / PR closed */
+  --status-info:    var(--sky-600);
+  --status-merged:  var(--plum-500);   /* PR merged */
+  --status-muted:   var(--navy-500);   /* draft / unknown */
+}

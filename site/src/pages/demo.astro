@@ -1,0 +1,47 @@
+---
+import Base from "../layouts/Base.astro";
+import Badge from "../lib/pibarm/Badge.astro";
+import Callout from "../lib/pibarm/Callout.astro";
+import PiSession from "../components/PiSession.jsx";
+import MatrixDemo from "../components/Matrix.jsx";
+---
+
+<Base active="demo" title="pibarm — see it work">
+  <div class="demo-head">
+    <h1 class="demo-h1">See it work</h1>
+    <p class="demo-lead">Two scripted simulations of pibarm in a real pi session. Both loop automatically — no install required to get the gist.</p>
+  </div>
+
+  <section class="demo-block">
+    <div class="demo-cap">
+      <span class="demo-cap-no">01</span>
+      <h2 class="demo-cap-title">A planning session</h2>
+      <span class="demo-cap-note">/plan → questions → /execute-plan worktree</span>
+    </div>
+    <div class="pib-demo-row">
+      <PiSession client:visible />
+      <div>
+        <p class="demo-note">pi enters read-only plan mode, inspects the repo, and asks a clarifying question before proposing anything. Once you answer, it captures a plan and executes it in an isolated git worktree — your active checkout never moves.</p>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <Badge tone="info" dot>read-only</Badge>
+          <Badge tone="success" dot>worktree</Badge>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <section class="demo-block">
+    <div class="demo-cap">
+      <span class="demo-cap-no">02</span>
+      <h2 class="demo-cap-title">Matrix orchestration</h2>
+      <span class="demo-cap-note">parallel scout · planner · worker in WezTerm</span>
+    </div>
+    <p class="demo-note" style="max-width:70ch;margin-bottom:20px;">The parent session spawns visible agents in WezTerm panes. Scout and planner inspect and plan in parallel; once joined, a worker fixes and verifies in its own worktree. The task widget below the window mirrors every delegated agent.</p>
+    <MatrixDemo client:visible />
+    <div style="margin-top:22px;">
+      <Callout tone="tip" title="Why visible?">Parent-controlled panes mean you can watch, message, and capture each agent's output live — orchestration you can audit, not a black box.</Callout>
+    </div>
+  </section>
+</Base>

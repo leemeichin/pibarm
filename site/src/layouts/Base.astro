@@ -1,0 +1,71 @@
+---
+import "../styles/global.css";
+import Button from "../lib/pibarm/Button.astro";
+import Icon from "../lib/pibarm/Icon.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  active?: "home" | "docs" | "demo";
+}
+
+const {
+  title = "pibarm — agentic coding for northerners",
+  description = "pi extensions and skills: plan before editing, keep risky work in a worktree, and watch agents work in WezTerm.",
+  active = "home",
+} = Astro.props;
+
+const nav = [
+  { id: "home", label: "Home", href: `${import.meta.env.BASE_URL}` },
+  { id: "docs", label: "Docs", href: `${import.meta.env.BASE_URL}docs` },
+  { id: "demo", label: "Demo", href: `${import.meta.env.BASE_URL}demo` },
+];
+const home = import.meta.env.BASE_URL;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/png" href={`${import.meta.env.BASE_URL}assets/pie-mark.png`} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <div class="site-page">
+      <header class="site-nav">
+        <div class="site-nav__inner">
+          <a class="site-mark" href={home}>
+            <img class="site-mark__img" src={`${import.meta.env.BASE_URL}assets/pie-logo.png`} alt="" />
+            <span class="site-mark__text">p<span class="dot">i</span>barm</span>
+          </a>
+          <nav class="site-nav__links">
+            {nav.map((n) => (
+              <a class={`site-link ${active === n.id ? "site-link--active" : ""}`} href={n.href}>{n.label}</a>
+            ))}
+            <div class="site-nav__spacer"></div>
+            <Button variant="secondary" size="sm" as="a" href="https://github.com/leemeichin/pibarm" target="_blank" rel="noopener">
+              <Icon slot="leading" name="github" size={15} />
+              GitHub
+            </Button>
+          </nav>
+        </div>
+      </header>
+
+      <main class="site-main">
+        <slot />
+      </main>
+
+      <footer class="site-footer">
+        <div class="site-footer__inner">
+          <p class="site-foot">pibarm · agentic coding for northerners · MIT</p>
+          <p class="site-foot">alright ar kid</p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

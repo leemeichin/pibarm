@@ -1,0 +1,23 @@
+---
+/** Content card with optional eyebrow/title and accent bar. */
+interface Props {
+  eyebrow?: string;
+  title?: string;
+  accent?: boolean;
+  interactive?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { eyebrow, title, accent = false, interactive = false, class: className = "", ...rest } = Astro.props;
+const cls = `pib-card ${accent ? "pib-card--accent" : ""} ${interactive ? "pib-card--interactive" : ""} ${className}`
+  .replace(/\s+/g, " ")
+  .trim();
+---
+
+<div class={cls} {...rest}>
+  <slot name="icon" />
+  {eyebrow && <p class="pib-card__eyebrow">{eyebrow}</p>}
+  {title && <h3 class="pib-card__title">{title}</h3>}
+  <div class="pib-card__body"><slot /></div>
+</div>

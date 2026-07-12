@@ -70,7 +70,7 @@ async function main() {
 
   commandCheck("pi", { required: true, install: "https://pi.dev / your normal pi installer", detail: "required to load this package and run subagents" });
   commandCheck("git", { required: true, install: "brew install git", detail: "required for repo status and worktrees" });
-  commandCheck("bash", { required: true, detail: "required by inline shell, watchers, and subagent wrappers" });
+  commandCheck("bash", { required: true, detail: "required by watchers and subagent wrappers" });
   commandCheck("bun", { install: "curl -fsSL https://bun.sh/install | bash", detail: "needed for development checks (bun run check)" });
 
   commandCheck("gh", { install: "brew install gh && gh auth login", detail: "GitHub PR/CI tools" });

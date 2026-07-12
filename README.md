@@ -59,7 +59,7 @@ Required for core usage:
 
 - `pi` — loads this package and runs subagents
 - `git` — repo status and worktrees
-- `bash` — inline shell, watcher scripts, and subagent wrappers
+- `bash` — watcher scripts and subagent wrappers
 
 Feature-specific tools:
 
@@ -413,7 +413,6 @@ extensions/obsidian.ts         # Obsidian session export commands/autosync
 extensions/repo-status.ts      # git/forge/CI statusline
 extensions/waiting-notify.ts   # local terminal/native notifications for pending questions
 extensions/permission-gate.ts  # opt-in confirmation gate for risky/out-of-project actions
-extensions/inline-shell.ts     # run !-prefixed local shell commands inline
 extensions/ar-kid.ts           # Manchester/Bolton dialect easter egg
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/watch-agent.ts      # sibling watcher agents for PRs/checks/external state

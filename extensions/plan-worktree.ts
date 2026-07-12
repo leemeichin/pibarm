@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { StringEnum } from "@earendil-works/pi-ai";
 import { Editor, type EditorTheme, Key, matchesKey, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { join } from "node:path";
@@ -24,18 +25,10 @@ const PLAN_QUESTION = Type.Object({
   label: Type.Optional(Type.String({ description: "Short tab label" })),
   question: Type.Optional(Type.String({ description: "Question text" })),
   prompt: Type.Optional(Type.String({ description: "Alias for question" })),
-  type: Type.Optional(Type.Union([
-    Type.Literal("text"),
-    Type.Literal("free_text"),
-    Type.Literal("select"),
-    Type.Literal("select_one"),
-    Type.Literal("multi"),
-    Type.Literal("select_many"),
-    Type.Literal("confirm"),
-    Type.Literal("bool"),
-    Type.Literal("boolean"),
-    Type.Literal("number"),
-  ], { description: "Input type. Defaults to free_text." })),
+  type: Type.Optional(StringEnum(
+    ["text", "free_text", "select", "select_one", "multi", "select_many", "confirm", "bool", "boolean", "number"] as const,
+    { description: "Input type. Defaults to free_text." },
+  )),
   options: Type.Optional(Type.Array(PLAN_OPTION, { description: "Options for select/select_many/confirm inputs" })),
   default: Type.Optional(Type.Unknown({ description: "Default answer/value" })),
   min: Type.Optional(Type.Number({ description: "Minimum number value" })),
@@ -427,7 +420,6 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
         if (matchesKey(data, Key.enter)) submit();
         return;
       }
-      if (data === "n" || data === "N") return toggleNoteMode();
       const question = currentQuestion();
       if (!question) return;
       if (noteMode || customMode || question.type === "free_text" || question.type === "number") {
@@ -439,6 +431,9 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
         refresh();
         return;
       }
+      // Only treat "n" as the notes shortcut when keystrokes are not being
+      // routed to a text editor, so it stays typeable in answers and notes.
+      if (data === "n" || data === "N") return toggleNoteMode();
       const optionCount = question.options.length + (question.allowCustom ? 1 : 0);
       if (matchesKey(data, Key.up)) {
         optionIndex = Math.max(0, optionIndex - 1);
@@ -595,13 +590,21 @@ function modelLabel(model: string | undefined) {
   return model?.split("/").pop()?.replace(/^claude-/, "") ?? "default";
 }
 
-function isReadOnlyCommand(command: string): boolean {
+const READ_ONLY_SEGMENT = /^(pwd|ls|find|rg|grep|cat|head|tail|wc|sed\s+-n|awk|git\s+(status|diff|log|show|branch|rev-parse|worktree\s+list)\b)/;
+
+export function isReadOnlyCommand(command: string): boolean {
   const trimmed = command.trim();
   if (!trimmed) return true;
-  if (/[;&|`]\s*(rm|mv|cp|chmod|chown|mkdir|rmdir|touch|tee|python|node|npm|pnpm|yarn|bun|make|cargo|go|git\s+(add|commit|checkout|switch|reset|clean|apply|am|merge|rebase|worktree\s+(add|remove|prune)|stash\s+(push|pop|apply)))/.test(trimmed)) {
-    return false;
-  }
-  return /^(pwd|ls|find|rg|grep|cat|head|tail|wc|sed\s+-n|awk|git\s+(status|diff|log|show|branch|rev-parse|worktree\s+list)\b)/.test(trimmed);
+  // Substitutions and output redirection can mutate state even when every
+  // command name looks read-only, so reject them outright.
+  if (/[`>]|\$\(|<\(/.test(trimmed)) return false;
+  // Require every pipeline/sequence segment (including across newlines) to be
+  // a known read-only command, instead of blacklisting known-bad ones.
+  return trimmed
+    .split(/[\n;&|]+/)
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .every((segment) => READ_ONLY_SEGMENT.test(segment));
 }
 
 function looksLikePlan(text: string): boolean {
@@ -636,11 +639,21 @@ async function createWorktree(pi: ExtensionAPI, cwd: string, name: string, baseR
   const branch = `pibarm/${slug}`;
   await mkdir(join(root, ".pi", "wt"), { recursive: true });
   const result = await pi.exec("git", ["-C", root, "worktree", "add", "-b", branch, path, baseRef], { timeout: 30000 });
-  if (result.code !== 0 && /already exists|is already checked out/i.test(result.stderr ?? "")) {
+  if (result.code === 0) return { root, path, branch, reused: false, stdout: result.stdout, stderr: result.stderr };
+  if (!/already exists|is already checked out/i.test(result.stderr ?? "")) {
+    throw new Error(result.stderr || result.stdout || "git worktree add failed");
+  }
+  // "already exists" also fires when only the branch survived a removed
+  // worktree, so verify the path is actually registered before claiming reuse.
+  const list = await pi.exec("git", ["-C", root, "worktree", "list", "--porcelain"], { timeout: 10000 });
+  if (list.stdout.split("\n").includes(`worktree ${path}`)) {
     return { root, path, branch, reused: true, stdout: result.stdout, stderr: result.stderr };
   }
-  if (result.code !== 0) throw new Error(result.stderr || result.stdout || "git worktree add failed");
-  return { root, path, branch, reused: false, stdout: result.stdout, stderr: result.stderr };
+  const reattach = await pi.exec("git", ["-C", root, "worktree", "add", path, branch], { timeout: 30000 });
+  if (reattach.code !== 0) {
+    throw new Error(reattach.stderr || reattach.stdout || `Branch ${branch} exists but its worktree is gone and could not be recreated. Remove the branch or run 'git worktree prune' and retry.`);
+  }
+  return { root, path, branch, reused: true, stdout: reattach.stdout, stderr: reattach.stderr };
 }
 
 async function listWorktrees(pi: ExtensionAPI) {
@@ -756,7 +769,7 @@ export default function planWorktree(pi: ExtensionAPI) {
       enablePlanMode(ctx);
       const task = args.trim();
       if (task) {
-        pi.sendUserMessage(`Plan this task. Ask clarifying questions first if needed. Do not edit files.\n\nTask: ${task}`);
+        pi.sendUserMessage(`Plan this task. Ask clarifying questions first if needed. Do not edit files.\n\nTask: ${task}`, { deliverAs: "followUp" });
       }
     },
   });
@@ -787,10 +800,10 @@ export default function planWorktree(pi: ExtensionAPI) {
     disablePlanMode(ctx);
     if (worktreeName) {
       const wt = await createWorktree(pi, ctx.cwd, worktreeName);
-      pi.sendUserMessage(`Execute the approved plan in the isolated git worktree at ${wt.path}. Make all file changes under that path, not the active repo.\n\nApproved plan:\n${lastPlan}`);
+      pi.sendUserMessage(`Execute the approved plan in the isolated git worktree at ${wt.path}. Make all file changes under that path, not the active repo.\n\nApproved plan:\n${lastPlan}`, { deliverAs: "followUp" });
       return;
     }
-    pi.sendUserMessage(`Execute the approved plan in the active checkout.\n\nApproved plan:\n${lastPlan}`);
+    pi.sendUserMessage(`Execute the approved plan in the active checkout.\n\nApproved plan:\n${lastPlan}`, { deliverAs: "followUp" });
   }
 
   async function approvePlanCommand(args: string, ctx: ExtensionContext) {
@@ -1037,7 +1050,9 @@ export default function planWorktree(pi: ExtensionAPI) {
   });
 
   pi.on("session_start", async (_event, ctx) => {
-    const restored = ctx.sessionManager.getEntries()
+    // Restore from the active branch only, so plans from abandoned /tree or
+    // /fork branches don't come back.
+    const restored = ctx.sessionManager.getBranch()
       .filter((entry: { type: string; customType?: string }) => entry.type === "custom" && entry.customType === "pibarm-plan")
       .pop() as { data?: { plan?: string; steps?: string[]; status?: PlanStatus; capturedAt?: number } } | undefined;
     if (restored?.data?.plan) lastPlan = restored.data.plan;

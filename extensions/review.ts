@@ -59,7 +59,7 @@ export default function reviewExtension(pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const target = parseReviewTarget(args);
       const gh = await githubContext(pi, ctx.cwd, target).catch(() => undefined);
-      pi.sendUserMessage(reviewPrompt(target, gh));
+      pi.sendUserMessage(reviewPrompt(target, gh), { deliverAs: "followUp" });
     },
   });
 }

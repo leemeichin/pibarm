@@ -2,6 +2,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { basename, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { selectAgentModelRef, type ModelSelection } from "../lib/current-model.js";
 import { finishAgentTask, removeAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 
@@ -122,20 +123,26 @@ async function openWorkspaceClient(pi: ExtensionAPI, workspace: string) {
   await pi.exec("bash", ["-lc", `(wezterm connect unix --workspace ${workspaceArg} >/dev/null 2>&1 || wezterm start --workspace ${workspaceArg} >/dev/null 2>&1) &`], { timeout: 1000 }).catch(() => undefined);
 }
 
-async function hasAttachedClient(pi: ExtensionAPI) {
+async function hasWorkspaceClient(pi: ExtensionAPI, workspace: string) {
   const result = await wezterm(pi, ["list-clients", "--format", "json"], 5000);
   if (result.code !== 0) return false;
   try {
-    return (JSON.parse(result.stdout) as unknown[]).length > 0;
+    const clients = JSON.parse(result.stdout) as Array<{ workspace?: string }>;
+    if (!clients.length) return false;
+    // Older wezterm builds omit the workspace field on clients; fall back to
+    // treating any attached client as good enough rather than opening extras.
+    if (clients.every((client) => client.workspace === undefined)) return true;
+    return clients.some((client) => client.workspace === workspace);
   } catch {
     return false;
   }
 }
 
 async function ensureWorkspaceClient(pi: ExtensionAPI, workspace: string) {
-  // Backgrounding another client on every spawn produces duplicate GUI
-  // windows, so only open one when nothing is attached.
-  if (await hasAttachedClient(pi)) return;
+  // Open a window for THIS session's workspace when none is showing it —
+  // an unrelated WezTerm window must not stop the Matrix window appearing —
+  // but never background extra clients when one is already attached to it.
+  if (await hasWorkspaceClient(pi, workspace)) return;
   await openWorkspaceClient(pi, workspace);
 }
 
@@ -222,22 +229,29 @@ function agentPrompt(role: string, task: string, worktree?: string) {
   return `You are Matrix ${role}. ${scope}\n\nYou run non-interactively: nobody can answer questions mid-run. If anything is unclear, state your assumptions and end your final output with any open questions.\n\nTask:\n${task}`;
 }
 
+function rendererPath() {
+  return fileURLToPath(new URL("../scripts/matrix-render.mjs", import.meta.url));
+}
+
 function commandFor(role: string, task: string, model: string | undefined, tools: string[] | undefined, worktree: string | undefined, logPath: string, statusPath: string) {
-  const args = ["pi", "--name", `matrix-${role}`, "-p", "--no-session"];
+  // JSON event mode + a local renderer: print mode (-p) emits nothing until
+  // the run ends, but the whole point of a pane is watching reasoning, text,
+  // and tool activity stream live.
+  const args = ["pi", "--name", `matrix-${role}`, "--mode", "json", "--no-session"];
   if (model) args.push("--model", model);
   if (tools?.length) args.push("--tools", tools.join(","));
   args.push(agentPrompt(role, task, worktree));
 
   const piCommand = args.map(shellQuote).join(" ");
+  const renderCommand = `${shellQuote(process.execPath)} ${shellQuote(rendererPath())}`;
   const script = [
     `: > ${shellQuote(logPath)}`,
     `printf '%s\\n' ${shellQuote(`[matrix ${role} started]`)}`,
     `printf '%s\\n' ${shellQuote(`model: ${model ?? "default"}`)}`,
     `printf '%s\\n' ${shellQuote(`log: ${logPath}`)}`,
-    `printf '%s\\n' ${shellQuote("running pi agent... output will stream here when pi emits it")}`,
     `printf '%s\\n' ${shellQuote(`[matrix ${role} started]`)} >> ${shellQuote(logPath)}`,
     "set -o pipefail",
-    `${piCommand} 2>&1 | tee -a ${shellQuote(logPath)}`,
+    `${piCommand} 2>&1 | ${renderCommand} | tee -a ${shellQuote(logPath)}`,
     "code=${PIPESTATUS[0]}",
     `printf '\\n[matrix ${role} exited %s]\\n' "$code" | tee -a ${shellQuote(logPath)}`,
     `printf '%s\\n' "$code" > ${shellQuote(statusPath)}`,

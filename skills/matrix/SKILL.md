@@ -56,7 +56,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 - same branch/distributed work: no worktree
 - separate branch or risky changes: `matrix_spawn` with `worktree: true`
 - use `matrix_spawn.placement` for `right`, `down`, `tab`, or `window` when placement matters
-- Matrix uses a project/session-specific workspace name, opens/focuses a visible WezTerm client automatically, reuses one workspace window where possible, prints a visible start/log banner, logs to `.pi/matrix/`, shows agent pills in the shared task widget, and panes exit when done
+- Matrix uses a project/session-specific workspace name, opens/focuses a visible WezTerm client automatically, reuses one workspace window where possible, streams the agent's reasoning/response/tool activity live in the pane, logs the same transcript to `.pi/matrix/`, shows agent pills in the shared task widget, and panes exit when done
 
 5. Clean up:
 

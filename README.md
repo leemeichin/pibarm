@@ -276,7 +276,7 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 Defaults:
 
 - spawned agents use the current active model unless `model` is set explicitly; simple-scope tasks may use a lighter authenticated model
-- agents run non-interactively in WezTerm, print a visible start/log banner, write logs under `.pi/matrix/`, and panes exit when tasks finish
+- agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/matrix/`, and panes exit when tasks finish
 - `matrix_join` waits for completion, returns logs, and cleans up pane tracking
 - Matrix uses a project/session-specific workspace name like `matrix-<project>-<session>` to avoid cross-session conflicts, opens/focuses a visible WezTerm client automatically, and splits that window unless `placement` is `tab` or `window`
 - agents run non-interactively and cannot receive input mid-run; join them and spawn a follow-up agent to give new instructions

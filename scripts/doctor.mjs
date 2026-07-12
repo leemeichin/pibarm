@@ -16,7 +16,9 @@ function run(command, args = [], timeout = 5000) {
 }
 
 function has(command) {
-  const result = run("bash", ["-lc", `command -v ${JSON.stringify(command)} >/dev/null 2>&1`]);
+  // Pass the name as a positional parameter so env-derived values are never
+  // interpolated into shell syntax ($(...), backticks, $var all stay literal).
+  const result = run("bash", ["-lc", 'command -v "$1" >/dev/null 2>&1', "doctor", command]);
   return result.status === 0;
 }
 
@@ -91,7 +93,8 @@ async function main() {
   try {
     const settings = JSON.parse(await readFile(resolve(root, ".pi/settings.json"), "utf8"));
     const packages = settings.packages ?? [];
-    if (packages.includes("git:github.com/DietrichGebert/ponytail")) ok(".pi/settings.json", "ponytail package configured");
+    const ponytail = "git:github.com/DietrichGebert/ponytail";
+    if (packages.some((pkg) => String(pkg) === ponytail || String(pkg).startsWith(`${ponytail}@`))) ok(".pi/settings.json", "ponytail package configured");
     else warn(".pi/settings.json", "ponytail package is not configured");
     if (packages.some((pkg) => /cmux/i.test(String(pkg)))) warn(".pi/settings.json", "cmux package still configured; remove it if you want pibarm-only Matrix/notifications");
   } catch (error) {

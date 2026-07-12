@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const DANGEROUS_BASH = [
@@ -14,17 +14,20 @@ const MUTATING_BASH = /\b(rm|mv|cp|mkdir|touch|tee|chmod|chown|npm\s+install|pnp
 const SENSITIVE_PATH = /(^|\/)(\.env|\.git|node_modules|\.ssh|\.aws|\.gnupg)(\/|$)|\.(pem|key)$/i;
 const PATH_TOKEN = /(^|[\s=:])([~./][^\s"'`;$|&<>]*)/g;
 
-function isInside(root: string, path: string): boolean {
-  const relative = resolve(root, path).slice(resolve(root).length);
-  return relative === "" || (relative.startsWith("/") && !relative.startsWith("/.."));
+export function isInside(root: string, path: string): boolean {
+  const rel = relative(resolve(root), resolve(root, path));
+  return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 }
 
-function expandsOutsideProject(command: string, cwd: string): boolean {
+export function expandsOutsideProject(command: string, cwd: string): boolean {
   for (const match of command.matchAll(PATH_TOKEN)) {
     const token = match[2];
     if (!token || token === "." || token.startsWith("./")) continue;
     if (token.startsWith("/tmp") || token.startsWith("/var/folders")) continue;
-    if (token.startsWith("~") || token.startsWith("/")) return !isInside(cwd, token.replace(/^~/, process.env.HOME ?? "~"));
+    if (token.startsWith("~") || token.startsWith("/")) {
+      if (!isInside(cwd, token.replace(/^~/, process.env.HOME ?? "~"))) return true;
+      continue;
+    }
     if (token.startsWith("..")) return true;
   }
   return false;

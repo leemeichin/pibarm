@@ -14,6 +14,11 @@ export interface PibarmSettings {
   obsidian?: ObsidianSettings;
 }
 
+export interface SettingsContext {
+  cwd: string;
+  isProjectTrusted(): boolean;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -41,17 +46,36 @@ function expandPath(path: string, cwd: string) {
   return isAbsolute(expanded) ? expanded : resolve(cwd, expanded);
 }
 
-export async function getPibarmSettings(cwd: string): Promise<PibarmSettings> {
-  const global = await readJson(join(homedir(), ".pi", "agent", "settings.json"));
-  const project = await readJson(join(cwd, ".pi", "settings.json"));
-  const merged = deepMerge(global, project);
+export function sanitizeBasePath(input: string): string {
+  // Keep the export destination inside the vault: drop empty, ".", "..", and
+  // absolute segments so a project-supplied basePath cannot traverse out.
+  const segments = input.split(/[\\/]+/).filter((segment) => segment && segment !== "." && segment !== "..");
+  return segments.join("/");
+}
+
+export function mergePibarmSettings(
+  global: Record<string, unknown>,
+  project: Record<string, unknown>,
+  projectTrusted: boolean,
+): PibarmSettings {
+  // Project settings can redirect exports (and future behavior) to attacker
+  // chosen paths, so only honor them once the project is trusted.
+  const merged = projectTrusted ? deepMerge(global, project) : global;
   return isRecord(merged.pibarm) ? merged.pibarm as PibarmSettings : {};
 }
 
-export async function getObsidianSettings(cwd: string): Promise<Required<ObsidianSettings> & { configured: boolean }> {
-  const settings = (await getPibarmSettings(cwd)).obsidian ?? {};
+export async function getPibarmSettings(ctx: SettingsContext): Promise<PibarmSettings> {
+  const global = await readJson(join(homedir(), ".pi", "agent", "settings.json"));
+  const project = await readJson(join(ctx.cwd, ".pi", "settings.json"));
+  return mergePibarmSettings(global, project, ctx.isProjectTrusted());
+}
+
+export function normalizeObsidianSettings(
+  settings: ObsidianSettings,
+  cwd: string,
+): Required<ObsidianSettings> & { configured: boolean } {
   const vault = typeof settings.vault === "string" && settings.vault.trim() ? expandPath(settings.vault.trim(), cwd) : "";
-  const basePath = typeof settings.basePath === "string" && settings.basePath.trim() ? settings.basePath.trim().replace(/^\/+|\/+$/g, "") : "Pi";
+  const basePath = (typeof settings.basePath === "string" ? sanitizeBasePath(settings.basePath.trim()) : "") || "Pi";
   return {
     vault,
     basePath,
@@ -60,4 +84,8 @@ export async function getObsidianSettings(cwd: string): Promise<Required<Obsidia
     includeAttachments: settings.includeAttachments !== false,
     configured: Boolean(vault),
   };
+}
+
+export async function getObsidianSettings(ctx: SettingsContext): Promise<Required<ObsidianSettings> & { configured: boolean }> {
+  return normalizeObsidianSettings((await getPibarmSettings(ctx)).obsidian ?? {}, ctx.cwd);
 }

@@ -5,29 +5,44 @@ import { getObsidianSettings } from "../lib/pibarm-settings.js";
 export default function obsidianExtension(pi: ExtensionAPI) {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let running = false;
+  let pendingCtx: ExtensionContext | undefined;
 
   async function exportNow(ctx: ExtensionContext) {
     const result = await exportCurrentSessionToObsidian(ctx);
     return `Exported ${result.entries} entries to ${result.path}`;
   }
 
+  function runAutoExport(ctx: ExtensionContext) {
+    if (running) {
+      // An export is in flight; remember that another one is due so the final
+      // turns of a session still get synced.
+      pendingCtx = ctx;
+      return;
+    }
+    running = true;
+    exportCurrentSessionToObsidian(ctx)
+      .catch((error) => ctx.ui.notify(`Obsidian export failed: ${(error as Error).message}`, "warning"))
+      .finally(() => {
+        running = false;
+        if (pendingCtx) {
+          const next = pendingCtx;
+          pendingCtx = undefined;
+          runAutoExport(next);
+        }
+      });
+  }
+
   async function maybeAutoSync(ctx: ExtensionContext) {
-    const settings = await getObsidianSettings(ctx.cwd);
+    const settings = await getObsidianSettings(ctx);
     if (!settings.configured || !settings.autoSync) return;
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (running) return;
-      running = true;
-      exportCurrentSessionToObsidian(ctx)
-        .catch((error) => ctx.ui.notify(`Obsidian export failed: ${(error as Error).message}`, "warning"))
-        .finally(() => { running = false; });
-    }, settings.debounceMs);
+    timer = setTimeout(() => runAutoExport(ctx), settings.debounceMs);
   }
 
   pi.registerCommand("obsidian-status", {
     description: "Show pibarm Obsidian export settings",
     handler: async (_args, ctx) => {
-      const settings = await getObsidianSettings(ctx.cwd);
+      const settings = await getObsidianSettings(ctx);
       ctx.ui.notify([
         `vault: ${settings.vault || "(not configured)"}`,
         `basePath: ${settings.basePath}`,

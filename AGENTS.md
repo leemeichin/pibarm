@@ -48,6 +48,7 @@ If TypeScript dependencies are installed, also run:
 
 ```bash
 bun run check
+bun run test
 ```
 
 ## Security

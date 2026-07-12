@@ -238,24 +238,36 @@ export default function forgeExtension(pi: ExtensionAPI) {
   pi.registerCommand("forge-prs", {
     description: "List PRs/patches using the detected/configured forge",
     handler: async (_args, ctx) => {
-      const result = await forgeRun(pi, ctx, undefined, ["pr", "list", "--state", "open", "--limit", "10"], undefined).catch((error) => unsupported("github", (error as Error).message));
-      ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
+      try {
+        const result = await forgeRun(pi, ctx, undefined, ["pr", "list", "--state", "open", "--limit", "10"], undefined);
+        ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
+      } catch (error) {
+        ctx.ui.notify((error as Error).message, "error");
+      }
     },
   });
 
   pi.registerCommand("forge-ci", {
     description: "List CI/builds using the detected/configured forge",
     handler: async (_args, ctx) => {
-      const result = await forgeRun(pi, ctx, undefined, ["run", "list", "--limit", "5"], ["builds", "list", "--count", "10"]).catch((error) => unsupported("github", (error as Error).message));
-      ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
+      try {
+        const result = await forgeRun(pi, ctx, undefined, ["run", "list", "--limit", "5"], ["builds", "list", "--count", "10"]);
+        ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
+      } catch (error) {
+        ctx.ui.notify((error as Error).message, "error");
+      }
     },
   });
 
   pi.registerCommand("forge-tickets", {
     description: "List issues/tickets using the detected/configured forge",
     handler: async (_args, ctx) => {
-      const result = await forgeRun(pi, ctx, undefined, ["issue", "list", "--limit", "10"], ["todo", "ticket", "list", "--count", "10"]).catch((error) => unsupported("github", (error as Error).message));
-      ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
+      try {
+        const result = await forgeRun(pi, ctx, undefined, ["issue", "list", "--limit", "10"], ["todo", "ticket", "list", "--count", "10"]);
+        ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
+      } catch (error) {
+        ctx.ui.notify((error as Error).message, "error");
+      }
     },
   });
 }

@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import type { ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
 import { getObsidianSettings } from "./pibarm-settings.js";
 
@@ -47,15 +47,21 @@ function renderEntry(entry: SessionEntry): string {
 }
 
 export async function exportCurrentSessionToObsidian(ctx: ExtensionContext) {
-  const settings = await getObsidianSettings(ctx.cwd);
+  const settings = await getObsidianSettings(ctx);
   if (!settings.configured) throw new Error("Obsidian vault is not configured. Set pibarm.obsidian.vault in ~/.pi/agent/settings.json or .pi/settings.json.");
 
   const sessionId = ctx.sessionManager.getSessionId();
   const sessionName = ctx.sessionManager.getSessionName();
   const project = slug(basename(ctx.cwd));
   const title = sessionName || `Pi session ${sessionId}`;
-  const dir = join(settings.vault, settings.basePath, project);
-  const path = join(dir, `${slug(sessionName || sessionId)}.md`);
+  const dir = resolve(settings.vault, settings.basePath, project);
+  const insideVault = relative(resolve(settings.vault), dir);
+  if (insideVault.startsWith("..") || isAbsolute(insideVault)) {
+    throw new Error(`Refusing to export outside the vault: ${dir}`);
+  }
+  const shortId = sessionId.replace(/[^a-z0-9]/gi, "").slice(0, 8);
+  const fileName = sessionName ? `${slug(sessionName)}-${shortId}` : slug(sessionId);
+  const path = join(dir, `${fileName}.md`);
   const entries = ctx.sessionManager.getBranch();
   const sessionFile = ctx.sessionManager.getSessionFile();
 

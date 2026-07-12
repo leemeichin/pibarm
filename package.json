@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc --noEmit",
+    "test": "bun test tests",
     "doctor": "node scripts/doctor.mjs",
     "setup": "node scripts/doctor.mjs --write",
     "list": "find extensions skills prompts -maxdepth 3 -type f | sort"

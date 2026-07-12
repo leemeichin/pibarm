@@ -1,0 +1,10 @@
+---
+/** Keyboard key cap. */
+interface Props {
+  class?: string;
+  [key: string]: unknown;
+}
+const { class: className = "", ...rest } = Astro.props;
+---
+
+<kbd class={`pib-kbd ${className}`.trim()} {...rest}><slot /></kbd>

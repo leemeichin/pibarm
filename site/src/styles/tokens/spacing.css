@@ -1,0 +1,48 @@
+/* pibarm spacing, radii, borders, elevation, motion
+   Spacing on a 4px base. Radii are gentle (soft, not pill) to stay technical
+   with a friendly edge. Shadows are warm-tinted, low, and soft. */
+:root {
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* corner radii */
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  10px;   /* cards, inputs */
+  --radius-lg:  16px;   /* panels */
+  --radius-xl:  22px;   /* hero panels */
+  --radius-pill: 999px; /* pills, tags, task widget */
+
+  /* borders */
+  --border-w:      1px;
+  --border-w-bold: 2px;
+
+  /* warm-tinted elevation (browns, not grey) */
+  --shadow-xs: 0 1px 0 rgba(78, 53, 32, 0.06);
+  --shadow-sm: 0 1px 2px rgba(78, 53, 32, 0.10), 0 1px 1px rgba(78, 53, 32, 0.06);
+  --shadow-md: 0 6px 16px -6px rgba(78, 53, 32, 0.20), 0 2px 6px rgba(78, 53, 32, 0.08);
+  --shadow-lg: 0 20px 40px -16px rgba(45, 30, 18, 0.28), 0 6px 14px rgba(78, 53, 32, 0.10);
+  --shadow-terminal: 0 24px 48px -20px rgba(20, 24, 30, 0.45);
+
+  /* layout */
+  --container:   1120px; /* @kind other */
+  --container-narrow: 760px; /* @kind other */
+
+  /* motion — quick, gentle, a touch of bounce for whimsy */
+  --ease-out:   cubic-bezier(0.22, 0.61, 0.36, 1); /* @kind other */
+  --ease-bounce:cubic-bezier(0.34, 1.56, 0.64, 1); /* @kind other */
+  --dur-fast:   120ms; /* @kind other */
+  --dur-med:    200ms; /* @kind other */
+  --dur-slow:   320ms; /* @kind other */
+}

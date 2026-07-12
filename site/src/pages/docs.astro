@@ -1,0 +1,106 @@
+---
+import Base from "../layouts/Base.astro";
+import Callout from "../lib/pibarm/Callout.astro";
+import CodeBlock from "../lib/pibarm/CodeBlock.astro";
+import CommandRow from "../lib/pibarm/CommandRow.astro";
+import Badge from "../lib/pibarm/Badge.astro";
+import Kbd from "../lib/pibarm/Kbd.astro";
+import { COMMANDS } from "../data/site.ts";
+
+const sections = [
+  { id: "start", label: "Quick start" },
+  { id: "workflow", label: "Main workflow" },
+  { id: "commands", label: "Commands" },
+  { id: "matrix", label: "Matrix" },
+  { id: "notes", label: "Notifications" },
+];
+
+const workflowSnippet = `/plan <task>
+  ↓  pi inspects read-only, asks questions
+/approve-plan worktree <name>
+  ↓  changes happen in .pi/wt/<name>, not your checkout
+/worktree-diff .pi/wt/<name>`;
+
+const matrixSnippet = `/matrix investigate flaky tests
+/matrix-spawn worker fix the failing test
+/matrix-join worker
+/matrix-kill all`;
+
+const notifySnippet = `export PI_NOTIFY_COOLDOWN_SECONDS=60
+export PI_NOTIFY_INCLUDE_QUESTION=1`;
+---
+
+<Base active="docs" title="pibarm — documentation">
+  <div class="pib-docs">
+    <nav class="pib-docs-side">
+      <div class="docs-side-group">
+        <p class="docs-side-title">Documentation</p>
+        {sections.map((s, i) => (
+          <a class={`docs-side-link ${i === 0 ? "is-active" : ""}`} href={`#doc-${s.id}`} data-spy={s.id}>{s.label}</a>
+        ))}
+      </div>
+    </nav>
+
+    <article>
+      <h1 class="docs-h1">Documentation</h1>
+      <p class="docs-lead">pibarm is a pi package — the extensions and skills I use for planning, worktrees, presets, and watching agents work. Install it into whatever project you like.</p>
+
+      <h2 id="doc-start" class="docs-h2">Quick start</h2>
+      <p>Install pibarm into another project. pi loads its extensions and skills on startup once you trust the project.</p>
+      <CodeBlock language="bash" code="pi install git@github.com:leemeichin/pibarm.git" />
+      <div class="docs-spacer"></div>
+      <Callout tone="note" title="Nerd Font glyphs">The TUI uses Nerd Font icons for the statusline and task widget. Install a Nerd Font, or they render as boxes.</Callout>
+
+      <h2 id="doc-workflow" class="docs-h2">Main workflow</h2>
+      <p>Plan first, edit later. pi inspects read-only, asks questions, and only executes after you approve — ideally in an isolated worktree.</p>
+      <CodeBlock language="text" code={workflowSnippet} />
+      <div class="docs-spacer"></div>
+      <Callout tone="warning" title="Plan mode is read-only"><code>edit</code> and <code>write</code> are disabled and bash is restricted until you approve the captured plan.</Callout>
+
+      <h2 id="doc-commands" class="docs-h2">Commands</h2>
+      <p>A selection of the slash-commands pibarm adds. Press <Kbd>/</Kbd> in pi to browse them all.</p>
+      <div class="docs-cardwrap">
+        {COMMANDS.map((c) => (
+          <CommandRow name={c.name} args={c.args || null}>
+            {c.tag === "wezterm" && <Badge slot="trailing" tone="accent">wezterm</Badge>}
+            {c.tag === "safe" && <Badge slot="trailing" tone="success">safe</Badge>}
+            {c.desc}
+          </CommandRow>
+        ))}
+      </div>
+
+      <h2 id="doc-matrix" class="docs-h2">Matrix</h2>
+      <p><code>matrix.ts</code> is WezTerm-native orchestration for visible, parent-controlled agents. Scout and planner use read-focused toolsets; worker uses normal tools.</p>
+      <CodeBlock language="bash" code={matrixSnippet} />
+      <div class="docs-spacer"></div>
+      <Callout tone="tip" title="Isolated branches">Pass <code>worktree: true</code> on <code>matrix_spawn</code> and the agent gets its own branch and worktree for separate work.</Callout>
+
+      <h2 id="doc-notes" class="docs-h2">Notifications</h2>
+      <p><code>waiting-notify.ts</code> sends a local notification when a question is waiting — Kitty's escape, <code>terminal-notifier</code>, or an iTerm2-style fallback.</p>
+      <CodeBlock language="bash" code={notifySnippet} />
+    </article>
+  </div>
+</Base>
+
+<script>
+  // Sidebar scroll-spy: highlight the section nearest the top of the viewport.
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".docs-side-link"));
+  const targets = links
+    .map((l) => document.getElementById("doc-" + l.dataset.spy))
+    .filter((el): el is HTMLElement => !!el);
+
+  const setActive = (id: string) => {
+    for (const l of links) l.classList.toggle("is-active", l.dataset.spy === id);
+  };
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((e) => e.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (visible[0]) setActive(visible[0].target.id.replace("doc-", ""));
+    },
+    { rootMargin: "-80px 0px -70% 0px", threshold: 0 }
+  );
+  for (const t of targets) io.observe(t);
+</script>

@@ -1,0 +1,31 @@
+---
+/**
+ * Faux terminal window (macOS-style chrome) for showing pi sessions.
+ * Compose the body with plain text plus helper spans:
+ * <span class="slash">/plan</span>, .cmd, .dim, .ok, .warn, .err, .info.
+ */
+interface Props {
+  title?: string;
+  height?: number | null;
+  bodyStyle?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { title = "pi — pibarm", height = null, bodyStyle = "", class: className = "", ...rest } = Astro.props;
+const bodyStyleStr = `${height ? `height:${height}px;max-height:${height}px;` : ""}${bodyStyle}`;
+---
+
+<div class={`pib-term ${className}`.trim()} {...rest}>
+  <div class="pib-term__bar">
+    <div class="pib-term__dots">
+      <span class="pib-term__dot" style="background:#e0685b"></span>
+      <span class="pib-term__dot" style="background:#e6b02c"></span>
+      <span class="pib-term__dot" style="background:#6fa84c"></span>
+    </div>
+    <span class="pib-term__title" set:html={title}></span>
+  </div>
+  <div class="pib-term__body" style={bodyStyleStr}>
+    <slot />
+  </div>
+</div>

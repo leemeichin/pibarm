@@ -29,11 +29,9 @@ export default function questionExtension(pi: ExtensionAPI) {
 
       if (!ctx.hasUI) {
         const choices = options.length ? `\nOptions:\n${options.map((o, i) => `${i + 1}. ${o.label}${o.description ? ` — ${o.description}` : ""}`).join("\n")}` : "";
-        return {
-          content: [{ type: "text", text: `Question requires user input in interactive mode:\n${params.question}${choices}` }],
-          details: { question: params.question, options, answer: null },
-          isError: true,
-        };
+        // Throw so the failure is actually flagged to the model; a returned
+        // isError is ignored and would read as a successful (non-)answer.
+        throw new Error(`Question requires user input in interactive mode; no user is available to answer:\n${params.question}${choices}`);
       }
 
       if (options.length > 0) {

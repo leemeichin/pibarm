@@ -145,10 +145,13 @@ export default function mcporterExtension(pi: ExtensionAPI) {
         uri: "",
       })));
       const result = await runMcporter(pi, ctx, args, { signal });
+      if (result.code !== 0) {
+        // Throw so failures are flagged to the model; a returned isError is ignored.
+        throw new Error(result.stderr || result.stdout || `mcporter exited ${result.code}`);
+      }
       return {
         content: [{ type: "text", text: resultText(result) }],
         details: result,
-        isError: result.code !== 0,
       };
     },
   });
@@ -173,10 +176,13 @@ export default function mcporterExtension(pi: ExtensionAPI) {
         uri: "",
       })));
       const result = await runMcporter(pi, ctx, args, { signal });
+      if (result.code !== 0) {
+        // Throw so failures are flagged to the model; a returned isError is ignored.
+        throw new Error(result.stderr || result.stdout || `mcporter exited ${result.code}`);
+      }
       return {
         content: [{ type: "text", text: resultText(result) }],
         details: result,
-        isError: result.code !== 0,
       };
     },
   });
@@ -199,10 +205,13 @@ export default function mcporterExtension(pi: ExtensionAPI) {
         uri: params.uri ?? "",
       })));
       const result = await runMcporter(pi, ctx, args, { signal });
+      if (result.code !== 0) {
+        // Throw so failures are flagged to the model; a returned isError is ignored.
+        throw new Error(result.stderr || result.stdout || `mcporter exited ${result.code}`);
+      }
       return {
         content: [{ type: "text", text: resultText(result) }],
         details: result,
-        isError: result.code !== 0,
       };
     },
   });

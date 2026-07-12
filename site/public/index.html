@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pibarm — pi extensions &amp; skills for safer agent workflows</title>
+<meta name="description" content="pibarm packages pi coding-agent extensions and skills: plan-first workflows, git worktree isolation, WezTerm Matrix agent panes, subagents, MCP bridging, and forge-aware status.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>π</text></svg>">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="pi">π</span>barm</a>
+    <nav class="main">
+      <a href="/" class="active">Overview</a>
+      <a href="/commands.html">Commands</a>
+      <a href="/tools.html">Tools</a>
+      <a href="/skills.html">Skills</a>
+      <a href="/demos.html">Demos</a>
+    </nav>
+    <a class="gh" href="https://github.com/leemeichin/pibarm">GitHub ↗</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1><span class="t-accent">π</span>barm</h1>
+    <p class="tagline">
+      Extensions and skills for the <a href="https://github.com/earendil-works/pi-mono">pi coding agent</a>:
+      plan first and edit later, run risky work in git worktrees, spawn visible WezTerm agent panes,
+      delegate to headless subagents, and keep repo/PR/CI status one glance away.
+    </p>
+    <div class="hero-actions">
+      <a class="btn primary" href="/demos.html">See the demos</a>
+      <a class="btn" href="/commands.html">Command reference</a>
+      <a class="btn" href="/tools.html">Tool reference</a>
+    </div>
+  </section>
+
+  <h2>Quick start</h2>
+  <p>Install into any project pi trusts:</p>
+  <pre><code>pi install git@github.com:leemeichin/pibarm.git</code></pre>
+  <p>Or clone for local development:</p>
+  <pre><code>git clone git@github.com:leemeichin/pibarm.git
+cd pibarm
+bun install
+bun run setup   # copies config examples + runs the setup doctor
+pi</code></pre>
+
+  <h2>What's inside</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Plan-first workflow</h3>
+      <p><span class="k">/plan</span> enters read-only plan mode, asks clarifying questions with rich TUI inputs,
+      and requires approval before anything is edited.</p>
+    </div>
+    <div class="card">
+      <h3>Worktree isolation</h3>
+      <p><span class="k">/execute-plan worktree &lt;name&gt;</span> runs changes in a repo-local
+      git worktree under <span class="k">.pi/wt/</span>, keeping your active checkout untouched.</p>
+    </div>
+    <div class="card">
+      <h3>Matrix agent panes</h3>
+      <p>Parent-controlled agents in visible WezTerm splits/tabs:
+      <span class="k">/matrix</span>, <span class="k">/matrix-spawn</span>, <span class="k">/matrix-join</span>.
+      Watch scouts and planners work in real time.</p>
+    </div>
+    <div class="card">
+      <h3>Headless subagents</h3>
+      <p><span class="k">run_subagent</span> / <span class="k">run_subagents</span> run isolated
+      <span class="k">pi -p</span> jobs — in parallel, optionally across different models.</p>
+    </div>
+    <div class="card">
+      <h3>Watcher agents</h3>
+      <p><span class="k">watch_agent</span> starts a sibling process that polls a PR (or any command)
+      and runs a headless pi task only when the observed state changes.</p>
+    </div>
+    <div class="card">
+      <h3>MCP via mcporter</h3>
+      <p><span class="k">mcporter_list</span> / <span class="k">mcporter_call</span> bridge MCP servers
+      through the <span class="k">mcporter</span> CLI with configurable command templates.</p>
+    </div>
+    <div class="card">
+      <h3>Forge-aware statusline</h3>
+      <p>An icon-first footer with project, model, context usage, branch, dirty diff stats,
+      PR state and CI state — GitHub via <span class="k">gh</span>, SourceHut via <span class="k">hut</span>.</p>
+    </div>
+    <div class="card">
+      <h3>Shared task widget</h3>
+      <p>Todos and delegated agents render as compact horizontal pills below the editor,
+      so parallel work stays visible without a tall list.</p>
+    </div>
+    <div class="card">
+      <h3>Model presets</h3>
+      <p><span class="k">/preset planner</span>, <span class="k">/preset executor</span> —
+      switch provider/model, thinking level, and active tools by role.</p>
+    </div>
+  </div>
+
+  <h2>The main workflow</h2>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">pi — plan → approve → worktree</span></div>
+    <div class="term-body"><div class="out"><span class="t-prompt">›</span> /plan add rate limiting to the API client
+<span class="t-dim">pi inspects read-only and asks questions if needed…</span>
+<span class="t-blue">?</span> Scope: which endpoints need limiting?  <span class="t-muted">[all] [mutations only] [custom]</span>
+<span class="t-dim">you approve or refine the plan…</span>
+<span class="t-prompt">›</span> /execute-plan worktree rate-limit
+<span class="t-green">✓</span> worktree <span class="t-accent">.pi/wt/rate-limit</span> on branch <span class="t-accent">pibarm/rate-limit</span>
+<span class="t-dim">changes happen in the worktree, not your active checkout</span>
+<span class="t-prompt">›</span> /worktree-diff .pi/wt/rate-limit
+<span class="t-green">+184</span> <span class="t-red">−12</span> <span class="t-muted">across 6 files — review, merge, or abandon</span></div></div>
+  </div>
+
+  <h2>External tooling</h2>
+  <p>pibarm itself is a pi package, but some features shell out to local CLIs. <code>bun run doctor</code> checks your setup:</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Tool</th><th>Enables</th></tr>
+    <tr><td><code>pi</code></td><td>loads this package and runs subagents (required)</td></tr>
+    <tr><td><code>git</code></td><td>repo status and worktrees (required)</td></tr>
+    <tr><td><code>wezterm</code></td><td>Matrix visible agent panes</td></tr>
+    <tr><td><code>gh</code></td><td>GitHub-backed <code>forge_*</code> tools and statusline PR/CI checks</td></tr>
+    <tr><td><code>hut</code></td><td>SourceHut-backed <code>forge_*</code> tools</td></tr>
+    <tr><td><code>mcporter</code></td><td>MCP bridge tools</td></tr>
+    <tr><td><code>terminal-notifier</code></td><td>optional native macOS notifications</td></tr>
+  </table></div>
+  <p>The TUI uses Nerd Font glyphs for the statusline, Matrix/task widget, and rich planning questions —
+  install a <a href="https://www.nerdfonts.com/">Nerd Font</a> if icons render as boxes.</p>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    pibarm · MIT · <a href="https://github.com/leemeichin/pibarm">github.com/leemeichin/pibarm</a> ·
+    docs served from a Cloudflare Worker · demos are browser-side simulations
+  </div>
+</footer>
+</body>
+</html>

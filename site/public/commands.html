@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands — pibarm</title>
+<meta name="description" content="Reference for every slash command pibarm adds to the pi coding agent.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>π</text></svg>">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="pi">π</span>barm</a>
+    <nav class="main">
+      <a href="/">Overview</a>
+      <a href="/commands.html" class="active">Commands</a>
+      <a href="/tools.html">Tools</a>
+      <a href="/skills.html">Skills</a>
+      <a href="/demos.html">Demos</a>
+    </nav>
+    <a class="gh" href="https://github.com/leemeichin/pibarm">GitHub ↗</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Commands</h1>
+  <p class="lead">Slash commands pibarm registers in pi. Type them in the pi editor; arguments in <code>&lt;angle brackets&gt;</code> are required, <code>[square brackets]</code> optional.</p>
+
+  <h2 id="planning">Planning &amp; execution</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>/plan &lt;task&gt;</code></td><td>Enter read-only plan mode and ask for a plan. Edits are disabled and bash is restricted while planning.</td></tr>
+    <tr><td><code>/plan-mode</code></td><td>Toggle read-only plan mode manually.</td></tr>
+    <tr><td><code>/plan-show</code></td><td>Show the last captured plan, its status, and parsed steps.</td></tr>
+    <tr><td><code>/approve-plan [active|worktree &lt;name&gt;]</code></td><td>Approve and execute the captured plan — in the active checkout or an isolated worktree.</td></tr>
+    <tr><td><code>/refine-plan &lt;feedback&gt;</code></td><td>Revise the captured plan; approval is required again afterwards.</td></tr>
+    <tr><td><code>/execute-plan</code></td><td>Execute the last captured plan in the active checkout.</td></tr>
+    <tr><td><code>/execute-plan worktree &lt;name&gt;</code></td><td>Execute the plan in a new repo-local git worktree (<code>.pi/wt/&lt;name&gt;</code>, branch <code>pibarm/&lt;name&gt;</code>).</td></tr>
+  </table></div>
+
+  <h2 id="worktrees">Worktrees</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>/worktrees</code></td><td>List git worktrees for this repo.</td></tr>
+    <tr><td><code>/worktree-diff &lt;path&gt;</code></td><td>Show status and diff stat for a worktree.</td></tr>
+    <tr><td><code>/worktree-remove [--force] &lt;path&gt;</code></td><td>Remove a worktree after reviewing, merging, or abandoning it.</td></tr>
+  </table></div>
+
+  <h2 id="matrix">Matrix (WezTerm agent panes)</h2>
+  <p>Visible, parent-controlled agents in WezTerm splits/tabs. Requires the <code>wezterm</code> CLI. See the <a href="/demos.html#matrix">Matrix demo</a>.</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>/matrix-help</code></td><td>Explain when/how to use Matrix and its prior art.</td></tr>
+    <tr><td><code>/matrix &lt;task&gt;</code></td><td>Start a Matrix with scout + planner panes for a task.</td></tr>
+    <tr><td><code>/matrix-attach</code></td><td>Open or focus the session-specific Matrix workspace window.</td></tr>
+    <tr><td><code>/matrix-spawn &lt;role&gt; &lt;task&gt;</code></td><td>Spawn one agent (scout / planner / worker / reviewer) in a pane.</td></tr>
+    <tr><td><code>/matrix-send &lt;role&gt; &lt;message&gt;</code></td><td>Send a message to a still-running Matrix pane.</td></tr>
+    <tr><td><code>/matrix-capture [role]</code></td><td>Capture recent output from Matrix panes/logs.</td></tr>
+    <tr><td><code>/matrix-join [role|all]</code></td><td>Wait for agents to finish, capture logs, and clean up panes.</td></tr>
+    <tr><td><code>/matrix-list</code></td><td>List Matrix agents and panes for this session.</td></tr>
+    <tr><td><code>/matrix-kill [role|all]</code></td><td>Kill Matrix panes.</td></tr>
+  </table></div>
+
+  <h2 id="tasks">Tasks &amp; watchers</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>/tasks</code></td><td>Show all todo and delegated-agent items from the shared task widget in an expanded view.</td></tr>
+    <tr><td><code>/watchers</code></td><td>List active watcher sibling agents.</td></tr>
+    <tr><td><code>/watcher-stop [name]</code></td><td>Stop one or all watcher sibling agents.</td></tr>
+  </table></div>
+
+  <h2 id="forge">Repo, forge &amp; review</h2>
+  <p>GitHub via <code>gh</code>, SourceHut via <code>hut</code> — local CLI auth only, no tokens stored.</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>/repo-status</code></td><td>Show git/forge/CI status and update the pi statusline.</td></tr>
+    <tr><td><code>/forge [github|sourcehut|auto]</code></td><td>Show, set, or reset the remembered forge for this repo (stored in ignored <code>.pi/forge.json</code>).</td></tr>
+    <tr><td><code>/forge-prs</code></td><td>List PRs/patches using the detected or configured forge.</td></tr>
+    <tr><td><code>/forge-ci</code></td><td>List CI runs/builds.</td></tr>
+    <tr><td><code>/forge-tickets</code></td><td>List issues/tickets.</td></tr>
+    <tr><td><code>/review [#number|url|branch]</code></td><td>Start a PR/patch review; GitHub findings are posted inline when possible.</td></tr>
+  </table></div>
+
+  <h2 id="misc">Presets, MCP &amp; Obsidian</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>/preset</code></td><td>List role presets configured in <code>.pi/agent-presets.json</code>.</td></tr>
+    <tr><td><code>/preset &lt;name&gt;</code></td><td>Apply a preset — provider/model, thinking level, active tools (e.g. <code>planner</code>, <code>executor</code>).</td></tr>
+    <tr><td><code>/mcporter</code></td><td>Show configured mcporter command templates.</td></tr>
+    <tr><td><code>/mcporter &lt;args...&gt;</code></td><td>Run raw mcporter args from inside pi.</td></tr>
+    <tr><td><code>/obsidian-status</code></td><td>Show Obsidian export settings resolved from pi settings.</td></tr>
+    <tr><td><code>/obsidian-export</code></td><td>Export the current session to the configured Obsidian vault.</td></tr>
+  </table></div>
+
+  <h2 id="inline">Inline shell</h2>
+  <p>Type <code>!&lt;command&gt;</code> as a prompt to run a local shell command immediately and show the output in the transcript, without invoking the model. <code>!!</code> is left to pi's built-in bash handling.</p>
+  <pre><code>!git status --short</code></pre>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    pibarm · MIT · <a href="https://github.com/leemeichin/pibarm">github.com/leemeichin/pibarm</a>
+  </div>
+</footer>
+</body>
+</html>

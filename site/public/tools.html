@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tools — pibarm</title>
+<meta name="description" content="Reference for every LLM-callable tool pibarm registers in the pi coding agent.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>π</text></svg>">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="pi">π</span>barm</a>
+    <nav class="main">
+      <a href="/">Overview</a>
+      <a href="/commands.html">Commands</a>
+      <a href="/tools.html" class="active">Tools</a>
+      <a href="/skills.html">Skills</a>
+      <a href="/demos.html">Demos</a>
+    </nav>
+    <a class="gh" href="https://github.com/leemeichin/pibarm">GitHub ↗</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Tools</h1>
+  <p class="lead">Functions pibarm exposes to the model. The agent calls these itself; you can also nudge it ("use <code>run_subagents</code> to compare…").</p>
+
+  <h2 id="questions">Interactive questions</h2>
+
+  <h3><code>question</code></h3>
+  <p>Ask the user one focused question, optionally with choices, and return their answer.</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Param</th><th>Type</th><th>Notes</th></tr>
+    <tr><td><code>question</code></td><td>string</td><td>The question to ask.</td></tr>
+    <tr><td><code>options</code></td><td>array?</td><td><code>{ label, description? }</code> choices to pick from.</td></tr>
+    <tr><td><code>allowCustom</code></td><td>boolean?</td><td>Allow a typed custom answer. Default true.</td></tr>
+  </table></div>
+
+  <h3><code>elicit_plan_questions</code></h3>
+  <p>Ask several planning questions before finalizing/executing a plan, in a tabbed TUI with Nerd Font status icons, option descriptions/previews, and per-question notes.</p>
+  <p>Questions can be plain strings (free text) or typed objects:</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Type</th><th>Input</th></tr>
+    <tr><td><code>free_text</code></td><td>Multi-line editor</td></tr>
+    <tr><td><code>select_one</code></td><td>Single choice from <code>options</code></td></tr>
+    <tr><td><code>select_many</code></td><td>Multiple choices</td></tr>
+    <tr><td><code>confirm</code> / <code>boolean</code></td><td>Yes/no with optional <code>preview</code> of the action</td></tr>
+    <tr><td><code>number</code></td><td>Numeric with <code>default</code>, <code>min</code>, <code>max</code></td></tr>
+  </table></div>
+  <pre><code>{
+  "questions": [
+    { "label": "Scope", "question": "What should change?", "type": "select_many",
+      "options": ["UI", "Tool schema", "Docs"] },
+    { "label": "Proceed", "question": "Apply schema changes?", "type": "confirm",
+      "preview": "Keeps string questions backward-compatible." },
+    { "label": "Retries", "question": "How many retries?", "type": "number",
+      "default": 2, "min": 0, "max": 5 }
+  ]
+}</code></pre>
+
+  <h2 id="worktrees">Worktrees</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Tool</th><th>Purpose</th></tr>
+    <tr><td><code>create_git_worktree</code></td><td>Create an isolated repo-local git worktree and branch (<code>.pi/wt/&lt;name&gt;</code>, <code>pibarm/&lt;name&gt;</code>).</td></tr>
+    <tr><td><code>summarize_worktree_diff</code></td><td>Summarize status/diff for a worktree — used for review before merge/cleanup.</td></tr>
+    <tr><td><code>remove_git_worktree</code></td><td>Remove an isolated worktree after confirmation/review.</td></tr>
+    <tr><td><code>run_worktree_agent</code></td><td>Create/use a worktree and run <code>pi -p</code> there; simple tasks may use a lighter available model.</td></tr>
+  </table></div>
+
+  <h2 id="subagents">Headless subagents</h2>
+
+  <h3><code>run_subagent</code></h3>
+  <p>Run one isolated, non-interactive <code>pi -p</code> subagent and return its output. Defaults to a 10-minute timeout.</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Param</th><th>Type</th><th>Notes</th></tr>
+    <tr><td><code>prompt</code></td><td>string</td><td>Self-contained prompt — the subagent cannot see the parent conversation.</td></tr>
+    <tr><td><code>model</code></td><td>string?</td><td>pi model pattern. Defaults to the active model; simple-scope tasks may be downgraded to a lighter authenticated model.</td></tr>
+    <tr><td><code>timeoutMs</code></td><td>number?</td><td>Default 600000.</td></tr>
+  </table></div>
+
+  <h3><code>run_subagents</code></h3>
+  <p>Run up to 4 subagents in parallel, optionally on different models — for comparisons, parallel research, or planner/reviewer/verifier fan-out.</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Param</th><th>Type</th><th>Notes</th></tr>
+    <tr><td><code>jobs</code></td><td>array</td><td><code>{ name?, prompt, model?, timeoutMs? }</code> per subagent.</td></tr>
+    <tr><td><code>timeoutMs</code></td><td>number?</td><td>Default timeout applied per subagent.</td></tr>
+  </table></div>
+
+  <h3><code>watch_agent</code></h3>
+  <p>Start, stop, or list a sibling watcher process that polls external state and runs a headless pi task only when the observed state changes. Primary use case: PR follow-up while the parent session stays active. Logs under <code>.pi/watchers/</code>.</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Param</th><th>Type</th><th>Notes</th></tr>
+    <tr><td><code>action</code></td><td>enum?</td><td><code>start</code> (default), <code>stop</code>, <code>list</code>.</td></tr>
+    <tr><td><code>pr</code></td><td>string?</td><td>PR number/URL — builds a <code>gh pr view</code> watch command automatically.</td></tr>
+    <tr><td><code>watchCommand</code></td><td>string?</td><td>Any shell command whose output is polled for changes.</td></tr>
+    <tr><td><code>goal</code> / <code>loop</code></td><td>string?</td><td>Claude Code-style outcome + per-cycle instructions (legacy <code>task</code> also accepted).</td></tr>
+    <tr><td><code>intervalSeconds</code></td><td>number?</td><td>Poll interval, default 300.</td></tr>
+    <tr><td><code>maxIterations</code></td><td>number?</td><td>Optional stop after N polls.</td></tr>
+  </table></div>
+
+  <h2 id="matrix">Matrix (WezTerm panes)</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Tool</th><th>Purpose</th></tr>
+    <tr><td><code>matrix_spawn</code></td><td>Spawn a parent-controlled pi agent in a WezTerm pane. Params: <code>role</code>, <code>task</code>, optional <code>model</code>, <code>tools</code>, <code>worktree</code>, <code>placement</code> (right / down / tab / window).</td></tr>
+    <tr><td><code>matrix_attach</code></td><td>Open or focus the Matrix WezTerm workspace.</td></tr>
+    <tr><td><code>matrix_send</code></td><td>Send a message to a still-running Matrix pane.</td></tr>
+    <tr><td><code>matrix_capture</code></td><td>Capture recent output from panes/logs (<code>role?</code>, <code>lines?</code> default 80).</td></tr>
+    <tr><td><code>matrix_join</code></td><td>Wait for agents to finish, return logs, clean up panes (<code>role?</code>, <code>timeoutMs?</code> default 10 min, <code>kill?</code> default true).</td></tr>
+    <tr><td><code>matrix_list</code></td><td>List known Matrix agents and untracked workspace panes.</td></tr>
+    <tr><td><code>matrix_kill</code></td><td>Kill one pane or all Matrix workspace panes.</td></tr>
+  </table></div>
+  <p>Roles have default toolsets: <code>scout</code>/<code>reviewer</code> are read-focused, <code>planner</code> is read-only + questions, <code>worker</code> gets normal tools. Agents print a start/log banner, write logs under <code>.pi/matrix/</code>, and their panes exit when the task finishes.</p>
+
+  <h2 id="status">Repo &amp; forge status</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Tool</th><th>Purpose</th></tr>
+    <tr><td><code>repo_status</code></td><td>Summarize branch, dirty files, forge, PR, and CI status; refreshes the statusline.</td></tr>
+    <tr><td><code>forge_status</code></td><td>Detect/show the configured forge (GitHub vs SourceHut) for the current repo.</td></tr>
+    <tr><td><code>forge_prs</code></td><td>List PRs/patches via <code>gh</code>/<code>hut</code>.</td></tr>
+    <tr><td><code>forge_pr_status</code></td><td>Inspect the current/selected PR's review and check status.</td></tr>
+    <tr><td><code>forge_ci_status</code></td><td>List CI runs/builds.</td></tr>
+    <tr><td><code>forge_tickets</code></td><td>List issues/tickets.</td></tr>
+  </table></div>
+
+  <h2 id="mcp">MCP bridge (mcporter)</h2>
+  <div class="tbl-scroll"><table>
+    <tr><th>Tool</th><th>Purpose</th></tr>
+    <tr><td><code>mcporter_list</code></td><td>Discover MCP servers/tools through the <code>mcporter</code> CLI.</td></tr>
+    <tr><td><code>mcporter_call</code></td><td>Call an MCP tool: <code>server.tool</code> selector + JSON args.</td></tr>
+    <tr><td><code>mcporter_resource</code></td><td>List/read MCP resources.</td></tr>
+  </table></div>
+  <p>Command templates live in <code>.pi/mcporter.json</code> with placeholders <code>{server}</code>, <code>{tool}</code>, <code>{selector}</code>, <code>{argumentsJson}</code>, <code>{schemaFlag}</code>, <code>{uri}</code>. Default call template:</p>
+  <pre><code>["call", "{selector}", "--args", "{argumentsJson}", "--output", "json"]</code></pre>
+
+  <h2 id="todos">Todo tracking</h2>
+  <h3><code>todo_list</code></h3>
+  <p>Track progress when one prompt contains multiple requested tasks. Items render as pills in the shared task widget — see the <a href="/demos.html#widget">widget demo</a>.</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>Param</th><th>Type</th><th>Notes</th></tr>
+    <tr><td><code>action</code></td><td>enum</td><td><code>set</code>, <code>add</code>, <code>done</code>, <code>list</code>, <code>clear</code>.</td></tr>
+    <tr><td><code>items</code></td><td>string[]?</td><td>For <code>set</code>/<code>add</code>.</td></tr>
+    <tr><td><code>index</code></td><td>number?</td><td>1-based, for <code>done</code>.</td></tr>
+  </table></div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    pibarm · MIT · <a href="https://github.com/leemeichin/pibarm">github.com/leemeichin/pibarm</a>
+  </div>
+</footer>
+</body>
+</html>

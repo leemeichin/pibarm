@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demos — pibarm</title>
+<meta name="description" content="Interactive browser simulations of pibarm's task widget, statusline, and Matrix WezTerm agent panes.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>π</text></svg>">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="pi">π</span>barm</a>
+    <nav class="main">
+      <a href="/">Overview</a>
+      <a href="/commands.html">Commands</a>
+      <a href="/tools.html">Tools</a>
+      <a href="/skills.html">Skills</a>
+      <a href="/demos.html" class="active">Demos</a>
+    </nav>
+    <a class="gh" href="https://github.com/leemeichin/pibarm">GitHub ↗</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Demos</h1>
+  <span class="pill-note">browser-side simulations — no real pi agent runs here</span>
+  <p class="lead">Faithful-ish recreations of what pibarm's TUI pieces look like in a terminal, so you can poke at them before installing.</p>
+
+  <h2 id="widget">Shared task widget</h2>
+  <p>Todos and delegated agents render as compact horizontal pills below pi's editor. Drive it like the <code>todo_list</code> tool would:</p>
+
+  <div class="demo-controls">
+    <button id="tw-set">todo_list(action=set)</button>
+    <button id="tw-done">todo_list(action=done)</button>
+    <button id="tw-agent">spawn agent</button>
+    <button id="tw-finish">finish an agent</button>
+    <button id="tw-clear">todo_list(action=clear)</button>
+  </div>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">pi — task widget</span></div>
+    <div class="term-body">
+      <div class="out t-dim" id="tw-transcript">› …conversation above…</div>
+      <div style="border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.6rem; margin:0.6rem 0; color: var(--fg-dim);">type your prompt…<span class="t-accent">▍</span></div>
+      <div id="tw-pills"></div>
+    </div>
+    <div class="statusline">
+      <span><span class="t-accent"> pibarm</span> <span class="t-dim">·</span> <span class="t-muted">󰚩 anthropic/sonnet</span> <span class="t-dim">·</span> <span class="t-yellow">󰯌 ctx 37%</span></span>
+      <span id="tw-status" class="t-muted"></span>
+    </div>
+  </div>
+  <p class="demo-note">In the real widget, pills are plain text like <code>‹ ○ 1 · inspect auth ›</code> laid out by the TUI; <code>/tasks</code> shows the expanded vertical view when pills overflow.</p>
+
+  <h2 id="statusline">Forge-aware statusline</h2>
+  <p>The footer packs project, model, context usage and thinking level on the left; branch, dirty diff stats, Jira ticket, PR and CI state on the right. Toggle repo states:</p>
+
+  <div class="demo-controls">
+    <select id="sl-pr">
+      <option value="none">no PR</option>
+      <option value="open" selected>PR open</option>
+      <option value="draft">PR draft</option>
+      <option value="merged">PR merged</option>
+      <option value="closed">PR closed</option>
+    </select>
+    <select id="sl-ci">
+      <option value="pass" selected>CI passing</option>
+      <option value="run">CI running</option>
+      <option value="fail">CI failing</option>
+      <option value="none">CI unknown</option>
+    </select>
+    <button id="sl-dirty">toggle dirty tree</button>
+    <button id="sl-think">cycle thinking</button>
+  </div>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">pi — statusline</span></div>
+    <div class="term-body t-dim">…transcript…</div>
+    <div class="statusline mono" id="sl-line"></div>
+  </div>
+  <p class="demo-note">Colour mapping — PR: <span class="t-green">green open</span>, <span class="t-muted">grey draft</span>, <span class="t-accent">purple merged</span>, <span class="t-red">red closed</span>. CI: <span class="t-green">pass</span>, <span class="t-yellow">running</span>, <span class="t-red">failing</span>. Icons are Nerd Font glyphs in the real TUI.</p>
+
+  <h2 id="matrix">Matrix: WezTerm agent panes</h2>
+  <p>The Matrix flow: spawn visible agents into a session-specific WezTerm workspace, watch them work, then <code>/matrix-join</code> to collect logs and clean up.</p>
+
+  <div class="demo-controls">
+    <button id="mx-run">▶ run /matrix investigate flaky tests</button>
+    <button id="mx-reset" disabled>reset</button>
+  </div>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title" id="mx-title">wezterm — workspace: matrix-myapp-a1b2c3d4</span></div>
+    <div class="term-body" style="display:flex; gap:1rem; flex-wrap:wrap;">
+      <div style="flex:1; min-width: 260px;">
+        <div class="t-dim">┌─ pane 1 · matrix-scout ─────────</div>
+        <div class="out" id="mx-scout"><span class="t-dim">(empty)</span></div>
+      </div>
+      <div style="flex:1; min-width: 260px;">
+        <div class="t-dim">┌─ pane 2 · matrix-planner ───────</div>
+        <div class="out" id="mx-planner"><span class="t-dim">(empty)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">pi — parent session</span></div>
+    <div class="term-body"><div class="out" id="mx-parent"><span class="t-prompt">›</span> <span class="t-dim">waiting…</span></div></div>
+  </div>
+  <p class="demo-note">Real agents run <code>pi -p</code> non-interactively in each pane, stream a start/log banner, write logs to <code>.pi/matrix/</code>, and exit when done. <code>matrix_join</code> waits on their status files, returns the logs to the parent, and closes the panes.</p>
+
+  <h2 id="plan">Plan → worktree flow</h2>
+  <p>The end-to-end safety workflow, sped up:</p>
+  <div class="demo-controls">
+    <button id="pl-run">▶ run /plan add rate limiting</button>
+    <button id="pl-reset" disabled>reset</button>
+  </div>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">pi — plan mode</span></div>
+    <div class="term-body"><div class="out" id="pl-out"><span class="t-prompt">›</span> <span class="t-dim">press run…</span></div></div>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    pibarm · MIT · <a href="https://github.com/leemeichin/pibarm">github.com/leemeichin/pibarm</a> · demos are simulations
+  </div>
+</footer>
+<script src="/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+// Cloudflare Workers config for the pibarm docs site.
+// Deploy with: npx wrangler deploy (from this directory)
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pibarm-docs",
+  "compatibility_date": "2026-07-01",
+  // Assets-only Worker: static files served directly from Cloudflare's edge.
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  }
+}

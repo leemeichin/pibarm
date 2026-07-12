@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills — pibarm</title>
+<meta name="description" content="Skill catalogue for pibarm: progressive-disclosure workflows loadable in the pi coding agent.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>π</text></svg>">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="pi">π</span>barm</a>
+    <nav class="main">
+      <a href="/">Overview</a>
+      <a href="/commands.html">Commands</a>
+      <a href="/tools.html">Tools</a>
+      <a href="/skills.html" class="active">Skills</a>
+      <a href="/demos.html">Demos</a>
+    </nav>
+    <a class="gh" href="https://github.com/leemeichin/pibarm">GitHub ↗</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Skills</h1>
+  <p class="lead">Progressive-disclosure workflows: brief top-level instructions the model loads on demand with <code>/skill:&lt;name&gt;</code>, or automatically when the task matches. Each lives in <code>skills/&lt;name&gt;/SKILL.md</code>.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3><span class="k">/skill:agent-orchestration</span></h3>
+      <p>Plan and execute work with dedicated planner, executor, and subagent roles. Delegation guidance for <code>run_subagent(s)</code>, <code>run_worktree_agent</code>, watchers, and Matrix — when each is the right tool.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:matrix</span></h3>
+      <p>Operating guide for the WezTerm cockpit: spawn read-only scouts first, join before acting, worktrees for risky workers, forced cleanup with <code>matrix_kill all</code>.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:plan-worktree</span></h3>
+      <p>The plan-first workflow: read-only planning, explicit approval, worktree execution, review with <code>summarize_worktree_diff</code>.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:mcporter</span></h3>
+      <p>Using MCP servers through the mcporter bridge: discovery, schemas, calling tools, reading resources.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:model-presets</span></h3>
+      <p>Switching model/tool/thinking presets by role with <code>/preset</code> and <code>.pi/agent-presets.json</code>.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:pr-open</span></h3>
+      <p>Opening pull requests cleanly — newline-safe descriptions, sensible titles, the right base branch.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:pr-review</span></h3>
+      <p>Reviewing PRs/patches: gathering the diff, structuring findings, posting inline comments on GitHub when possible.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:ci-triage</span></h3>
+      <p>Triaging failing CI: fetching logs via the forge tools, isolating the failing step, proposing the smallest fix.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:ruby</span></h3>
+      <p>Ruby conventions for this environment plus how to run the smallest relevant check.</p>
+    </div>
+    <div class="card">
+      <h3><span class="k">/skill:typescript</span></h3>
+      <p>TypeScript conventions plus the minimal type-check/test loop.</p>
+    </div>
+  </div>
+
+  <h2>How skills load</h2>
+  <p>pi discovers skills from installed packages (this repo declares <code>skills/</code> in its <code>package.json</code> <code>pi</code> section). Invoke one explicitly with <code>/skill:&lt;name&gt;</code>, or let pi surface it when a prompt matches the skill's description. Skills follow pi's progressive-disclosure format — see pi's <code>docs/skills.md</code> for the format itself.</p>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    pibarm · MIT · <a href="https://github.com/leemeichin/pibarm">github.com/leemeichin/pibarm</a>
+  </div>
+</footer>
+</body>
+</html>

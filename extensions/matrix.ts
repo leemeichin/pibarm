@@ -88,7 +88,7 @@ Commands:
 /matrix-attach                 focus or create the WezTerm Matrix workspace window
 /matrix-spawn <role> <task>    spawn scout/planner/worker/reviewer
 /matrix-capture [role]         read pane/log output
-/matrix-join [role|all]        wait for agents to finish, then clean up panes
+/matrix-join [role|all]        wait for agents, summarize, clean up panes; closes the workspace once everything is done
 /matrix-list                   list session workspace agents/panes
 /matrix-kill [role|all]        force-kill this session's Matrix panes
 /matrix-kill-orphans           kill Matrix panes left behind by other sessions`;
@@ -437,12 +437,28 @@ export default function matrixExtension(pi: ExtensionAPI) {
       panes.delete(pane.role);
     }
 
+    let workspaceClosed = false;
+    if (killDone && stillRunning.length === 0 && panes.size === 0) {
+      // The join covered every tracked agent: close any leftover panes in this
+      // session's workspace (e.g. the /matrix-attach shell) so the whole
+      // workspace window goes away rather than lingering empty.
+      for (const pane of await workspacePanes(pi, workspaceName(ctx))) {
+        await wezterm(pi, ["kill-pane", "--pane-id", String(pane.pane_id)]).catch(() => undefined);
+        workspaceClosed = true;
+      }
+      lastPane = "";
+    }
     if (lastPane && !Array.from(panes.values()).some((pane) => pane.pane === lastPane)) {
       lastPane = await resolveTargetPane(pi, workspaceName(ctx), "", panes);
     }
     updateStatus(ctx);
     updateTaskWidget(ctx);
-    return `${stillRunning.length ? `Timed out waiting for: ${stillRunning.join(", ")}\n\n` : ""}${blocks.join("\n\n---\n\n")}`;
+    const notes = [
+      stillRunning.length ? `Timed out waiting for: ${stillRunning.join(", ")}\n\n` : "",
+      blocks.join("\n\n---\n\n"),
+      workspaceClosed ? "\n\n(Matrix workspace closed.)" : "",
+    ];
+    return notes.join("");
   }
 
   async function kill(ctx: ExtensionContext, role?: string) {
@@ -536,7 +552,7 @@ export default function matrixExtension(pi: ExtensionAPI) {
   });
 
   pi.registerCommand("matrix-join", {
-    description: "Wait for Matrix agents to finish and clean up panes: /matrix-join [role|all]",
+    description: "Wait for Matrix agents, summarize, and clean up panes (closes the workspace when all are done): /matrix-join [role|all]",
     handler: async (args, ctx) => {
       try {
         ctx.ui.notify(await joinAgents(ctx, args.trim() || undefined), "info");
@@ -632,7 +648,7 @@ export default function matrixExtension(pi: ExtensionAPI) {
   pi.registerTool({
     name: "matrix_join",
     label: "Matrix Join",
-    description: "Wait for one or all Matrix agents to finish, capture logs, and clean up panes.",
+    description: "Wait for one or all Matrix agents to finish, capture logs, and clean up panes. When every tracked agent is joined, the whole Matrix workspace window is closed.",
     promptSnippet: "Wait for Matrix agents and clean up panes",
     promptGuidelines: ["Use matrix_join after spawning Matrix agents when their results are needed."],
     parameters: JOIN_PARAMS,

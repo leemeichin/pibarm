@@ -46,8 +46,16 @@ function plain(parts: StatusPart[]): string {
   return parts.map((part) => part.text).join(" | ");
 }
 
-function firstJiraTicket(text: string): string | undefined {
-  return text.match(/\b[A-Z][A-Z0-9]+-\d+\b/)?.[0];
+// Common technical acronyms that match the JIRA key shape (UTF-8, SHA-256, …)
+// but are never project keys.
+const NOT_JIRA_KEYS = new Set(["UTF", "SHA", "ISO", "RFC", "CVE", "AES", "RSA", "MD", "GPG", "TLS", "HTTP", "ES", "EC", "X", "OAUTH", "IPV"]);
+
+export function firstJiraTicket(text: string): string | undefined {
+  for (const match of text.matchAll(/\b([A-Z][A-Z0-9]+)-\d+\b/g)) {
+    const key = match[1]!.replace(/\d+$/, "");
+    if (!NOT_JIRA_KEYS.has(key)) return match[0];
+  }
+  return undefined;
 }
 
 async function jiraTicketForBranch(pi: ExtensionAPI, branch: string) {
@@ -92,9 +100,15 @@ function modelLabel(ctx: ExtensionContext): string {
   const id = ctx.model.id
     .replace(/^claude-/, "")
     .replace(/^gpt-/, "gpt ")
+    .replace(/(\d)-(\d)/g, "$1.$2")
     .replace(/-/g, " ")
     .replace(/\b(sonnet|haiku|opus)\b/i, (m) => m[0]!.toUpperCase() + m.slice(1));
   return `󰚩 ${ctx.model.provider}/${id}`;
+}
+
+function shortModelLabel(ctx: ExtensionContext): string {
+  if (!ctx.model) return "󰚩 ?";
+  return `󰚩 ${ctx.model.id.replace(/^claude-/, "")}`;
 }
 
 function contextLabel(ctx: ExtensionContext): string {
@@ -125,13 +139,49 @@ function extensionStatusesText(statuses: unknown): string {
   return values.map(String).filter((text) => text && !/ponytail/i.test(text)).join("  ");
 }
 
+// gh calls hit the network with 15s timeouts, and the jira sweep runs many
+// git commands; cache both so the per-turn footer refresh stays cheap.
+const GH_TTL_MS = 60000;
+const ghCache = new Map<string, { at: number; parts: StatusPart[]; details: Record<string, unknown> }>();
+const jiraCache = new Map<string, string | undefined>();
+
+async function githubParts(pi: ExtensionAPI, branch: string): Promise<{ parts: StatusPart[]; details: Record<string, unknown> }> {
+  const cached = ghCache.get(branch);
+  if (cached && Date.now() - cached.at < GH_TTL_MS) return cached;
+  const parts: StatusPart[] = [];
+  const details: Record<string, unknown> = {};
+  const pr = await exec(pi, "gh", ["pr", "view", "--json", "number,state,isDraft,statusCheckRollup,url"], 15000);
+  if (pr.code === 0 && pr.stdout) {
+    const parsed = JSON.parse(pr.stdout);
+    parts.push(prPart(parsed));
+    parts.push(checkSummary(parsed.statusCheckRollup));
+    details.github = parsed;
+  } else {
+    const run = await exec(pi, "gh", ["run", "list", "--branch", branch, "--limit", "1", "--json", "status,conclusion,url"], 15000);
+    if (run.code === 0 && run.stdout) {
+      const parsed = JSON.parse(run.stdout)[0];
+      if (parsed) {
+        parts.push(runSummary(parsed));
+        details.githubRun = parsed;
+      }
+    }
+  }
+  const entry = { at: Date.now(), parts, details };
+  ghCache.set(branch, entry);
+  return entry;
+}
+
 async function collect(pi: ExtensionAPI) {
-  const branch = (await exec(pi, "git", ["branch", "--show-current"])).stdout || "detached";
-  const short = (await exec(pi, "git", ["status", "--short"])).stdout;
-  const dirty = short ? short.split("\n").filter(Boolean).length : 0;
-  const remote = (await exec(pi, "git", ["remote", "get-url", "origin"])).stdout;
-  const forge = parseForge(remote);
-  const jiraTicket = await jiraTicketForBranch(pi, branch);
+  const [branchResult, shortResult, remoteResult] = await Promise.all([
+    exec(pi, "git", ["branch", "--show-current"]),
+    exec(pi, "git", ["status", "--short"]),
+    exec(pi, "git", ["remote", "get-url", "origin"]),
+  ]);
+  const branch = branchResult.stdout || "detached";
+  const dirty = shortResult.stdout ? shortResult.stdout.split("\n").filter(Boolean).length : 0;
+  const forge = parseForge(remoteResult.stdout);
+  if (!jiraCache.has(branch)) jiraCache.set(branch, await jiraTicketForBranch(pi, branch));
+  const jiraTicket = jiraCache.get(branch);
   const rightParts: StatusPart[] = [];
   if (jiraTicket) rightParts.push({ text: jiraTicket, tone: "accent" });
   rightParts.push({ text: ` ${branch}`, tone: dirty ? "warning" : "success" });
@@ -140,22 +190,9 @@ async function collect(pi: ExtensionAPI) {
   const details: Record<string, unknown> = { branch, dirty, forge, jiraTicket, uncommittedDiff: diffPart?.text };
 
   if (forge === "github") {
-    const pr = await exec(pi, "gh", ["pr", "view", "--json", "number,state,isDraft,statusCheckRollup,url"], 15000);
-    if (pr.code === 0 && pr.stdout) {
-      const parsed = JSON.parse(pr.stdout);
-      rightParts.push(prPart(parsed));
-      rightParts.push(checkSummary(parsed.statusCheckRollup));
-      details.github = parsed;
-    } else {
-      const run = await exec(pi, "gh", ["run", "list", "--branch", branch, "--limit", "1", "--json", "status,conclusion,url"], 15000);
-      if (run.code === 0 && run.stdout) {
-        const parsed = JSON.parse(run.stdout)[0];
-        if (parsed) {
-          rightParts.push(runSummary(parsed));
-          details.githubRun = parsed;
-        }
-      }
-    }
+    const gh = await githubParts(pi, branch);
+    rightParts.push(...gh.parts);
+    Object.assign(details, gh.details);
   } else if (forge === "sourcehut") {
     rightParts.push({ text: " sr.ht", tone: "accent" });
   }
@@ -191,21 +228,39 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
         invalidate() {},
         render(width: number): string[] {
           const statusText = extensionStatusesText(footerData.getExtensionStatuses());
-          const leftParts: StatusPart[] = [
-            { text: ` ${basename(ctx.cwd)}`, tone: "accent" },
-            { text: modelLabel(ctx), tone: "muted" },
-            { text: contextLabel(ctx), tone: "warning" },
-          ];
+          const dirPart: StatusPart = { text: ` ${basename(ctx.cwd)}`, tone: "accent" };
+          const contextPart: StatusPart = { text: contextLabel(ctx), tone: "warning" };
           const thinking = thinkingLabel(pi);
-          if (thinking) leftParts.push({ text: thinking, tone: "accent" });
-          if (statusText) leftParts.push({ text: ` ${statusText}`, tone: "dim" });
 
-          const left = renderSegments(leftParts, theme);
+          // Degrade left-side detail before ever cutting into the right-hand
+          // repo/PR/CI segment, which is the most actionable part.
+          const variants: StatusPart[][] = [];
+          const full: StatusPart[] = [dirPart, { text: modelLabel(ctx), tone: "muted" }, contextPart];
+          if (thinking) full.push({ text: thinking, tone: "accent" });
+          if (statusText) full.push({ text: ` ${statusText}`, tone: "dim" });
+          variants.push(full);
+          const noStatuses: StatusPart[] = [dirPart, { text: modelLabel(ctx), tone: "muted" }, contextPart];
+          if (thinking) noStatuses.push({ text: thinking, tone: "accent" });
+          variants.push(noStatuses);
+          variants.push([dirPart, { text: modelLabel(ctx), tone: "muted" }, contextPart]);
+          variants.push([dirPart, { text: shortModelLabel(ctx), tone: "muted" }, contextPart]);
+          variants.push([dirPart, contextPart]);
+
           const right = rightStatusParts.length > 0
             ? renderSegments(rightStatusParts, theme)
             : theme.fg("dim", rightStatus);
-          const pad = " ".repeat(Math.max(1, width - visibleWidth(left) - visibleWidth(right)));
-          return [truncateToWidth(left + pad + right, width)];
+          const rightWidth = visibleWidth(right);
+          if (rightWidth >= width) return [truncateToWidth(right, width)];
+
+          for (const variant of variants) {
+            const left = renderSegments(variant, theme);
+            const leftWidth = visibleWidth(left);
+            if (leftWidth + 1 + rightWidth <= width) {
+              return [left + " ".repeat(width - leftWidth - rightWidth) + right];
+            }
+          }
+          const left = truncateToWidth(renderSegments([dirPart, contextPart], theme), Math.max(0, width - rightWidth - 1));
+          return [left + " ".repeat(Math.max(1, width - visibleWidth(left) - rightWidth)) + right];
         },
       };
     });
@@ -236,18 +291,29 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
     },
   });
 
-  pi.on("session_start", async (_event, ctx) => {
+  let refreshing = false;
+  // Fire-and-forget: pi awaits lifecycle handlers, so a slow/unauthenticated
+  // gh call must not stall the session between turns just to repaint a footer.
+  function backgroundRefresh(ctx: ExtensionContext) {
+    if (refreshing) return;
+    refreshing = true;
+    void refresh(pi, ctx, requestRender)
+      .then((status) => {
+        rightStatus = status.right;
+        rightStatusParts = status.rightParts;
+        requestRender();
+      })
+      .finally(() => {
+        refreshing = false;
+      });
+  }
+
+  pi.on("session_start", (_event, ctx) => {
     installFooter(ctx);
-    const status = await refresh(pi, ctx, requestRender);
-    rightStatus = status.right;
-    rightStatusParts = status.rightParts;
-    requestRender();
+    backgroundRefresh(ctx);
   });
-  pi.on("turn_end", async (_event, ctx) => {
-    const status = await refresh(pi, ctx, requestRender);
-    rightStatus = status.right;
-    rightStatusParts = status.rightParts;
-    requestRender();
+  pi.on("turn_end", (_event, ctx) => {
+    backgroundRefresh(ctx);
   });
   pi.on("model_select", () => requestRender());
   pi.on("thinking_level_select", () => requestRender());

@@ -1,4 +1,5 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 export type TodoItem = { text: string; done: boolean };
 export type AgentTaskStatus = "running" | "done" | "failed";
@@ -19,6 +20,10 @@ export function getTodos() {
 
 export function setTodos(items: string[]) {
   todos = items.map((text) => ({ text, done: false }));
+}
+
+export function restoreTodos(items: TodoItem[]) {
+  todos = items.map((item) => ({ text: String(item.text), done: item.done === true }));
 }
 
 export function addTodos(items: string[]) {
@@ -94,10 +99,19 @@ export function updateTaskWidget(ctx: ExtensionContext) {
   ctx.ui.setStatus("todos", undefined);
   ctx.ui.setStatus("pibarm-tasks", statusParts.join(" · "));
   ctx.ui.setWidget("todos", undefined);
-  ctx.ui.setWidget("pibarm-tasks", renderTaskPills(todos, agents), { placement: "belowEditor" });
+  if (ctx.mode === "tui") {
+    // Component form: render receives the real viewport width, so pills wrap
+    // correctly on narrow terminals instead of at a hardcoded column count.
+    ctx.ui.setWidget("pibarm-tasks", () => ({
+      render: (width: number) => renderTaskPills(getTodos(), Array.from(agentTasks.values()), width),
+      invalidate: () => {},
+    }), { placement: "belowEditor" });
+  } else {
+    ctx.ui.setWidget("pibarm-tasks", renderTaskPills(todos, agents, 80), { placement: "belowEditor" });
+  }
 }
 
-function renderTaskPills(items: TodoItem[], agents: AgentTask[]) {
+export function renderTaskPills(items: TodoItem[], agents: AgentTask[], width: number) {
   const allPills = [
     ...items.map((todo, index) => pill(`${todo.done ? "✓" : "○"} ${index + 1} · ${shorten(todo.text, 34)}`)),
     ...agents.map((task) => pill(`${statusIcon(task.status)} ${shorten(task.label, 24)}${task.session ? ` · ${shorten(task.session, 18)}` : ""}${task.detail ? ` · ${shorten(task.detail, 16)}` : ""}`)),
@@ -107,14 +121,16 @@ function renderTaskPills(items: TodoItem[], agents: AgentTask[]) {
   const hidden = allPills.length - visible.length;
   const pills = hidden > 0 ? [...visible, pill(`+${hidden} more`)] : visible;
 
+  const maxWidth = Math.max(12, width);
   const lines: string[] = [];
   let line = "";
-  for (const pill of pills) {
-    if (line && line.length + pill.length + 1 > 120) {
+  for (const nextPill of pills) {
+    const candidate = line ? `${line} ${nextPill}` : nextPill;
+    if (line && visibleWidth(candidate) > maxWidth) {
       lines.push(line);
-      line = pill;
+      line = visibleWidth(nextPill) > maxWidth ? truncateToWidth(nextPill, maxWidth) : nextPill;
     } else {
-      line = line ? `${line} ${pill}` : pill;
+      line = visibleWidth(candidate) > maxWidth ? truncateToWidth(candidate, maxWidth) : candidate;
     }
   }
   if (line) lines.push(line);
@@ -133,5 +149,8 @@ function statusIcon(status: AgentTaskStatus) {
 
 function shorten(text: string, max: number) {
   const normalized = text.replace(/\s+/g, " ").trim();
-  return normalized.length <= max ? normalized : `${normalized.slice(0, Math.max(1, max - 1))}…`;
+  // Measure display columns (CJK/emoji are double width) and truncate on
+  // grapheme boundaries instead of slicing through surrogate pairs.
+  if (visibleWidth(normalized) <= max) return normalized;
+  return `${truncateToWidth(normalized, Math.max(1, max - 1))}…`;
 }

@@ -1,7 +1,7 @@
 import { StringEnum } from "@earendil-works/pi-ai";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { addTodos, clearAgentTasks, clearTodos, getTodos, markTodoDone, setTodos, taskSummaryLines, todoLines, todoSummary, updateTaskWidget } from "../lib/task-widget.js";
+import { addTodos, clearAgentTasks, clearTodos, getTodos, markTodoDone, restoreTodos, setTodos, taskSummaryLines, todoLines, todoSummary, updateTaskWidget, type TodoItem } from "../lib/task-widget.js";
 
 const TODO_PARAMS = Type.Object({
   action: StringEnum(["set", "add", "done", "list", "clear"] as const),
@@ -57,5 +57,28 @@ export default function todoListExtension(pi: ExtensionAPI) {
     };
   });
 
-  pi.on("session_start", (_event, ctx) => updateTaskWidget(ctx));
+  pi.on("session_start", (_event, ctx) => {
+    // Module state outlives /new, /resume, and branch switches; rebuild the
+    // widget from the active session branch instead of showing stale todos.
+    clearTodos();
+    clearAgentTasks();
+    const restored = latestTodoSnapshot(ctx);
+    if (restored) restoreTodos(restored);
+    updateTaskWidget(ctx);
+  });
+}
+
+function latestTodoSnapshot(ctx: ExtensionContext): TodoItem[] | undefined {
+  const entries = ctx.sessionManager.getBranch();
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const entry = entries[i] as { type: string; message?: { role?: string; toolName?: string; details?: { todos?: unknown } } };
+    if (entry.type !== "message") continue;
+    const message = entry.message;
+    if (message?.role !== "toolResult" || message.toolName !== "todo_list") continue;
+    const todos = message.details?.todos;
+    if (Array.isArray(todos)) {
+      return todos.filter((item): item is TodoItem => Boolean(item) && typeof (item as TodoItem).text === "string");
+    }
+  }
+  return undefined;
 }

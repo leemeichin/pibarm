@@ -23,11 +23,11 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 /matrix <task>
 /matrix-attach
 /matrix-spawn <role> <task>
-/matrix-send <role> <message>
 /matrix-capture [role]
 /matrix-join [role|all]
 /matrix-list
 /matrix-kill [role|all]
+/matrix-kill-orphans
 ```
 
 ## Workflow
@@ -55,7 +55,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 
 - same branch/distributed work: no worktree
 - separate branch or risky changes: `matrix_spawn` with `worktree: true`
-- use `matrix_spawn.placement` for `right`, `down`, or `tab` when placement matters
+- use `matrix_spawn.placement` for `right`, `down`, `tab`, or `window` when placement matters
 - Matrix uses a project/session-specific workspace name, opens/focuses a visible WezTerm client automatically, reuses one workspace window where possible, prints a visible start/log banner, logs to `.pi/matrix/`, shows agent pills in the shared task widget, and panes exit when done
 
 5. Clean up:
@@ -75,6 +75,6 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 
 - Parent Pi remains the source of truth.
 - Use `matrix_join` after spawning agents so completion, logs, and cleanup are synchronized.
-- Use `matrix_send` only while a Matrix agent is still active.
+- Matrix agents run non-interactively (`pi -p`) and cannot receive input mid-run; to give new instructions, `matrix_join` the agent and spawn a follow-up with the extra context.
 - Do not run multiple writing workers in the same checkout unless files are clearly disjoint.
-- Use `matrix_kill all` to force-clean tracked and untracked Matrix workspace panes.
+- Use `matrix_kill all` to force-clean this session's workspace panes; `/matrix-kill-orphans` cleans up panes left behind by other sessions.

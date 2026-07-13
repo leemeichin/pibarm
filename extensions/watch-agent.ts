@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { StringEnum } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { CONFIG_DIR_NAME, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
@@ -161,7 +161,7 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
   const loop = params.loop ?? (params.pr ? "Poll the PR state. On each change, inspect reviews, comments, reviewDecision, and statusCheckRollup. Identify only new/actionable changes since the previous observation." : "Poll the watched state. On each change, inspect the latest output and decide whether action is needed.");
   const name = slug(params.name ?? (params.pr ? `pr-${params.pr}` : "watch"));
   const root = await gitRoot(pi, ctx.cwd);
-  const dir = join(root, ".pi", "watchers", `${name}-${Date.now()}`);
+  const dir = join(root, CONFIG_DIR_NAME, "watchers", `${name}-${Date.now()}`);
   await mkdir(dir, { recursive: true });
   const logPath = join(dir, "watch.log");
   const stopPath = join(dir, "stop");
@@ -243,7 +243,7 @@ async function sweepWatchers(ctx: ExtensionContext) {
 
 async function adoptWatchers(pi: ExtensionAPI, ctx: ExtensionContext) {
   const root = await gitRoot(pi, ctx.cwd);
-  const base = join(root, ".pi", "watchers");
+  const base = join(root, CONFIG_DIR_NAME, "watchers");
   let entries: string[];
   try {
     entries = await readdir(base);

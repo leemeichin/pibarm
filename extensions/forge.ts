@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { CONFIG_DIR_NAME, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 const FORGES = ["github", "sourcehut"] as const;
@@ -38,7 +38,7 @@ interface CommandResult {
 }
 
 function configPath(cwd: string) {
-  return join(cwd, ".pi", "forge.json");
+  return join(cwd, CONFIG_DIR_NAME, "forge.json");
 }
 
 function isForge(value: unknown): value is Forge {

@@ -62,7 +62,12 @@ describe.each(themes)("$name theme", ({ file, name }) => {
   });
 });
 
-test("project settings auto-switch between the pibarm themes", () => {
+test("project settings auto-switch between visibly distinct pibarm themes", () => {
   const settings = JSON.parse(readFileSync(join(import.meta.dir, "..", ".pi", "settings.json"), "utf8"));
+  const dark = loadTheme("pibarm-dark.json");
+  const light = loadTheme("pibarm-light.json");
+
   expect(settings.theme).toBe("pibarm-light/pibarm-dark");
+  expect(dark.vars[dark.colors.text]!).not.toBe(light.vars[light.colors.text]!);
+  expect(light.vars[light.colors.border]!).toBe("#DCCFC1");
 });

@@ -23,7 +23,7 @@
   },
   "colors": {
     "accent": "orange",
-    "border": "sky",
+    "border": "hairline",
     "borderAccent": "orange",
     "borderMuted": "hairline",
     "success": "pea",

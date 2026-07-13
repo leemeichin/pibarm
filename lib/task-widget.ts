@@ -5,10 +5,10 @@ export type TodoItem = { text: string; done: boolean };
 export type AgentTaskStatus = "running" | "done" | "failed";
 
 // Pill tones follow the design system's terminal-native TaskPill form:
-// dim guillemets/separators, muted todo marks and metadata, mustard running,
+// subtle guillemets/separators and metadata, muted todo marks, mustard running,
 // pea done, tomato failed, plain text labels, orange for the agent kind slot.
-type PillTone = "dim" | "muted" | "success" | "warning" | "error" | "text" | "accent";
-type PillTheme = { fg(tone: PillTone, text: string): string };
+type PillTone = "dim" | "muted" | "success" | "warning" | "error" | "text" | "accent" | "border";
+type PillTheme = { name?: string; fg(tone: PillTone, text: string): string };
 const PLAIN_THEME: PillTheme = { fg: (_tone, text) => text };
 const STATUS_TONE: Record<AgentTaskStatus, PillTone> = { running: "warning", done: "success", failed: "error" };
 export type AgentTask = {
@@ -129,25 +129,30 @@ export function updateTaskWidget(ctx: ExtensionContext) {
 }
 
 export function renderTaskPills(items: TodoItem[], agents: AgentTask[], width: number, theme: PillTheme = PLAIN_THEME) {
-  const sep = ` ${theme.fg("dim", "·")} `;
+  const light = theme.name === "pibarm-light";
+  const chromeTone: PillTone = light ? "border" : "dim";
+  const metaTone: PillTone = light ? "dim" : "muted";
+  const sep = ` ${theme.fg(chromeTone, "·")} `;
   const allPills = [
     ...items.map((todo, index) =>
       pill(
-        `${theme.fg(todo.done ? "success" : "muted", todo.done ? "✓" : "○")} ${theme.fg("muted", `${index + 1}`)}${sep}${theme.fg("text", shorten(todo.text, 34))}`,
+        `${theme.fg(todo.done ? "success" : "muted", todo.done ? "✓" : "○")} ${theme.fg(metaTone, `${index + 1}`)}${sep}${theme.fg("text", shorten(todo.text, 34))}`,
         theme,
+        chromeTone,
       ),
     ),
     ...agents.map((task) =>
       pill(
-        `${theme.fg(STATUS_TONE[task.status], statusIcon(task.status))} ${theme.fg("text", shorten(task.label, 24))}${task.session ? `${sep}${theme.fg("muted", shorten(task.session, 18))}` : ""}${task.detail ? `${sep}${theme.fg("muted", shorten(task.detail, 16))}` : ""}`,
+        `${theme.fg(STATUS_TONE[task.status], statusIcon(task.status))} ${agentLabel(task.label, theme)}${task.session ? `${sep}${theme.fg(metaTone, shorten(task.session, 18))}` : ""}${task.detail ? `${sep}${theme.fg(metaTone, shorten(task.detail, 16))}` : ""}`,
         theme,
+        chromeTone,
       ),
     ),
   ];
   const maxPills = 10;
   const visible = allPills.slice(0, maxPills);
   const hidden = allPills.length - visible.length;
-  const pills = hidden > 0 ? [...visible, pill(theme.fg("muted", `+${hidden} more`), theme)] : visible;
+  const pills = hidden > 0 ? [...visible, pill(theme.fg(metaTone, `+${hidden} more`), theme, chromeTone)] : visible;
 
   const maxWidth = Math.max(12, width);
   const lines: string[] = [];
@@ -165,8 +170,13 @@ export function renderTaskPills(items: TodoItem[], agents: AgentTask[], width: n
   return lines;
 }
 
-function pill(text: string, theme: PillTheme = PLAIN_THEME) {
-  return `${theme.fg("dim", "‹")} ${text} ${theme.fg("dim", "›")}`;
+function pill(text: string, theme: PillTheme = PLAIN_THEME, chromeTone: PillTone = "dim") {
+  return `${theme.fg(chromeTone, "‹")} ${text} ${theme.fg(chromeTone, "›")}`;
+}
+
+function agentLabel(label: string, theme: PillTheme) {
+  const [kind, ...rest] = shorten(label, 24).split(" ");
+  return `${theme.fg("accent", kind ?? "")}${rest.length ? ` ${theme.fg("text", rest.join(" "))}` : ""}`;
 }
 
 function statusIcon(status: AgentTaskStatus) {

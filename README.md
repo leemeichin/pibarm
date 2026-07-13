@@ -325,7 +325,7 @@ Type `!<command>` as a prompt to run a local shell command immediately and show 
 `repo-status.ts` installs a colorful icon-first footer with project/model/context/thinking on the left and repo/forge/CI status on the right. It includes dirty/uncommitted diff stats, detects Jira-style ticket IDs from branch names, and filters Ponytail extension chatter. Example:
 
 ```text
- pibarm · 󰚩 anthropic/Sonnet 4 5 · 󰯌 ctx 37%         main ±2 ·  #12 ·  CI
+󰚅 pibarm · 󰚩 anthropic/Sonnet 4 5 · 󰊚 ctx 37%         main ±2 ·  #12 ·  CI
 ```
 
 Colour mapping (mirrors the pibarm design system's StatusLine):

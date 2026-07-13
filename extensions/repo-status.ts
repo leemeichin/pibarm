@@ -145,8 +145,8 @@ function shortModelLabel(ctx: ExtensionContext): string {
 
 function contextLabel(ctx: ExtensionContext): string {
   const usage = ctx.getContextUsage();
-  if (!usage || usage.percent === null) return "󰯌 ctx ?";
-  return `󰯌 ctx ${Math.round(usage.percent)}%`;
+  if (!usage || usage.percent === null) return "󰊚 ctx ?";
+  return `󰊚 ctx ${Math.round(usage.percent)}%`;
 }
 
 function thinkingLabel(pi: ExtensionAPI): string | undefined {
@@ -272,7 +272,7 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
         invalidate() {},
         render(width: number): string[] {
           const statusText = extensionStatusesText(footerData.getExtensionStatuses());
-          const dirPart: StatusPart = { text: ` ${basename(ctx.cwd)}`, tone: "accent" };
+          const dirPart: StatusPart = { text: `󰚅 ${basename(ctx.cwd)}`, tone: "accent" };
           const contextPart: StatusPart = { text: contextLabel(ctx), tone: "muted" };
           const thinking = thinkingLabel(pi);
 

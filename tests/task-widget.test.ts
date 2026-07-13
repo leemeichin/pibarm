@@ -63,6 +63,26 @@ describe("renderTaskPills", () => {
     expect(tones).toContain("warning");
     expect(tones).toContain("error");
     expect(tones).toContain("text");
+    expect(tones).toContain("accent");
+  });
+
+  test("uses the website's lighter chrome and warm metadata hierarchy in light mode", () => {
+    const styled: Array<[string, string]> = [];
+    const theme = {
+      name: "pibarm-light",
+      fg(tone: string, text: string) {
+        styled.push([tone, text]);
+        return text;
+      },
+    };
+
+    renderTaskPills([todo("inspect auth")], [{ ...agent("matrix scout"), session: "matrix-pibarm" }], 80, theme);
+
+    expect(styled).toContainEqual(["border", "‹"]);
+    expect(styled).toContainEqual(["dim", "1"]);
+    expect(styled).toContainEqual(["accent", "matrix"]);
+    expect(styled).toContainEqual(["text", "scout"]);
+    expect(styled).toContainEqual(["dim", "matrix-pibarm"]);
   });
 
   test("renders plain text when no theme is given", () => {

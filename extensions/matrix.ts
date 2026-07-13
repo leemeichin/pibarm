@@ -30,7 +30,7 @@ const SPAWN_PARAMS = Type.Object({
   ),
   placement: Type.Optional(
     Type.String({
-      description: "Where to open it: right, down, tab, or window. Defaults to right split after the first window.",
+      description: "Where to open it: right, down, tab, or window. Current-tab agents form a bottom row.",
     }),
   ),
 });
@@ -83,6 +83,7 @@ type AgentPane = {
   logPath: string;
   statusPath: string;
   exited?: number;
+  parentTab: boolean;
 };
 
 type WeztermPane = {
@@ -98,7 +99,8 @@ const MATRIX_HELP = `Matrix is a WezTerm-native cockpit for visible parent-contr
 
 When to use it:
 - use Matrix when you want to watch agents run in WezTerm tabs or splits
-- Matrix splits the parent Pi window by default and leaves the parent pane focused
+- Matrix keeps the parent Pi pane full-width above a row of up to three agents
+- a fourth agent requires confirmation and opens in a new window
 - Matrix agents run non-interactively and auto-exit when their task is done
 - use run_subagent/run_subagents for headless one-shot checks
 - set pibarm.matrix.autoSpawn=true to route those isolated delegations through Matrix automatically
@@ -359,6 +361,9 @@ async function readLog(pane: AgentPane, lines = 80) {
 export default function matrixExtension(pi: ExtensionAPI) {
   const panes = new Map<string, AgentPane>();
   let lastPane = "";
+  let overflowPane = "";
+  let overflowApproved = false;
+  let spawnQueue: Promise<void> = Promise.resolve();
 
   // Reconcile finished agents even when matrix_join is never called, so pills
   // don't show "running" forever and the footer count stays honest.
@@ -403,6 +408,67 @@ export default function matrixExtension(pi: ExtensionAPI) {
     ctx: ExtensionContext,
     params: { role: string; task: string; model?: string; tools?: string[]; worktree?: boolean; placement?: string },
   ) {
+    const queued = spawnQueue.then(() => spawnNow(ctx, params));
+    spawnQueue = queued.then(
+      () => undefined,
+      () => undefined,
+    );
+    return queued;
+  }
+
+  async function spawnNow(
+    ctx: ExtensionContext,
+    params: { role: string; task: string; model?: string; tools?: string[]; worktree?: boolean; placement?: string },
+  ) {
+    const requestedPlace = placement(params.placement);
+    const target = await matrixTarget(pi, ctx);
+    await ensureWeztermServer(pi, target.workspace);
+    const liveIds = new Set((await workspacePanes(pi, target.workspace)).map((pane) => String(pane.pane_id)));
+    const liveTrackedPanes = Array.from(panes.values()).filter((pane) => liveIds.has(pane.pane));
+    if (!liveTrackedPanes.length) {
+      overflowPane = "";
+      overflowApproved = false;
+    }
+    const parentPanes = liveTrackedPanes.filter((pane) => pane.parentTab);
+    let targetPane = "";
+    let place = requestedPlace;
+    let parentTab = false;
+    let openNewWindow = requestedPlace === "window";
+    let overflowWindow = false;
+
+    if (requestedPlace === "tab") {
+      targetPane = await resolveTargetPane(pi, target.workspace, lastPane, panes, target.hostPane);
+    } else if (target.attached && requestedPlace !== "window") {
+      const liveOverflowPane = overflowPane && liveIds.has(overflowPane) ? overflowPane : "";
+      if (overflowApproved) {
+        targetPane = liveOverflowPane;
+        openNewWindow = !targetPane;
+        place = openNewWindow ? "window" : "right";
+        overflowWindow = true;
+      } else if (parentPanes.length >= 3) {
+        if (!ctx.hasUI)
+          throw new Error("More than 3 Matrix agents requires confirmation in an interactive Pi session.");
+        const approved = await ctx.ui.confirm(
+          "Open Matrix window?",
+          "You are requesting more than 3 agents. Continue in a new window?",
+        );
+        if (!approved) throw new Error("Matrix spawn cancelled; the parent tab still has 3 agents.");
+        overflowApproved = true;
+        openNewWindow = true;
+        place = "window";
+        overflowWindow = true;
+      } else {
+        const previous = parentPanes.at(-1);
+        targetPane = previous?.pane ?? target.hostPane ?? "";
+        place = previous ? "right" : "down";
+        parentTab = true;
+      }
+    } else if (!openNewWindow) {
+      targetPane = await resolveTargetPane(pi, target.workspace, lastPane, panes, target.hostPane);
+      openNewWindow = !targetPane;
+      if (openNewWindow) place = "window";
+    }
+
     const baseRole = slug(params.role);
     const role = uniqueRole(baseRole);
     const defaults = ROLE_DEFAULTS[baseRole] ?? ROLE_DEFAULTS.worker;
@@ -411,38 +477,33 @@ export default function matrixExtension(pi: ExtensionAPI) {
     const modelSelection = selectAgentModelRef(ctx, params.model, params.task);
     const model = modelSelection.model;
     const tools = (params.tools ?? defaults.tools)?.filter((tool) => !INTERACTIVE_ONLY_TOOLS.has(tool));
-    const place = placement(params.placement);
     // State paths must resolve against the parent checkout: inside a worktree
     // they would pollute the agent's diff and vanish with the worktree.
     const { logPath, statusPath } = await matrixStatePaths(pi, ctx.cwd, role);
     const command = commandFor(role, params.task, model, tools, worktree, logPath, statusPath);
-    const target = await matrixTarget(pi, ctx);
-    await ensureWeztermServer(pi, target.workspace);
-    const targetPane = await resolveTargetPane(pi, target.workspace, lastPane, panes, target.hostPane);
-
-    const args =
-      !targetPane || place === "window"
-        ? ["spawn", "--new-window", "--workspace", target.workspace, "--cwd", cwd, "--", ...command]
-        : place === "tab"
-          ? ["spawn", "--pane-id", targetPane, "--cwd", cwd, "--", ...command]
-          : [
-              "split-pane",
-              "--pane-id",
-              targetPane,
-              place === "down" ? "--bottom" : "--right",
-              "--cwd",
-              cwd,
-              "--",
-              ...command,
-            ];
+    const args = openNewWindow
+      ? ["spawn", "--new-window", "--workspace", target.workspace, "--cwd", cwd, "--", ...command]
+      : place === "tab"
+        ? ["spawn", "--pane-id", targetPane, "--cwd", cwd, "--", ...command]
+        : [
+            "split-pane",
+            "--pane-id",
+            targetPane,
+            place === "down" ? "--bottom" : "--right",
+            "--cwd",
+            cwd,
+            "--",
+            ...command,
+          ];
 
     const result = await wezterm(pi, args, 15000);
     if (result.code !== 0) throw new Error(result.stderr || result.stdout || "wezterm spawn failed");
     const paneId = result.stdout;
     // split-pane focuses the child; give input back to Pi before any further bookkeeping.
-    if (target.hostPane && place !== "window")
+    if (target.hostPane && requestedPlace !== "window")
       await wezterm(pi, ["activate-pane", "--pane-id", target.hostPane]).catch(() => undefined);
     if (!target.attached) await ensureWorkspaceClient(pi, target.workspace);
+    if (overflowWindow) overflowPane = paneId;
     lastPane = paneId;
     panes.set(role, {
       role,
@@ -456,6 +517,7 @@ export default function matrixExtension(pi: ExtensionAPI) {
       placement: place,
       logPath,
       statusPath,
+      parentTab,
     });
     upsertAgentTask({
       id: `matrix:${role}`,
@@ -548,6 +610,10 @@ export default function matrixExtension(pi: ExtensionAPI) {
     }
 
     if (lastPane && !Array.from(panes.values()).some((pane) => pane.pane === lastPane)) lastPane = "";
+    if (!panes.size) {
+      overflowPane = "";
+      overflowApproved = false;
+    }
     updateTaskWidget(ctx);
     return `${stillRunning.length ? `Timed out waiting for: ${stillRunning.join(", ")}\n\n` : ""}${blocks.join("\n\n---\n\n")}`;
   }
@@ -559,6 +625,8 @@ export default function matrixExtension(pi: ExtensionAPI) {
       for (const pane of panes.values()) removeAgentTask(`matrix:${pane.role}`);
       panes.clear();
       lastPane = "";
+      overflowPane = "";
+      overflowApproved = false;
       updateTaskWidget(ctx);
       return "Matrix panes killed.";
     }

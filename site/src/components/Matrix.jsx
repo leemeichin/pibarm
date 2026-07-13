@@ -17,20 +17,20 @@ const matrixStyles = {
 
 const MATRIX_PANES = [
   { role: "scout", color: "#7fb2ce", lines: [
-    "read  extensions/watch-agent.ts",
-    "read  lib/task-widget.ts",
-    "grep  retry|backoff → 3 hits",
-    "✓ 2 likely causes"] },
+    "forge_tickets → 4 open",
+    "#1 permission gate · #20 docs",
+    "#43 deploy CI · #44 web spike",
+    "✓ issue map ready"] },
   { role: "planner", color: "#b79ad2", lines: [
-    "draft plan · 4 steps",
-    "risk: restart loop on failure",
-    "gate: worktree recommended",
-    "✓ plan ready"] },
+    "dependency: #20 → #43 → #44",
+    "parallel: #1 permission gate",
+    "queue: #1 · #20/#43 · #44",
+    "✓ 4 smallest plans ready"] },
   { role: "worker", color: "#8fce9b", worktree: true, lines: [
-    "worktree .pi/wt/fix-flaky",
-    "edit  watch-agent.ts",
-    "run   bun test → 12 pass",
-    "✓ worktree ready to review"] },
+    "issue #1 · permission approvals",
+    "worktree .pi/wt/issue-1",
+    "run   bun test → pass",
+    "✓ pull request opened"] },
 ];
 
 const PILL_ICONS = { running: "●", done: "✓" };
@@ -59,6 +59,7 @@ export default function MatrixDemo() {
   const [runId, setRunId] = React.useState(0);
   const [parent, setParent] = React.useState([]);
   const [panes, setPanes] = React.useState(MATRIX_PANES.map((p) => ({ role: p.role, color: p.color, worktree: p.worktree, mounted: false, status: "idle", lines: [] })));
+  const [watching, setWatching] = React.useState(false);
   const timers = React.useRef([]);
 
   React.useEffect(() => {
@@ -76,21 +77,21 @@ export default function MatrixDemo() {
     }
 
     async function run() {
-      setParent([]); setPanes(MATRIX_PANES.map((p) => ({ role: p.role, color: p.color, worktree: p.worktree, mounted: false, status: "idle", lines: [] })));
+      setParent([]); setPanes(MATRIX_PANES.map((p) => ({ role: p.role, color: p.color, worktree: p.worktree, mounted: false, status: "idle", lines: [] }))); setWatching(false);
       await wait(650);
-      setParent((L) => [...L, { k: "cmd", t: "/matrix investigate flaky worker tests" }]); await wait(700);
+      setParent((L) => [...L, { k: "cmd", t: "/matrix triage every open issue and plan the smallest safe fix" }]); await wait(700);
       setParent((L) => [...L, { k: "dim", t: "splitting scout · planner below parent in workspace default" }]); await wait(500);
-      await streamPane(0);
-      await streamPane(1);
+      await Promise.all([streamPane(0), streamPane(1)]);
       await wait(300);
       setParent((L) => [...L, { k: "cmd", t: "/matrix-join all" }]); await wait(650);
       setPane(0, { mounted: false, status: "idle", lines: [] });
       setPane(1, { mounted: false, status: "idle", lines: [] });
-      setParent((L) => [...L, { k: "ok", t: "✓ joined 2 agents · panes cleaned up" }]); await wait(550);
-      setParent((L) => [...L, { k: "info", t: "matrix_spawn worker · worktree: true · fix + verify" }]); await wait(650);
+      setParent((L) => [...L, { k: "ok", t: "✓ joined 2 agents · 4 issue plans queued" }]); await wait(550);
+      setParent((L) => [...L, { k: "info", t: "loop: issue #1 → matrix worker · worktree: true" }]); await wait(650);
       await streamPane(2);
       await wait(300);
-      setParent((L) => [...L, { k: "ok", t: "✓ matrix complete · fix-flaky ready to merge" }]);
+      setParent((L) => [...L, { k: "info", t: "watch_agent · pull request review + CI loop" }]); setWatching(true); await wait(550);
+      setParent((L) => [...L, { k: "ok", t: "✓ issue #1 in review · continue with next unblocked plan" }]);
       await wait(3600);
       if (!cancelled) setRunId((n) => n + 1);
     }
@@ -149,8 +150,9 @@ export default function MatrixDemo() {
       {/* the task widget mirrors delegated work */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
         {panes.filter((p) => p.mounted).map((p, i) => (
-          <MatrixPill key={i} status={p.status === "done" ? "done" : "running"} kind={"matrix " + p.role} label={p.worktree ? "fix-flaky" : "matrix-pibarm"} />
+          <MatrixPill key={i} status={p.status === "done" ? "done" : "running"} kind={"matrix " + p.role} label={p.worktree ? "issue-1" : "open-issues"} />
         ))}
+        {watching && <MatrixPill status="running" kind="watch pr" label="review + CI" />}
       </div>
     </div>
   );

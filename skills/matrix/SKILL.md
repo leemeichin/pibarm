@@ -55,10 +55,13 @@ When auto-spawn is off, prefer `run_subagent`/`run_subagents` for cheap headless
 
 - same branch/distributed work: no worktree
 - separate branch or risky changes: `matrix_spawn` with `worktree: true`
-- use `matrix_spawn.placement` for `right`, `down`, `tab`, or `window` when placement matters
-- Matrix splits the parent Pi pane's current WezTerm window by default, immediately returns input focus to the parent, streams the agent's reasoning/response/tool activity live, logs the same transcript to `.pi/matrix/`, shows agent pills in the shared task widget, and uses a dedicated workspace only when Pi is outside WezTerm
+- current-tab agents automatically form a horizontal row below the full-width parent; use `matrix_spawn.placement` with `tab` or `window` to opt out
+- Matrix limits the parent tab to three agents; a fourth asks for confirmation, then opens the fourth and later agents in a new window when approved
+- Matrix immediately returns input focus to the parent, streams each agent's reasoning/response/tool activity live, logs the same transcript to `.pi/matrix/`, shows agent pills in the shared task widget, and uses a dedicated workspace only when Pi is outside WezTerm
 
-5. Clean up:
+5. For an issue-to-PR loop, join the triage agents, process one unblocked issue at a time with a worktree worker, and start `watch_agent` for each pull request's reviews and CI before continuing.
+
+6. Clean up:
 
 ```text
 /matrix-kill all
@@ -75,6 +78,7 @@ When auto-spawn is off, prefer `run_subagent`/`run_subagents` for cheap headless
 
 - Parent Pi remains the source of truth.
 - Use `matrix_join` after spawning agents so completion, logs, and cleanup are synchronized.
+- Do not bypass the three-agent confirmation by forcing extra current-tab splits.
 - Matrix agents run non-interactively (`pi -p`) and cannot receive input mid-run; to give new instructions, `matrix_join` the agent and spawn a follow-up with the extra context.
 - Do not run multiple writing workers in the same checkout unless files are clearly disjoint.
 - Use `matrix_kill all` to kill only this session's tracked agent panes; `/matrix-kill-orphans` cleans up legacy/fallback dedicated Matrix workspaces.

@@ -290,12 +290,12 @@ To make visible Matrix panes the default for `run_subagent` and `run_subagents`,
 Worktree agents and watchers remain unchanged.
 
 ```text
-/matrix investigate flaky tests
+/matrix triage every open issue and propose the smallest safe plan for each
 /matrix-attach
-/matrix-spawn worker fix the failing test
-/matrix-join worker
-/matrix-kill all
+/matrix-join all
 ```
+
+After joining, the parent can loop over unblocked plans with one `matrix_spawn` worktree worker at a time, then start `watch_agent` for each pull request's reviews and CI before moving to the next issue.
 
 Defaults:
 
@@ -303,7 +303,8 @@ Defaults:
 - agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/matrix/`, and panes exit when tasks finish
 - `matrix_join` waits for completion, returns logs, and cleans up only the finished agent panes
 - Matrix uses the parent Pi pane and its current WezTerm workspace by default; `placement: "window"` explicitly opens another window, and runs outside WezTerm fall back to a dedicated Matrix workspace
-- `/matrix` keeps the parent pane on top with scout/planner split below it and immediately returns input focus to the parent
+- Matrix keeps the parent pane full-width above a horizontal row of up to three agents and immediately returns input focus to the parent
+- requesting a fourth current-tab agent asks for confirmation; approval opens the fourth and later agents in a new window, while declining leaves the three-pane row unchanged
 - agents run non-interactively and cannot receive input mid-run; join them and spawn a follow-up agent to give new instructions
 - `scout` and `planner` use read-focused toolsets
 - `worker` uses normal tools

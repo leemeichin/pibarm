@@ -320,10 +320,16 @@ Type `!<command>` as a prompt to run a local shell command immediately and show 
  pibarm · 󰚩 anthropic/Sonnet 4 5 · 󰯌 ctx 37%         main ±2 ·  #12 ·  CI
 ```
 
-Colour mapping:
+Colour mapping (mirrors the pibarm design system's StatusLine):
 
-- PR: green open, grey draft, purple/accent merged, red closed
-- CI: green pass, yellow/orange running, red failing, grey unknown
+- Left: orange project, plain model, muted context
+- Branch: plain, with muted dirty/diff stats
+- PR: green (pea) open, grey draft, plum merged, red (tomato) closed
+- CI: green pass, mustard running, red failing, grey unknown
+
+## pibarm theme
+
+`.pi/themes/` ships `pibarm-dark` and `pibarm-light` pi themes built from the design-system palette: cream text on navy for dark terminals, navy ink on cream for light ones, with the orange-dot accent and the pea/sky/mustard/tomato/plum status set. `.pi/settings.json` sets `"theme": "pibarm-light/pibarm-dark"` so pi auto-switches with the terminal background; pick one explicitly with `/theme`.
 
 It uses local CLI auth only:
 
@@ -427,5 +433,7 @@ skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt
 prompts/pr-open.md            # newline-safe PR opening prompt
 scripts/doctor.mjs            # onboarding/setup doctor for local CLI dependencies
+.pi/themes/pibarm-dark.json   # design-system pi theme (dark terminals)
+.pi/themes/pibarm-light.json  # design-system pi theme (light terminals)
 .pi/*.example.json            # local config examples
 ```

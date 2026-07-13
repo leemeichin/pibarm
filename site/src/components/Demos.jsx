@@ -18,49 +18,21 @@ const DEMOS = [
     note: "triage → plan → worktree → watch",
   },
   {
-    id: "status",
+    id: "obsidian",
     number: "03",
-    label: "Repo status",
-    title: "Repository pulse",
-    note: "git → forge → pull request → CI",
-    description: "One command gathers the branch, dirty files, forge, pull request and checks, then keeps the same state visible in pi's statusline.",
+    label: "Obsidian",
+    title: "Sessions in your vault",
+    note: "export → organise → auto-sync",
+    description: "Each session becomes a Markdown note grouped by repository. Run /obsidian-export whenever you want, or enable auto-sync to update it after turns and compaction.",
     lines: [
-      { k: "cmd", t: "/repo-status" },
-      { k: "dim", t: "branch  main · clean" },
-      { k: "info", t: "forge   GitHub · PR #128 open · review requested" },
-      { k: "warn", t: "CI      4/5 passing · integration running" },
-      { k: "ok", t: "✓ statusline updated" },
-    ],
-  },
-  {
-    id: "watcher",
-    number: "04",
-    label: "Watcher",
-    title: "A PR watcher that sleeps",
-    note: "poll → compare → wake on change",
-    description: "A sibling agent polls quietly and only spends a pi turn when reviews or checks change, leaving the parent session free for other work.",
-    lines: [
-      { k: "you", t: "watch PR #128 for reviews and CI" },
-      { k: "info", t: "tool    watch_agent · interval 60s" },
-      { k: "dim", t: "poll    no change · sleeping" },
-      { k: "warn", t: "change  integration check failed" },
-      { k: "ok", t: "✓ watcher woke · triage started once" },
-    ],
-  },
-  {
-    id: "presets",
-    number: "05",
-    label: "Presets",
-    title: "Models matched to the job",
-    note: "planner reads → executor writes",
-    description: "Named presets switch model, thinking level and tools together, so a planner stays read-only and an executor gets only what the approved work needs.",
-    lines: [
-      { k: "cmd", t: "/preset planner" },
-      { k: "info", t: "model   reasoning · thinking high" },
-      { k: "dim", t: "tools   read · bash · question" },
-      { k: "cmd", t: "/preset executor" },
-      { k: "info", t: "model   balanced · thinking medium" },
-      { k: "ok", t: "tools   read · bash · edit · write" },
+      { k: "you", t: "tree ~/Vault/Pi" },
+      { k: "dim", t: "~/Vault/Pi" },
+      { k: "info", t: "├── .pibarm-sessions.json" },
+      { k: "info", t: "├── example-org" },
+      { k: "info", t: "│   └── example-repo" },
+      { k: "ok", t: "│       └── plan-release.md" },
+      { k: "info", t: "└── local" },
+      { k: "ok", t: "    └── scratchpad/session-42.md" },
     ],
   },
 ];
@@ -143,10 +115,12 @@ export default function Demos() {
           </div>
         )}
         {active === "matrix" && (
-          <div>
-            <p className="demo-note demo-note--wide">Scout maps scope while planner orders dependencies. The parent works through unblocked plans in isolated worktrees and starts a watcher for each pull request's reviews and CI.</p>
+          <div className="demo-matrix">
+            <div className="demo-matrix__intro">
+              <p className="demo-note">Spawn scout, planner and worker agents beside the parent pi in real WezTerm panes. Scout maps the scope, planner orders dependencies, and workers can use isolated worktrees.</p>
+              <p className="demo-matrix__callout"><b>Visible and parent-controlled.</b> Watch each agent live, capture its output, and join it when you need the result—without giving up the parent session.</p>
+            </div>
             <MatrixDemo />
-            <p className="demo-callout"><b>Why visible?</b> Parent-controlled panes let you watch and capture each agent while the parent pi remains usable.</p>
           </div>
         )}
         {demo.lines && <Snapshot demo={demo} />}

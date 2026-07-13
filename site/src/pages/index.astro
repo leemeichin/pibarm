@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import { Badge, Button, CodeBlock, Icon, StatusLine } from "pibarm-ds";
+import { Button, CodeBlock, Icon } from "pibarm-ds";
 import Demos from "../components/Demos.jsx";
 import { FEATURES } from "../data/site.ts";
 
@@ -57,25 +57,4 @@ const base = import.meta.env.BASE_URL;
     <Demos client:visible />
   </section>
 
-  <section class="pib-band">
-    <div>
-      <span class="band-eyebrow">The Matrix</span>
-      <h2 class="band-h2">Watch your agents work.</h2>
-      <p class="band-lead">Spawn scout, planner and worker agents beside the parent Pi in real WezTerm panes. Watch them, capture their logs, and join them.</p>
-      <Button variant="primary" as="a" href="#demos">
-        <Icon slot="leading" name="layers" size={15} />
-        See the demo
-      </Button>
-    </div>
-    <div>
-      <StatusLine project="pibarm" model="anthropic/Sonnet 4.5" context={41} branch="fix-flaky" dirty={3} pr={{ num: 128, state: "open" }} ci="running" />
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
-        <span class="band-prlabel">PR states:</span>
-        <Badge tone="success" dot>open</Badge>
-        <Badge tone="muted" dot>draft</Badge>
-        <Badge tone="merged" dot>merged</Badge>
-        <Badge tone="danger" dot>closed</Badge>
-      </div>
-    </div>
-  </section>
 </Base>

@@ -38,4 +38,35 @@ describe("renderTaskPills", () => {
     const lines = renderTaskPills(todos, [agent("matrix scout")], 200);
     expect(lines.join(" ")).toContain("+5 more");
   });
+
+  test("applies design-system tones through the theme without breaking wrapping", () => {
+    const tones: string[] = [];
+    const theme = {
+      fg(tone: string, text: string) {
+        tones.push(tone);
+        return `\x1b[31m${text}\x1b[0m`;
+      },
+    };
+    const todos = [todo("inspect the auth flow"), todo("write the failing test", true)];
+    const agents: AgentTask[] = [
+      { id: "a", label: "matrix scout", status: "running", session: "wt-scout" },
+      { id: "b", label: "planner", status: "failed" },
+    ];
+    const lines = renderTaskPills(todos, agents, 48, theme);
+    for (const line of lines) expect(visibleWidth(line)).toBeLessThanOrEqual(48);
+
+    // TaskPill term form: dim guillemets, muted todo marks, pea done,
+    // mustard running, tomato failed, plain-text labels, muted metadata.
+    expect(tones).toContain("dim");
+    expect(tones).toContain("muted");
+    expect(tones).toContain("success");
+    expect(tones).toContain("warning");
+    expect(tones).toContain("error");
+    expect(tones).toContain("text");
+  });
+
+  test("renders plain text when no theme is given", () => {
+    const lines = renderTaskPills([todo("plain task")], [], 80);
+    expect(lines.join("")).not.toContain("\x1b[");
+  });
 });

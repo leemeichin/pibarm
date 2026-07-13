@@ -9,6 +9,7 @@
     "../prompts"
   ],
   "enableSkillCommands": true,
+  "theme": "pibarm-light/pibarm-dark",
   "packages": [
     "git:github.com/DietrichGebert/ponytail"
   ]

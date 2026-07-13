@@ -6,7 +6,11 @@ import { Type } from "typebox";
 const PARAMS = Type.Object({});
 
 type Forge = "github" | "sourcehut" | "git";
-type Tone = "dim" | "muted" | "success" | "warning" | "error" | "accent";
+// Tones mirror the design system's StatusLine: orange project, plain model,
+// muted context/dirty, pea/mustard/tomato status colours, plum for merged.
+// "customMessageLabel" is the closest theme slot to the design system's plum
+// (purple in the built-in pi themes too), so merged PRs read as merged.
+type Tone = "dim" | "muted" | "success" | "warning" | "error" | "accent" | "text" | "customMessageLabel";
 type StatusPart = { text: string; tone: Tone };
 
 async function exec(pi: ExtensionAPI, command: string, args: string[], timeout = 10000) {
@@ -32,7 +36,7 @@ function checkSummary(checks: any[]): StatusPart {
 function prPart(pr: any): StatusPart {
   const text = ` #${pr.number}${pr.isDraft ? " draft" : ""}`;
   if (pr.isDraft) return { text, tone: "muted" };
-  if (pr.state === "MERGED") return { text, tone: "accent" };
+  if (pr.state === "MERGED") return { text, tone: "customMessageLabel" };
   if (pr.state === "CLOSED") return { text, tone: "error" };
   return { text, tone: "success" };
 }
@@ -90,9 +94,9 @@ async function uncommittedDiffPart(pi: ExtensionAPI, dirty: number): Promise<Sta
   if (parsed.insertions || parsed.deletions) {
     const plus = parsed.insertions ? `+${parsed.insertions}` : "+0";
     const minus = parsed.deletions ? `−${parsed.deletions}` : "−0";
-    return { text: `▰▰▰▰ ${plus} ${minus}`, tone: "warning" };
+    return { text: `▰▰▰▰ ${plus} ${minus}`, tone: "muted" };
   }
-  return { text: `▰▰▰▰ ±${dirty}`, tone: "warning" };
+  return { text: `▰▰▰▰ ±${dirty}`, tone: "muted" };
 }
 
 function modelLabel(ctx: ExtensionContext): string {
@@ -184,7 +188,7 @@ async function collect(pi: ExtensionAPI) {
   const jiraTicket = jiraCache.get(branch);
   const rightParts: StatusPart[] = [];
   if (jiraTicket) rightParts.push({ text: jiraTicket, tone: "accent" });
-  rightParts.push({ text: ` ${branch}`, tone: dirty ? "warning" : "success" });
+  rightParts.push({ text: ` ${branch}`, tone: "text" });
   const diffPart = await uncommittedDiffPart(pi, dirty);
   if (diffPart) rightParts.push(diffPart);
   const details: Record<string, unknown> = { branch, dirty, forge, jiraTicket, uncommittedDiff: diffPart?.text };
@@ -229,21 +233,21 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
         render(width: number): string[] {
           const statusText = extensionStatusesText(footerData.getExtensionStatuses());
           const dirPart: StatusPart = { text: ` ${basename(ctx.cwd)}`, tone: "accent" };
-          const contextPart: StatusPart = { text: contextLabel(ctx), tone: "warning" };
+          const contextPart: StatusPart = { text: contextLabel(ctx), tone: "muted" };
           const thinking = thinkingLabel(pi);
 
           // Degrade left-side detail before ever cutting into the right-hand
           // repo/PR/CI segment, which is the most actionable part.
           const variants: StatusPart[][] = [];
-          const full: StatusPart[] = [dirPart, { text: modelLabel(ctx), tone: "muted" }, contextPart];
+          const full: StatusPart[] = [dirPart, { text: modelLabel(ctx), tone: "text" }, contextPart];
           if (thinking) full.push({ text: thinking, tone: "accent" });
           if (statusText) full.push({ text: ` ${statusText}`, tone: "dim" });
           variants.push(full);
-          const noStatuses: StatusPart[] = [dirPart, { text: modelLabel(ctx), tone: "muted" }, contextPart];
+          const noStatuses: StatusPart[] = [dirPart, { text: modelLabel(ctx), tone: "text" }, contextPart];
           if (thinking) noStatuses.push({ text: thinking, tone: "accent" });
           variants.push(noStatuses);
-          variants.push([dirPart, { text: modelLabel(ctx), tone: "muted" }, contextPart]);
-          variants.push([dirPart, { text: shortModelLabel(ctx), tone: "muted" }, contextPart]);
+          variants.push([dirPart, { text: modelLabel(ctx), tone: "text" }, contextPart]);
+          variants.push([dirPart, { text: shortModelLabel(ctx), tone: "text" }, contextPart]);
           variants.push([dirPart, contextPart]);
 
           const right = rightStatusParts.length > 0

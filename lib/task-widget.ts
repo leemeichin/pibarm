@@ -3,6 +3,14 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 export type TodoItem = { text: string; done: boolean };
 export type AgentTaskStatus = "running" | "done" | "failed";
+
+// Pill tones follow the design system's terminal-native TaskPill form:
+// dim guillemets/separators, muted todo marks and metadata, mustard running,
+// pea done, tomato failed, plain text labels, orange for the agent kind slot.
+type PillTone = "dim" | "muted" | "success" | "warning" | "error" | "text" | "accent";
+type PillTheme = { fg(tone: PillTone, text: string): string };
+const PLAIN_THEME: PillTheme = { fg: (_tone, text) => text };
+const STATUS_TONE: Record<AgentTaskStatus, PillTone> = { running: "warning", done: "success", failed: "error" };
 export type AgentTask = {
   id: string;
   label: string;
@@ -102,8 +110,8 @@ export function updateTaskWidget(ctx: ExtensionContext) {
   if (ctx.mode === "tui") {
     // Component form: render receives the real viewport width, so pills wrap
     // correctly on narrow terminals instead of at a hardcoded column count.
-    ctx.ui.setWidget("pibarm-tasks", () => ({
-      render: (width: number) => renderTaskPills(getTodos(), Array.from(agentTasks.values()), width),
+    ctx.ui.setWidget("pibarm-tasks", (_tui, theme) => ({
+      render: (width: number) => renderTaskPills(getTodos(), Array.from(agentTasks.values()), width, theme),
       invalidate: () => {},
     }), { placement: "belowEditor" });
   } else {
@@ -111,15 +119,22 @@ export function updateTaskWidget(ctx: ExtensionContext) {
   }
 }
 
-export function renderTaskPills(items: TodoItem[], agents: AgentTask[], width: number) {
+export function renderTaskPills(items: TodoItem[], agents: AgentTask[], width: number, theme: PillTheme = PLAIN_THEME) {
+  const sep = ` ${theme.fg("dim", "·")} `;
   const allPills = [
-    ...items.map((todo, index) => pill(`${todo.done ? "✓" : "○"} ${index + 1} · ${shorten(todo.text, 34)}`)),
-    ...agents.map((task) => pill(`${statusIcon(task.status)} ${shorten(task.label, 24)}${task.session ? ` · ${shorten(task.session, 18)}` : ""}${task.detail ? ` · ${shorten(task.detail, 16)}` : ""}`)),
+    ...items.map((todo, index) => pill(
+      `${theme.fg(todo.done ? "success" : "muted", todo.done ? "✓" : "○")} ${theme.fg("muted", `${index + 1}`)}${sep}${theme.fg("text", shorten(todo.text, 34))}`,
+      theme,
+    )),
+    ...agents.map((task) => pill(
+      `${theme.fg(STATUS_TONE[task.status], statusIcon(task.status))} ${theme.fg("text", shorten(task.label, 24))}${task.session ? `${sep}${theme.fg("muted", shorten(task.session, 18))}` : ""}${task.detail ? `${sep}${theme.fg("muted", shorten(task.detail, 16))}` : ""}`,
+      theme,
+    )),
   ];
   const maxPills = 10;
   const visible = allPills.slice(0, maxPills);
   const hidden = allPills.length - visible.length;
-  const pills = hidden > 0 ? [...visible, pill(`+${hidden} more`)] : visible;
+  const pills = hidden > 0 ? [...visible, pill(theme.fg("muted", `+${hidden} more`), theme)] : visible;
 
   const maxWidth = Math.max(12, width);
   const lines: string[] = [];
@@ -137,8 +152,8 @@ export function renderTaskPills(items: TodoItem[], agents: AgentTask[], width: n
   return lines;
 }
 
-function pill(text: string) {
-  return `‹ ${text} ›`;
+function pill(text: string, theme: PillTheme = PLAIN_THEME) {
+  return `${theme.fg("dim", "‹")} ${text} ${theme.fg("dim", "›")}`;
 }
 
 function statusIcon(status: AgentTaskStatus) {

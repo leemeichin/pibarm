@@ -32,7 +32,7 @@ Use this skill for complex work that benefits from explicit roles.
 
 ## Delegation Guidance
 
-Use `run_worktree_agent` when the subtask may modify files or should not affect the active checkout. Use `run_subagent` for one self-contained read-only subtask. Use `run_subagents` when comparing or delegating several read-only subtasks, especially across models, for example:
+Use `run_worktree_agent` when the subtask may modify files or should not affect the active checkout. Use `run_subagent` for one self-contained read-only subtask. Use `run_subagents` when comparing or delegating several read-only subtasks, especially across models. When `pibarm.matrix.autoSpawn` is enabled, isolated delegation uses Matrix spawn/join tools instead; worktree agents and watchers remain unchanged. Examples:
 
 - inspect unfamiliar docs and summarize them
 - compare alternatives across models

@@ -4,9 +4,16 @@ import { Type } from "typebox";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { selectAgentModelRef, type ModelSelection } from "../lib/current-model.js";
+import { getPibarmSettings } from "../lib/pibarm-settings.js";
 import { finishAgentTask, removeAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 
 const WORKSPACE_PREFIX = "matrix";
+const HEADLESS_SUBAGENT_TOOLS = new Set(["run_subagent", "run_subagents"]);
+const AUTO_MATRIX_TOOLS = ["matrix_spawn", "matrix_capture", "matrix_join", "matrix_list", "matrix_kill"];
+
+export function routeSubagentsToMatrix(activeTools: string[]) {
+  return [...new Set([...activeTools.filter((tool) => !HEADLESS_SUBAGENT_TOOLS.has(tool)), ...AUTO_MATRIX_TOOLS])];
+}
 
 const SPAWN_PARAMS = Type.Object({
   role: Type.String({ description: "Agent role/name, e.g. scout, planner, worker, reviewer" }),
@@ -94,6 +101,7 @@ When to use it:
 - Matrix splits the parent Pi window by default and leaves the parent pane focused
 - Matrix agents run non-interactively and auto-exit when their task is done
 - use run_subagent/run_subagents for headless one-shot checks
+- set pibarm.matrix.autoSpawn=true to route those isolated delegations through Matrix automatically
 - use worktrees for separate branch/risky worker changes
 - use the current checkout for same-branch distributed work
 
@@ -307,7 +315,7 @@ function commandFor(
   args.push(agentPrompt(role, task, worktree));
 
   const piCommand = args.map(shellQuote).join(" ");
-  const renderCommand = `${shellQuote(process.execPath)} ${shellQuote(rendererPath())}`;
+  const renderCommand = `${shellQuote("node")} ${shellQuote(rendererPath())}`;
   const script = [
     `: > ${shellQuote(logPath)}`,
     `printf '%s\\n' ${shellQuote(`[matrix ${role} started]`)}`,
@@ -352,15 +360,6 @@ export default function matrixExtension(pi: ExtensionAPI) {
   const panes = new Map<string, AgentPane>();
   let lastPane = "";
 
-  function runningPanes() {
-    return Array.from(panes.values()).filter((pane) => pane.exited === undefined);
-  }
-
-  function updateStatus(ctx: ExtensionContext) {
-    const running = runningPanes().length;
-    ctx.ui.setStatus("matrix", running ? `matrix ${running} agents` : undefined);
-  }
-
   // Reconcile finished agents even when matrix_join is never called, so pills
   // don't show "running" forever and the footer count stays honest.
   async function sweepPanes(ctx: ExtensionContext) {
@@ -377,10 +376,7 @@ export default function matrixExtension(pi: ExtensionAPI) {
       );
       changed = true;
     }
-    if (changed) {
-      updateStatus(ctx);
-      updateTaskWidget(ctx);
-    }
+    if (changed) updateTaskWidget(ctx);
   }
 
   function uniqueRole(baseRole: string) {
@@ -443,6 +439,9 @@ export default function matrixExtension(pi: ExtensionAPI) {
     const result = await wezterm(pi, args, 15000);
     if (result.code !== 0) throw new Error(result.stderr || result.stdout || "wezterm spawn failed");
     const paneId = result.stdout;
+    // split-pane focuses the child; give input back to Pi before any further bookkeeping.
+    if (target.hostPane && place !== "window")
+      await wezterm(pi, ["activate-pane", "--pane-id", target.hostPane]).catch(() => undefined);
     if (!target.attached) await ensureWorkspaceClient(pi, target.workspace);
     lastPane = paneId;
     panes.set(role, {
@@ -464,10 +463,6 @@ export default function matrixExtension(pi: ExtensionAPI) {
       status: "running",
       session: target.workspace,
     });
-    await wezterm(pi, ["set-tab-title", "--pane-id", paneId, `matrix-${role}`]).catch(() => undefined);
-    if (target.hostPane && place !== "window")
-      await wezterm(pi, ["activate-pane", "--pane-id", target.hostPane]).catch(() => undefined);
-    ctx.ui.setStatus("matrix", `matrix ${panes.size} agents`);
     updateTaskWidget(ctx);
     return panes.get(role)!;
   }
@@ -496,7 +491,6 @@ export default function matrixExtension(pi: ExtensionAPI) {
     if (existing) {
       if (!target.attached) await ensureWorkspaceClient(pi, target.workspace);
       await wezterm(pi, ["activate-pane", "--pane-id", existing]).catch(() => undefined);
-      ctx.ui.setStatus("matrix", panes.size ? `matrix ${panes.size} agents` : "matrix workspace");
       return existing;
     }
     const result = await wezterm(
@@ -507,7 +501,6 @@ export default function matrixExtension(pi: ExtensionAPI) {
     if (result.code !== 0) throw new Error(result.stderr || result.stdout || "wezterm spawn failed");
     await ensureWorkspaceClient(pi, target.workspace);
     await wezterm(pi, ["activate-pane", "--pane-id", result.stdout]).catch(() => undefined);
-    ctx.ui.setStatus("matrix", panes.size ? `matrix ${panes.size} agents` : "matrix workspace");
     return result.stdout || "opened";
   }
 
@@ -555,7 +548,6 @@ export default function matrixExtension(pi: ExtensionAPI) {
     }
 
     if (lastPane && !Array.from(panes.values()).some((pane) => pane.pane === lastPane)) lastPane = "";
-    updateStatus(ctx);
     updateTaskWidget(ctx);
     return `${stillRunning.length ? `Timed out waiting for: ${stillRunning.join(", ")}\n\n` : ""}${blocks.join("\n\n---\n\n")}`;
   }
@@ -567,7 +559,6 @@ export default function matrixExtension(pi: ExtensionAPI) {
       for (const pane of panes.values()) removeAgentTask(`matrix:${pane.role}`);
       panes.clear();
       lastPane = "";
-      ctx.ui.setStatus("matrix", undefined);
       updateTaskWidget(ctx);
       return "Matrix panes killed.";
     }
@@ -577,7 +568,6 @@ export default function matrixExtension(pi: ExtensionAPI) {
     panes.delete(pane.role);
     removeAgentTask(`matrix:${pane.role}`);
     if (lastPane === pane.pane) lastPane = "";
-    updateStatus(ctx);
     updateTaskWidget(ctx);
     return `Killed ${pane.role}.`;
   }
@@ -705,6 +695,23 @@ export default function matrixExtension(pi: ExtensionAPI) {
     },
   });
 
+  async function applyAutomaticRouting(ctx: ExtensionContext) {
+    if (ctx.mode !== "tui" || (await getPibarmSettings(ctx)).matrix?.autoSpawn !== true) return false;
+    const active = pi.getActiveTools();
+    const routed = routeSubagentsToMatrix(active);
+    if (active.join("\n") !== routed.join("\n")) pi.setActiveTools(routed);
+    return true;
+  }
+
+  pi.on("session_start", async (_event, ctx) => {
+    await applyAutomaticRouting(ctx);
+  });
+  pi.on("before_agent_start", async (event, ctx) => {
+    if (!(await applyAutomaticRouting(ctx))) return;
+    return {
+      systemPrompt: `${event.systemPrompt}\n\nMatrix auto-spawn is enabled. Use matrix_spawn instead of run_subagent/run_subagents for isolated delegation, and matrix_join when results are needed. Leave worktree agents and watchers unchanged.`,
+    };
+  });
   pi.on("turn_end", async (_event, ctx) => sweepPanes(ctx));
 
   pi.registerTool({

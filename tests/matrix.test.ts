@@ -2,16 +2,18 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import matrixExtension from "../extensions/matrix.js";
+import matrixExtension, { routeSubagentsToMatrix } from "../extensions/matrix.js";
 
 const tools = new Map<string, any>();
 const calls: Array<{ command: string; args: string[] }> = [];
+const statusKeys: string[] = [];
 let cwd = "";
 let previousPane: string | undefined;
 
 beforeEach(async () => {
   tools.clear();
   calls.length = 0;
+  statusKeys.length = 0;
   cwd = await mkdtemp(join(tmpdir(), "matrix-test-"));
   previousPane = process.env.WEZTERM_PANE;
   process.env.WEZTERM_PANE = "7";
@@ -51,7 +53,12 @@ describe("Matrix workspace targeting", () => {
       model: undefined,
       modelRegistry: { getAvailable: () => [] },
       sessionManager: { getSessionId: () => "session" },
-      ui: { setStatus() {}, setWidget() {} },
+      ui: {
+        setStatus(key: string) {
+          statusKeys.push(key);
+        },
+        setWidget() {},
+      },
     };
     matrixExtension(pi as never);
 
@@ -69,7 +76,32 @@ describe("Matrix workspace targeting", () => {
     );
     expect(calls.some(({ args }) => args.includes("--new-window"))).toBe(false);
     expect(calls.some(({ args }) => args.includes("activate-pane") && args.includes("7"))).toBe(true);
+    expect(calls.some(({ args }) => args.includes("set-tab-title"))).toBe(false);
     expect(calls.some(({ args }) => args.includes("kill-pane") && args.includes("11"))).toBe(true);
     expect(calls.some(({ args }) => args.includes("kill-pane") && args.includes("7"))).toBe(false);
+    expect(statusKeys).not.toContain("matrix");
+
+    const split = calls.find(({ args }) => args.includes("split-pane"));
+    expect(split?.args.at(-1)).toContain("'node'");
+    expect(calls.findIndex(({ args }) => args.includes("activate-pane"))).toBe(
+      calls.findIndex(({ args }) => args.includes("split-pane")) + 1,
+    );
+  });
+});
+
+describe("automatic Matrix routing", () => {
+  test("replaces only headless subagent tools", () => {
+    expect(
+      routeSubagentsToMatrix(["read", "run_subagent", "run_subagents", "run_worktree_agent", "watch_agent"]),
+    ).toEqual([
+      "read",
+      "run_worktree_agent",
+      "watch_agent",
+      "matrix_spawn",
+      "matrix_capture",
+      "matrix_join",
+      "matrix_list",
+      "matrix_kill",
+    ]);
   });
 });

@@ -30,6 +30,11 @@ describe("mergePibarmSettings", () => {
     expect(settings.obsidian?.vault).toBe("/attacker/vault");
     expect(settings.obsidian?.autoSync).toBe(true);
   });
+
+  test("reads the Matrix auto-spawn setting", () => {
+    const settings = mergePibarmSettings({ pibarm: { matrix: { autoSpawn: true } } }, {}, false);
+    expect(settings.matrix?.autoSpawn).toBe(true);
+  });
 });
 
 describe("normalizeObsidianSettings", () => {

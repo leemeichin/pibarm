@@ -1,5 +1,65 @@
 import { describe, expect, test } from "bun:test";
-import { isReadOnlyCommand } from "../extensions/plan-worktree.js";
+import planWorktree, { isReadOnlyCommand } from "../extensions/plan-worktree.js";
+
+describe("elicit_plan_questions", () => {
+  test("submits and records a custom select answer", async () => {
+    const tools = new Map<string, any>();
+    const pi = {
+      registerTool(tool: any) {
+        tools.set(tool.name, tool);
+      },
+      registerCommand() {},
+      on() {},
+    };
+    planWorktree(pi as never);
+
+    const ctx = {
+      hasUI: true,
+      mode: "tui",
+      ui: {
+        async custom(factory: any) {
+          let result: any;
+          const tui = { requestRender() {} };
+          const theme = {
+            fg: (_tone: string, text: string) => text,
+            bg: (_tone: string, text: string) => text,
+            bold: (text: string) => text,
+          };
+          const component = factory(tui, theme, {}, (value: any) => {
+            result = value;
+          });
+          component.handleInput("\u001b[B");
+          component.handleInput("\r");
+          for (const character of "kept answer") component.handleInput(character);
+          component.handleInput("\r");
+          component.handleInput("\r");
+          return result;
+        },
+      },
+    };
+
+    const result = await tools.get("elicit_plan_questions").execute(
+      "ask",
+      {
+        questions: [
+          {
+            id: "scope",
+            question: "What scope?",
+            type: "select_one",
+            options: ["Default"],
+            allowCustom: true,
+          },
+        ],
+      },
+      undefined,
+      undefined,
+      ctx,
+    );
+
+    expect(result.details.answers[0]).toMatchObject({ answer: "kept answer", value: "kept answer", wasCustom: true });
+    expect(result.content[0].text).toContain("kept answer");
+  });
+});
 
 describe("isReadOnlyCommand", () => {
   test("allows plain read-only commands", () => {

@@ -5,7 +5,7 @@ description: Use parent-controlled WezTerm Matrix panes for visible multi-agent 
 
 # Matrix
 
-Matrix is a visible cockpit, not the default way to do every task.
+Matrix is a visible cockpit. It is opt-in unless `pibarm.matrix.autoSpawn` is enabled in Pi settings.
 
 Use it when parallel work benefits from observation:
 
@@ -14,7 +14,7 @@ Use it when parallel work benefits from observation:
 - run a worker in a separate worktree
 - keep a TUI/log/test command visible beside Pi
 
-Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility does not matter.
+When auto-spawn is off, prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility does not matter. When it is on, those tools are replaced by Matrix spawn/join tools for isolated delegation; worktree agents and watchers stay unchanged.
 
 ## Commands
 
@@ -56,7 +56,7 @@ Prefer `run_subagent`/`run_subagents` for cheap headless checks where visibility
 - same branch/distributed work: no worktree
 - separate branch or risky changes: `matrix_spawn` with `worktree: true`
 - use `matrix_spawn.placement` for `right`, `down`, `tab`, or `window` when placement matters
-- Matrix splits the parent Pi pane's current WezTerm window by default, returns focus to the parent, streams the agent's reasoning/response/tool activity live, logs the same transcript to `.pi/matrix/`, shows agent pills in the shared task widget, and uses a dedicated workspace only when Pi is outside WezTerm
+- Matrix splits the parent Pi pane's current WezTerm window by default, immediately returns input focus to the parent, streams the agent's reasoning/response/tool activity live, logs the same transcript to `.pi/matrix/`, shows agent pills in the shared task widget, and uses a dedicated workspace only when Pi is outside WezTerm
 
 5. Clean up:
 

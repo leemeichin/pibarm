@@ -293,11 +293,11 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
       return states[current];
     }
 
-    function saveEditor() {
+    function saveEditor(input = editor.getText()) {
       const question = currentQuestion();
       const state = currentState();
       if (!question || !state) return;
-      const text = editor.getText().trim();
+      const text = input.trim();
       if (noteMode) {
         state.notes = text;
       } else if (customMode) {
@@ -372,15 +372,15 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
       else goto(questions.length);
     }
 
-    editor.onSubmit = () => {
-      saveEditor();
-      if (noteMode || customMode) {
+    editor.onSubmit = (text) => {
+      saveEditor(text);
+      if (noteMode) {
         noteMode = false;
-        customMode = false;
         loadEditor();
         refresh();
         return;
       }
+      if (customMode) customMode = false;
       advance();
     };
 

@@ -11,8 +11,13 @@ export interface ObsidianSettings {
   includeAttachments?: boolean;
 }
 
+export interface MatrixSettings {
+  autoSpawn?: boolean;
+}
+
 export interface PibarmSettings {
   obsidian?: ObsidianSettings;
+  matrix?: MatrixSettings;
 }
 
 export interface SettingsContext {

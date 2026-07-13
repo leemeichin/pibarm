@@ -275,6 +275,20 @@ For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
 `matrix.ts` is WezTerm-native orchestration for visible parent-controlled agents. It opens agents in WezTerm tabs/splits and keeps only lightweight pane tracking in Pi. Use `/matrix-help` inside Pi for the quick operating guide.
 
+To make visible Matrix panes the default for `run_subagent` and `run_subagents`, add this opt-in setting to global or trusted project Pi settings, then reload Pi:
+
+```json
+{
+  "pibarm": {
+    "matrix": {
+      "autoSpawn": true
+    }
+  }
+}
+```
+
+Worktree agents and watchers remain unchanged.
+
 ```text
 /matrix investigate flaky tests
 /matrix-attach
@@ -289,7 +303,7 @@ Defaults:
 - agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/matrix/`, and panes exit when tasks finish
 - `matrix_join` waits for completion, returns logs, and cleans up only the finished agent panes
 - Matrix uses the parent Pi pane and its current WezTerm workspace by default; `placement: "window"` explicitly opens another window, and runs outside WezTerm fall back to a dedicated Matrix workspace
-- `/matrix` keeps the parent pane on top with scout/planner split below it and returns focus to the parent
+- `/matrix` keeps the parent pane on top with scout/planner split below it and immediately returns input focus to the parent
 - agents run non-interactively and cannot receive input mid-run; join them and spawn a follow-up agent to give new instructions
 - `scout` and `planner` use read-focused toolsets
 - `worker` uses normal tools

@@ -8,6 +8,8 @@ import { getObsidianSettings } from "./pibarm-settings.js";
 const execFileAsync = promisify(execFile);
 
 const INDEX_FILE = ".pibarm-sessions.json";
+const GENERIC_BRANCHES = new Set(["main", "master", "trunk", "develop"]);
+const JIRA_KEY = /^[A-Z][A-Z0-9]+-\d+$/;
 
 interface SessionIndexEntry {
   path: string;
@@ -85,6 +87,20 @@ async function resolveRepoDir(cwd: string): Promise<string> {
   const parsed = url ? parseForgeRemote(url) : undefined;
   if (parsed) return `${parsed.org}/${parsed.repo}`;
   return `local/${pathSegment(basename(cwd)) ?? "project"}`;
+}
+
+async function gitBranch(cwd: string): Promise<string | undefined> {
+  try {
+    const { stdout } = await execFileAsync("git", ["-C", cwd, "branch", "--show-current"], { timeout: 5000 });
+    return usableBranch(stdout);
+  } catch {
+    return undefined;
+  }
+}
+
+export function usableBranch(input: string): string | undefined {
+  const branch = input.trim();
+  return branch && !GENERIC_BRANCHES.has(branch.toLowerCase()) ? branch : undefined;
 }
 
 // Index paths use forward slashes so the vault index stays portable across machines.
@@ -166,21 +182,100 @@ function textContent(content: unknown): string {
     .map((part) => {
       if (typeof part === "string") return part;
       if (part && typeof part === "object" && "type" in part) {
-        const typed = part as { type?: unknown; text?: unknown; source?: unknown };
+        const typed = part as { type?: unknown; text?: unknown };
         if (typed.type === "text" && typeof typed.text === "string") return typed.text;
         if (typed.type === "image") return "[image]";
       }
-      return JSON.stringify(part);
+      return "";
     })
     .filter(Boolean)
     .join("\n");
 }
 
-function renderEntry(entry: SessionEntry): string {
+function compactInline(input: string, limit = 180) {
+  const text = input.replace(/\s+/g, " ").trim();
+  return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
+}
+
+function compactToolResult(content: unknown) {
+  const text = textContent(content).trim();
+  if (!text) return "empty";
+  const lines = text.split("\n").length;
+  const preview = compactInline(text);
+  return text.length <= 180 ? preview : `${lines} lines, ${text.length.toLocaleString()} chars — ${preview}`;
+}
+
+function toolCalls(content: unknown): string[] {
+  if (!Array.isArray(content)) return [];
+  return content.flatMap((part) => {
+    if (!part || typeof part !== "object") return [];
+    const call = part as { type?: unknown; name?: unknown; arguments?: unknown };
+    if (call.type !== "toolCall" || typeof call.name !== "string") return [];
+    const args = compactInline(JSON.stringify(call.arguments ?? {})).replace(/`/g, "'");
+    return [`> **${call.name}** — \`${args}\``];
+  });
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function jiraIssue(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const issue = jiraIssue(item);
+      if (issue) return issue;
+    }
+    return undefined;
+  }
+  const object = record(value);
+  if (!object) return undefined;
+
+  const fields = record(object.fields);
+  const key = [object.key, object.issueKey, object.ticketKey].find(
+    (candidate): candidate is string => typeof candidate === "string" && JIRA_KEY.test(candidate),
+  );
+  const title = [object.summary, object.title, fields?.summary, fields?.title].find(
+    (candidate): candidate is string => typeof candidate === "string" && Boolean(candidate.trim()),
+  );
+  if (key && title) return `${key} ${compactInline(title, 120)}`;
+
+  for (const child of Object.values(object)) {
+    const issue = jiraIssue(child);
+    if (issue) return issue;
+  }
+  return undefined;
+}
+
+export function jiraIssueName(entries: SessionEntry[]): string | undefined {
+  for (const entry of [...entries].reverse()) {
+    if (entry.type !== "message") continue;
+    const message = entry.message as { content?: unknown };
+    const text = textContent(message.content).trim();
+    if (!text) continue;
+    try {
+      const issue = jiraIssue(JSON.parse(text));
+      if (issue) return issue;
+    } catch {
+      const match = text.match(
+        /(?:key|ticket)\s*[:=]\s*([A-Z][A-Z0-9]+-\d+)[\s\S]{0,200}?(?:summary|title)\s*[:=]\s*([^\n]{1,120})/i,
+      );
+      if (match) return `${match[1]!.toUpperCase()} ${compactInline(match[2]!, 120)}`;
+    }
+  }
+  return undefined;
+}
+
+export function renderEntry(entry: SessionEntry): string {
   if (entry.type === "message") {
-    const message = entry.message as { role?: string; content?: unknown; toolName?: string };
+    const message = entry.message as { role?: string; content?: unknown; toolName?: string; isError?: boolean };
+    if (message.role === "toolResult") {
+      return `> **${message.toolName ?? "tool"} ${message.isError ? "error" : "result"}** — ${compactToolResult(message.content)}\n`;
+    }
     const role = message.role ?? "message";
-    return `## ${role}\n\n${textContent(message.content).trim() || "_(empty)_"}\n`;
+    const content = textContent(message.content).trim();
+    const calls = toolCalls(message.content);
+    return `## ${role}\n\n${[content, ...calls].filter(Boolean).join("\n\n") || "_(empty)_"}\n`;
   }
   if (entry.type === "custom_message") {
     return `## ${entry.customType}\n\n${textContent(entry.content).trim() || "_(empty)_"}\n`;
@@ -205,7 +300,9 @@ export async function exportCurrentSessionToObsidian(ctx: ExtensionContext) {
     );
 
   const sessionId = ctx.sessionManager.getSessionId();
-  const sessionName = ctx.sessionManager.getSessionName();
+  const entries = ctx.sessionManager.getBranch();
+  const sessionName =
+    ctx.sessionManager.getSessionName()?.trim() || jiraIssueName(entries) || (await gitBranch(ctx.cwd));
   const root = join(settings.vault, settings.basePath);
   const repoDir = await resolveRepoDir(ctx.cwd);
   const notePath = await resolveNotePath(settings.vault, root, repoDir, sessionId, sessionName || undefined);
@@ -214,7 +311,6 @@ export async function exportCurrentSessionToObsidian(ctx: ExtensionContext) {
   if (!insideVault(settings.vault, path)) {
     throw new Error(`Refusing to export outside the vault: ${path}`);
   }
-  const entries = ctx.sessionManager.getBranch();
   const sessionFile = ctx.sessionManager.getSessionFile();
 
   await mkdir(dirname(path), { recursive: true });

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { claimNotePath, parseForgeRemote } from "../lib/obsidian-export.js";
+import type { SessionEntry } from "@earendil-works/pi-coding-agent";
+import { claimNotePath, jiraIssueName, parseForgeRemote, renderEntry, usableBranch } from "../lib/obsidian-export.js";
 
 describe("parseForgeRemote", () => {
   test("parses scp-style GitHub remotes", () => {
@@ -24,6 +25,51 @@ describe("parseForgeRemote", () => {
     expect(parseForgeRemote("")).toBeUndefined();
     expect(parseForgeRemote("not a remote")).toBeUndefined();
     expect(parseForgeRemote("https://github.com/")).toBeUndefined();
+  });
+});
+
+describe("session name fallbacks", () => {
+  test("extracts a Jira key and nested summary from recent context", () => {
+    const entries = [
+      {
+        type: "message",
+        message: {
+          role: "toolResult",
+          content: [{ type: "text", text: JSON.stringify({ key: "ABC-123", fields: { summary: "Fix login" } }) }],
+        },
+      },
+    ] as SessionEntry[];
+    expect(jiraIssueName(entries)).toBe("ABC-123 Fix login");
+  });
+
+  test("uses only non-generic branches", () => {
+    expect(usableBranch("feature/ABC-123\n")).toBe("feature/ABC-123");
+    expect(usableBranch("main\n")).toBeUndefined();
+    expect(usableBranch("")).toBeUndefined();
+  });
+});
+
+describe("compact transcript rendering", () => {
+  test("renders tool calls and results as bounded rows", () => {
+    const call = {
+      type: "message",
+      message: {
+        role: "assistant",
+        content: [{ type: "toolCall", id: "1", name: "read", arguments: { path: "src/app.ts" } }],
+      },
+    } as SessionEntry;
+    const result = {
+      type: "message",
+      message: {
+        role: "toolResult",
+        toolName: "read",
+        content: [{ type: "text", text: `${"output ".repeat(40)}\nsecond line` }],
+        isError: false,
+      },
+    } as SessionEntry;
+
+    expect(renderEntry(call)).toContain('> **read** — `{"path":"src/app.ts"}`');
+    expect(renderEntry(result)).toMatch(/^> \*\*read result\*\* — 2 lines, \d+ chars — .+…\n$/);
   });
 });
 

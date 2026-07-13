@@ -41,6 +41,9 @@
     ],
     "prompts": [
       "./prompts"
+    ],
+    "themes": [
+      "./.pi/themes"
     ]
   }
 }

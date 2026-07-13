@@ -352,7 +352,7 @@ Colour mapping (mirrors the pibarm design system's StatusLine):
 
 ## pibarm theme
 
-`.pi/themes/` ships `pibarm-dark` and `pibarm-light` pi themes built from the design-system palette: cream text on navy for dark terminals, navy ink on cream for light ones, with the orange-dot accent and the pea/sky/mustard/tomato/plum status set. `.pi/settings.json` sets `"theme": "pibarm-light/pibarm-dark"` so pi auto-switches with the terminal background; pick one explicitly with `/theme`.
+`.pi/themes/` ships `pibarm-dark` and `pibarm-light` pi themes built from the design-system palette: cream text on navy for dark terminals, navy ink on cream for light ones, with the orange-dot accent and the pea/sky/mustard/tomato/plum status set. The package manifest exposes them globally when pibarm is installed, while `.pi/settings.json` sets `"theme": "pibarm-light/pibarm-dark"` so pi auto-switches with the terminal background; pick one explicitly with `/theme`.
 
 It uses local CLI auth only:
 

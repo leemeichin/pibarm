@@ -10,7 +10,7 @@ export interface Feature {
 export const FEATURES: Feature[] = [
   { icon: "clipboard-list", eyebrow: "Plan mode", title: "Plan first, edit later", body: "pi inspects read-only and asks explicit questions before it proposes a plan. edit and write stay disabled until you approve." },
   { icon: "git-branch", eyebrow: "Worktrees", title: "Risky work, isolated", body: "Execute plans in a repo-local git worktree instead of your active checkout. Review the diff, then merge or bin it." },
-  { icon: "layers", eyebrow: "Matrix", title: "Visible parallel agents", body: "Spawn scout, planner and worker agents in WezTerm panes you can watch, message, and join — orchestration you can see." },
+  { icon: "layers", eyebrow: "Matrix", title: "Visible parallel agents", body: "Spawn scout, planner and worker agents beside the parent Pi in WezTerm panes you can watch, capture, and join." },
   { icon: "sliders-horizontal", eyebrow: "Presets", title: "Right model for the role", body: "Switch model, thinking level and active tools per role. Planners read; executors write; simple jobs use lighter models." },
   { icon: "bell", eyebrow: "Watchers", title: "Sibling agents that wait", body: "A watcher polls a PR or external state and only runs when something changes — follow-up without babysitting." },
   { icon: "notebook-pen", eyebrow: "Obsidian", title: "Sessions, exported", body: "Auto-sync each session to your Obsidian vault, debounced after turns and compaction. Your notes, your machine." },

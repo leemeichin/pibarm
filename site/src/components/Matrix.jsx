@@ -30,7 +30,7 @@ const MATRIX_PANES = [
     "worktree .pi/wt/fix-flaky",
     "edit  watch-agent.ts",
     "run   bun test → 12 pass",
-    "✓ pushed pibarm/fix-flaky"] },
+    "✓ worktree ready to review"] },
 ];
 
 const PILL_ICONS = { running: "●", done: "✓" };
@@ -79,13 +79,15 @@ export default function MatrixDemo() {
       setParent([]); setPanes(MATRIX_PANES.map((p) => ({ role: p.role, color: p.color, worktree: p.worktree, mounted: false, status: "idle", lines: [] })));
       await wait(650);
       setParent((L) => [...L, { k: "cmd", t: "/matrix investigate flaky worker tests" }]); await wait(700);
-      setParent((L) => [...L, { k: "dim", t: "spawning scout · planner in matrix-pibarm-a1b2" }]); await wait(500);
+      setParent((L) => [...L, { k: "dim", t: "splitting scout · planner below parent in workspace default" }]); await wait(500);
       await streamPane(0);
       await streamPane(1);
       await wait(300);
-      setParent((L) => [...L, { k: "cmd", t: "/matrix-join scout planner" }]); await wait(650);
-      setParent((L) => [...L, { k: "ok", t: "✓ joined 2 agents · plan approved" }]); await wait(550);
-      setParent((L) => [...L, { k: "cmd", t: "/matrix-spawn worker fix + verify" }]); await wait(650);
+      setParent((L) => [...L, { k: "cmd", t: "/matrix-join all" }]); await wait(650);
+      setPane(0, { mounted: false, status: "idle", lines: [] });
+      setPane(1, { mounted: false, status: "idle", lines: [] });
+      setParent((L) => [...L, { k: "ok", t: "✓ joined 2 agents · panes cleaned up" }]); await wait(550);
+      setParent((L) => [...L, { k: "info", t: "matrix_spawn worker · worktree: true · fix + verify" }]); await wait(650);
       await streamPane(2);
       await wait(300);
       setParent((L) => [...L, { k: "ok", t: "✓ matrix complete · fix-flaky ready to merge" }]);
@@ -99,6 +101,7 @@ export default function MatrixDemo() {
   const parentColor = { cmd: "#f2f0e8", dim: "#8fa1b0", ok: "var(--pea-500)", info: "#7fb2ce" };
   const statusLabel = { idle: "idle", running: "running", done: "done" };
   const dotColor = (s) => s === "done" ? "var(--pea-500)" : s === "running" ? "var(--mustard-500)" : "#3a4b59";
+  const visiblePanes = panes.filter((p) => p.mounted);
 
   return (
     <div>
@@ -109,7 +112,7 @@ export default function MatrixDemo() {
             <span style={{ ...matrixStyles.dot, background: "#e6b02c" }} />
             <span style={{ ...matrixStyles.dot, background: "#6fa84c" }} />
           </div>
-          <span style={matrixStyles.title}>WezTerm · <b style={{ color: "var(--orange-400)" }}>matrix-pibarm-a1b2</b> · parent pi</span>
+          <span style={matrixStyles.title}>WezTerm · <b style={{ color: "var(--orange-400)" }}>workspace default</b> · parent pi</span>
         </div>
 
         <div style={matrixStyles.parent}>
@@ -122,9 +125,9 @@ export default function MatrixDemo() {
           <span className="pib-term__caret" />
         </div>
 
-        <div style={matrixStyles.grid}>
-          {panes.map((p, i) => (
-            <div key={i} style={{ ...matrixStyles.pane, borderRight: i === 2 ? "none" : matrixStyles.pane.borderRight, opacity: p.mounted ? 1 : 0.32, transition: "opacity .35s ease" }}>
+        <div style={{ ...matrixStyles.grid, gridTemplateColumns: `repeat(${Math.max(1, visiblePanes.length)}, 1fr)` }}>
+          {visiblePanes.map((p, i) => (
+            <div key={p.role} style={{ ...matrixStyles.pane, borderRight: i === visiblePanes.length - 1 ? "none" : matrixStyles.pane.borderRight, transition: "opacity .35s ease" }}>
               <div style={matrixStyles.paneHead}>
                 <span style={{ ...matrixStyles.role, color: p.color }}>{p.role}{p.worktree ? " ⌥" : ""}</span>
                 <span style={matrixStyles.statusWrap}>

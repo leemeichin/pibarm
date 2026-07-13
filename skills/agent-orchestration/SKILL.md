@@ -46,4 +46,4 @@ For Matrix/WezTerm orchestration:
 - use worktrees for separate branch work
 - use the current checkout for same-branch distributed work
 - use `matrix_join` to wait for Matrix agents, collect logs, and clean up panes before summarizing results
-- use `matrix_kill all` for forced cleanup, including untracked Matrix workspace panes
+- use `matrix_kill all` for forced cleanup of this session's tracked Matrix agent panes

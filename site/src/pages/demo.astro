@@ -37,10 +37,10 @@ import MatrixDemo from "../components/Matrix.jsx";
       <h2 class="demo-cap-title">Matrix orchestration</h2>
       <span class="demo-cap-note">parallel scout · planner · worker in WezTerm</span>
     </div>
-    <p class="demo-note" style="max-width:70ch;margin-bottom:20px;">The parent session spawns visible agents in WezTerm panes. Scout and planner inspect and plan in parallel; once joined, a worker fixes and verifies in its own worktree. The task widget below the window mirrors every delegated agent.</p>
+    <p class="demo-note" style="max-width:70ch;margin-bottom:20px;">The parent session stays focused while scout and planner run in splits below it. Joining captures their logs and removes only their panes; a worker can then fix and verify in its own worktree. The task widget below the window mirrors every active agent.</p>
     <MatrixDemo client:visible />
     <div style="margin-top:22px;">
-      <Callout tone="tip" title="Why visible?">Parent-controlled panes mean you can watch, message, and capture each agent's output live — orchestration you can audit, not a black box.</Callout>
+      <Callout tone="tip" title="Why visible?">Parent-controlled panes mean you can watch and capture each agent's output live while the parent Pi remains usable — orchestration you can audit, not a black box.</Callout>
     </div>
   </section>
 </Base>

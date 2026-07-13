@@ -119,43 +119,43 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 
 ## Commands
 
-| Command                                   | What it does                                                                                  |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `/plan <task>`                            | Enter read-only plan mode and ask for a plan.                                                 |
-| `/plan-mode`                              | Toggle read-only plan mode manually.                                                          |
-| `/plan-show`                              | Show the last captured plan, status, and parsed steps.                                        |
-| `/approve-plan [active\|worktree <name>]` | Approve and execute the captured plan.                                                        |
-| `/refine-plan <feedback>`                 | Revise the captured plan and require approval again.                                          |
-| `/execute-plan`                           | Execute the last captured plan in the active checkout.                                        |
-| `/execute-plan worktree <name>`           | Execute the last captured plan in a new repo-local git worktree.                              |
-| `/worktrees`                              | List git worktrees for this repo.                                                             |
-| `/worktree-diff <path>`                   | Show status + diff stat for a worktree.                                                       |
-| `/worktree-remove [--force] <path>`       | Remove a worktree after review/merge/abandoning it.                                           |
-| `/tasks`                                  | Show all todo and delegated agent task widget items.                                          |
-| `/watchers`                               | List active watcher sibling agents.                                                           |
-| `/watcher-stop [name]`                    | Stop watcher sibling agents.                                                                  |
-| `/preset`                                 | List configured role presets.                                                                 |
-| `/preset planner`                         | Apply planner model/tool/thinking preset.                                                     |
-| `/preset executor`                        | Apply executor model/tool/thinking preset.                                                    |
-| `/mcporter`                               | Show configured mcporter command templates.                                                   |
-| `/mcporter <args...>`                     | Run raw mcporter args from inside pi.                                                         |
-| `/repo-status`                            | Show git/forge/CI status and update pi statusline.                                            |
-| `/forge [github\|sourcehut\|auto]`        | Show, set, or reset the remembered forge for this repo.                                       |
-| `/forge-prs`                              | List PRs/patches using the detected/configured forge.                                         |
-| `/forge-ci`                               | List CI/builds using the detected/configured forge.                                           |
-| `/forge-tickets`                          | List issues/tickets using the detected/configured forge.                                      |
-| `/review [#number\|url\|branch]`          | Start a PR/patch review; GitHub findings are posted inline when possible.                     |
-| `/obsidian-status`                        | Show Obsidian export settings resolved from Pi settings.                                      |
-| `/obsidian-export`                        | Export the current session to the configured Obsidian vault.                                  |
-| `/matrix-help`                            | Explain when/how to use Matrix and its prior art.                                             |
-| `/matrix <task>`                          | Start a WezTerm Matrix with scout/planner panes.                                              |
-| `/matrix-attach`                          | Open/focus the session-specific Matrix workspace window.                                      |
-| `/matrix-spawn <role> <task>`             | Spawn one Matrix agent in a WezTerm pane.                                                     |
-| `/matrix-capture [role]`                  | Capture recent output from Matrix panes/logs.                                                 |
-| `/matrix-join [role\|all]`                | Wait for Matrix agents, capture logs, clean up panes; closes the workspace when all are done. |
-| `/matrix-list`                            | List Matrix agents and panes for this session.                                                |
-| `/matrix-kill [role\|all]`                | Kill this session's Matrix panes.                                                             |
-| `/matrix-kill-orphans`                    | Kill Matrix panes left behind by other sessions.                                              |
+| Command                                   | What it does                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------------- |
+| `/plan <task>`                            | Enter read-only plan mode and ask for a plan.                             |
+| `/plan-mode`                              | Toggle read-only plan mode manually.                                      |
+| `/plan-show`                              | Show the last captured plan, status, and parsed steps.                    |
+| `/approve-plan [active\|worktree <name>]` | Approve and execute the captured plan.                                    |
+| `/refine-plan <feedback>`                 | Revise the captured plan and require approval again.                      |
+| `/execute-plan`                           | Execute the last captured plan in the active checkout.                    |
+| `/execute-plan worktree <name>`           | Execute the last captured plan in a new repo-local git worktree.          |
+| `/worktrees`                              | List git worktrees for this repo.                                         |
+| `/worktree-diff <path>`                   | Show status + diff stat for a worktree.                                   |
+| `/worktree-remove [--force] <path>`       | Remove a worktree after review/merge/abandoning it.                       |
+| `/tasks`                                  | Show all todo and delegated agent task widget items.                      |
+| `/watchers`                               | List active watcher sibling agents.                                       |
+| `/watcher-stop [name]`                    | Stop watcher sibling agents.                                              |
+| `/preset`                                 | List configured role presets.                                             |
+| `/preset planner`                         | Apply planner model/tool/thinking preset.                                 |
+| `/preset executor`                        | Apply executor model/tool/thinking preset.                                |
+| `/mcporter`                               | Show configured mcporter command templates.                               |
+| `/mcporter <args...>`                     | Run raw mcporter args from inside pi.                                     |
+| `/repo-status`                            | Show git/forge/CI status and update pi statusline.                        |
+| `/forge [github\|sourcehut\|auto]`        | Show, set, or reset the remembered forge for this repo.                   |
+| `/forge-prs`                              | List PRs/patches using the detected/configured forge.                     |
+| `/forge-ci`                               | List CI/builds using the detected/configured forge.                       |
+| `/forge-tickets`                          | List issues/tickets using the detected/configured forge.                  |
+| `/review [#number\|url\|branch]`          | Start a PR/patch review; GitHub findings are posted inline when possible. |
+| `/obsidian-status`                        | Show Obsidian export settings resolved from Pi settings.                  |
+| `/obsidian-export`                        | Export the current session to the configured Obsidian vault.              |
+| `/matrix-help`                            | Explain when/how to use Matrix and its prior art.                         |
+| `/matrix <task>`                          | Start a WezTerm Matrix with scout/planner panes.                          |
+| `/matrix-attach`                          | Focus a Matrix agent or the parent WezTerm pane.                          |
+| `/matrix-spawn <role> <task>`             | Spawn one Matrix agent beside the parent Pi pane.                         |
+| `/matrix-capture [role]`                  | Capture recent output from Matrix panes/logs.                             |
+| `/matrix-join [role\|all]`                | Wait for Matrix agents, capture logs, and clean up their panes.           |
+| `/matrix-list`                            | List tracked Matrix agents in the current workspace.                      |
+| `/matrix-kill [role\|all]`                | Kill tracked Matrix agent panes without touching the parent workspace.    |
+| `/matrix-kill-orphans`                    | Kill Matrix panes left behind by other sessions.                          |
 
 ## Tools exposed to the agent
 
@@ -181,11 +181,11 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `forge_tickets`           | List issues/tickets using the detected/configured forge.                                                                                                                |
 | `todo_list`               | Track progress when one prompt contains multiple requested tasks in the shared task widget.                                                                             |
 | `matrix_spawn`            | Spawn a parent-controlled pi agent in a WezTerm Matrix pane.                                                                                                            |
-| `matrix_attach`           | Open the Matrix WezTerm workspace.                                                                                                                                      |
+| `matrix_attach`           | Focus a Matrix agent or the parent WezTerm pane.                                                                                                                        |
 | `matrix_capture`          | Capture recent output from Matrix WezTerm panes/logs.                                                                                                                   |
-| `matrix_join`             | Wait for Matrix agents to finish, capture logs, clean up panes, and close the finished workspace.                                                                       |
-| `matrix_list`             | List known Matrix agents and untracked Matrix workspace panes.                                                                                                          |
-| `matrix_kill`             | Kill Matrix WezTerm panes.                                                                                                                                              |
+| `matrix_join`             | Wait for Matrix agents to finish, capture logs, and clean up their panes.                                                                                               |
+| `matrix_list`             | List tracked Matrix agents in the parent workspace.                                                                                                                     |
+| `matrix_kill`             | Kill tracked Matrix agent panes without touching the parent workspace.                                                                                                  |
 
 ## Rich planning questions
 
@@ -287,14 +287,15 @@ Defaults:
 
 - spawned agents use the current active model unless `model` is set explicitly; simple-scope tasks may use a lighter authenticated model
 - agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/matrix/`, and panes exit when tasks finish
-- `matrix_join` waits for completion, returns logs, cleans up pane tracking, and closes the workspace window once every tracked agent is done
-- Matrix uses a project/session-specific workspace name like `matrix-<project>-<session>` to avoid cross-session conflicts, opens/focuses a visible WezTerm client automatically, and splits that window unless `placement` is `tab` or `window`
+- `matrix_join` waits for completion, returns logs, and cleans up only the finished agent panes
+- Matrix uses the parent Pi pane and its current WezTerm workspace by default; `placement: "window"` explicitly opens another window, and runs outside WezTerm fall back to a dedicated Matrix workspace
+- `/matrix` keeps the parent pane on top with scout/planner split below it and returns focus to the parent
 - agents run non-interactively and cannot receive input mid-run; join them and spawn a follow-up agent to give new instructions
 - `scout` and `planner` use read-focused toolsets
 - `worker` uses normal tools
 - `worktree: true` on `matrix_spawn` creates an isolated branch/worktree when the agent needs separate branch work
 - same-branch/distributed work uses the current checkout
-- `/matrix-kill all` also closes untracked panes left in this session's Matrix workspace; `/matrix-kill-orphans` cleans up other sessions' leftovers
+- `/matrix-kill all` kills only panes tracked by this Pi session; `/matrix-kill-orphans` cleans up legacy/fallback dedicated Matrix workspaces
 
 ## Notifications and permission gates
 

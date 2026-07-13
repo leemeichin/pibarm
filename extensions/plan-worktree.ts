@@ -1,4 +1,5 @@
 import { mkdir } from "node:fs/promises";
+import { CONFIG_DIR_NAME } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { StringEnum } from "@earendil-works/pi-ai";
 import { Editor, type EditorTheme, Key, matchesKey, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
@@ -636,9 +637,9 @@ async function createWorktree(pi: ExtensionAPI, cwd: string, name: string, baseR
   const root = await gitRoot(pi);
 
   const slug = slugify(name);
-  const path = join(root, ".pi", "wt", slug);
+  const path = join(root, CONFIG_DIR_NAME, "wt", slug);
   const branch = `pibarm/${slug}`;
-  await mkdir(join(root, ".pi", "wt"), { recursive: true });
+  await mkdir(join(root, CONFIG_DIR_NAME, "wt"), { recursive: true });
   const result = await pi.exec("git", ["-C", root, "worktree", "add", "-b", branch, path, baseRef], { timeout: 30000 });
   if (result.code === 0) return { root, path, branch, reused: false, stdout: result.stdout, stderr: result.stderr };
   if (!/already exists|is already checked out/i.test(result.stderr ?? "")) {

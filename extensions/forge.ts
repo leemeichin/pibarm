@@ -1,5 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { CONFIG_DIR_NAME } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
@@ -38,7 +39,7 @@ interface CommandResult {
 }
 
 function configPath(cwd: string) {
-  return join(cwd, ".pi", "forge.json");
+  return join(cwd, CONFIG_DIR_NAME, "forge.json");
 }
 
 function isForge(value: unknown): value is Forge {

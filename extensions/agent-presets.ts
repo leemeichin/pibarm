@@ -1,3 +1,4 @@
+import { CONFIG_DIR_NAME } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { readFile } from "node:fs/promises";
@@ -41,7 +42,7 @@ const SUBAGENTS_PARAMS = Type.Object({
 });
 
 async function loadPresets(cwd: string): Promise<PresetFile> {
-  const raw = await readFile(join(cwd, ".pi", "agent-presets.json"), "utf8");
+  const raw = await readFile(join(cwd, CONFIG_DIR_NAME, "agent-presets.json"), "utf8");
   return JSON.parse(raw) as PresetFile;
 }
 

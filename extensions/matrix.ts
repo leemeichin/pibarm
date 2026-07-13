@@ -1,4 +1,5 @@
 import { mkdir, readFile } from "node:fs/promises";
+import { CONFIG_DIR_NAME } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { basename, join } from "node:path";
@@ -202,7 +203,7 @@ async function gitRoot(pi: ExtensionAPI, cwd: string) {
 
 async function matrixStatePaths(pi: ExtensionAPI, cwd: string, role: string) {
   const root = await gitRoot(pi, cwd);
-  const dir = join(root, ".pi", "matrix");
+  const dir = join(root, CONFIG_DIR_NAME, "matrix");
   await mkdir(dir, { recursive: true });
   const run = `${slug(role)}-${Date.now()}`;
   return { logPath: join(dir, `${run}.log`), statusPath: join(dir, `${run}.status`) };
@@ -214,9 +215,9 @@ async function maybeWorktree(pi: ExtensionAPI, cwd: string, role: string) {
   // diffs into new tasks, and a leftover branch without its directory made
   // `worktree add -b` fail with a raw git error.
   const run = `${slug(role)}-${Date.now()}`;
-  const path = join(root, ".pi", "wt", `matrix-${run}`);
+  const path = join(root, CONFIG_DIR_NAME, "wt", `matrix-${run}`);
   const branch = `matrix/${run}`;
-  await mkdir(join(root, ".pi", "wt"), { recursive: true });
+  await mkdir(join(root, CONFIG_DIR_NAME, "wt"), { recursive: true });
   const result = await pi.exec("git", ["-C", root, "worktree", "add", "-b", branch, path, "HEAD"], { timeout: 30000 });
   if (result.code !== 0) throw new Error(result.stderr || result.stdout || "git worktree add failed");
   return path;

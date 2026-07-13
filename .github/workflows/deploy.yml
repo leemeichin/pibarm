@@ -1,0 +1,68 @@
+name: Deploy
+
+# Deploys the website to Cloudflare via Wrangler.
+#
+# Boilerplate for now — to finish the setup once the site PR lands:
+#   1. Add repository secrets: CLOUDFLARE_API_TOKEN (Workers deploy permission)
+#      and CLOUDFLARE_ACCOUNT_ID.
+#   2. Point SITE_DIR below at the directory containing the site's
+#      wrangler config (wrangler.toml / wrangler.jsonc).
+# Until the secrets exist, the deploy step is skipped rather than failing.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  SITE_DIR: site
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check prerequisites
+        id: prereqs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "CLOUDFLARE_API_TOKEN secret is not set; skipping deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ ! -e "$SITE_DIR/wrangler.toml" ] && [ ! -e "$SITE_DIR/wrangler.jsonc" ] && [ ! -e "$SITE_DIR/wrangler.json" ]; then
+            echo "No wrangler config found in $SITE_DIR; skipping deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: oven-sh/setup-bun@v2
+        if: steps.prereqs.outputs.ready == 'true'
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        if: steps.prereqs.outputs.ready == 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Build site
+        if: steps.prereqs.outputs.ready == 'true'
+        working-directory: ${{ env.SITE_DIR }}
+        run: |
+          if [ -f package.json ]; then
+            bun install --frozen-lockfile
+            bun run build --if-present
+          else
+            echo "Static site, no build step."
+          fi
+
+      - name: Deploy
+        if: steps.prereqs.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ${{ env.SITE_DIR }}

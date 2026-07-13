@@ -1,0 +1,16 @@
+{
+  "shape": "package",
+  "pkg": "pibarm-ds",
+  "globalName": "PibarmDesignSystem8a605e",
+  "projectId": "8a605e8d-6871-4259-ae7b-4d6392d64775",
+  "buildCmd": "npm run build --prefix packages/pibarm-ds",
+  "cssEntry": "src/styles/components.css",
+  "tokensPkg": "pibarm-ds",
+  "tokensGlob": "src/styles/tokens/*.css",
+  "extraFonts": ["fonts/fonts.css"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "StatusLine": { "cardMode": "column" },
+    "CommandRow": { "cardMode": "column" }
+  }
+}

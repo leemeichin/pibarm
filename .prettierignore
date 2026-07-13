@@ -1,2 +1,9 @@
 # The site is its own sub-project with its own tooling; root oxfmt stays out of it.
 site/
+
+# The design-system package is likewise its own sub-project (npm + tsc), and its
+# CSS is the hand-authored source of truth that ships verbatim to Claude Design.
+packages/pibarm-ds/
+
+# design-sync inputs (authored previews, notes, conventions header) — not app code.
+.design-sync/

@@ -26,27 +26,37 @@ src/
     PiSession.jsx           React island: scripted /plan → /execute-plan session
     Matrix.jsx              React island: WezTerm multi-pane orchestration
   data/site.ts              features, command list, session script (typed)
-  lib/pibarm/               the design-system component library (see below)
   styles/
-    global.css              entry point (@imports the rest)
-    tokens/                 CSS custom properties (colors, type, spacing, fonts, base)
-    components.css          all component styles (shipped globally)
+    global.css              entry point (@imports the design system, then site.css)
     site.css                page layout + responsive rules
 public/assets/              pie-logo.png, pie-mark.png, readme-banner.png
 ```
 
-## Component library — `src/lib/pibarm/`
+The design system itself — the components **and** the token/component CSS — lives in
+[`packages/pibarm-ds`](../packages/pibarm-ds), not here.
 
-Real, importable Astro components ported 1:1 from the design system. Import what you need:
+## Component library — `pibarm-ds`
+
+Real, importable React components. Astro renders them at build time (no `client:*`
+directive, so no framework JS ships), and named slots map to props:
 
 ```astro
 ---
-import { Button, StatusLine, TaskPill, Terminal } from "../lib/pibarm";
-// or individually:
-import Button from "../lib/pibarm/Button.astro";
+import { Button, Icon, StatusLine } from "pibarm-ds";
 ---
-<Button variant="primary" size="lg">Read the docs</Button>
+<Button variant="primary" size="lg">
+  <Icon slot="leading" name="terminal" size={16} />
+  Read the docs
+</Button>
 ```
+
+The site resolves `pibarm-ds` from source through a Vite alias in `astro.config.mjs` — there is
+no build step and no lockfile entry, but the package's own deps must be installed once:
+`npm install --prefix ../packages/pibarm-ds`.
+
+**Don't add a `client:*` directive to a design-system component.** Astro only strips its
+`<astro-slot>` wrapper for non-hydrated components; hydrating one puts a real element inside the
+flex layouts in the DS CSS.
 
 | Component | Notes |
 |-----------|-------|
@@ -57,21 +67,21 @@ import Button from "../lib/pibarm/Button.astro";
 | `StatusLine` | the TUI statusline footer · `theme` dark/light · `variant` panel/bare |
 | `Terminal` | faux terminal window; compose the body with `.cmd`/`.dim`/`.ok`/`.slash` spans |
 | `Callout` | admonition · `tone` note/tip/warning/danger |
-| `CodeBlock` | language label + copy button (small vanilla script) |
+| `CodeBlock` | language label + copy button (delegated listener in `Base.astro`, since the component isn't hydrated) |
 | `CommandRow` | slash-command reference row · `trailing` slot for a badge |
 | `Kbd` | keyboard key cap |
-| `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) |
+| `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
 The two animated demo pieces (`PiSession`, `Matrix`) live in `src/components/` as React islands because they are stateful animations; everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 
-- **Fonts** — the banner wordmark is a bespoke slab; **Zilla Slab** stands in (via Google Fonts). Body is IBM Plex Sans, mono is JetBrains Mono.
-- **Icons** — the TUI's Nerd Font glyphs can't ship on the web, so **Lucide** stands in (rendered to static SVG at build).
+- **Fonts** — the banner wordmark is a bespoke slab; **Zilla Slab** stands in. The site loads the three families from Google Fonts; the design system ships self-hosted copies (`packages/pibarm-ds/fonts/`). Body is IBM Plex Sans, mono is JetBrains Mono.
+- **Icons** — the TUI's Nerd Font glyphs can't ship on the web, so **Lucide** stands in (rendered to static SVG at build). Lucide ships no brand icons, so the GitHub mark is hand-inlined.
 - **Logo** — the wordmark is live type (orange `i` dot); only the pie mascot (`pie-logo.png`) is an image.
 
 ## Source & credit
 
-Grounded in [`leemeichin/pibarm`](https://github.com/leemeichin/pibarm) (README, `lib/task-widget.ts`, `extensions/matrix.ts`, `extensions/repo-status.ts`) and the pibarm design system exported from Claude Design. Explore the repo for deeper implementation detail.
+Grounded in [`leemeichin/pibarm`](https://github.com/leemeichin/pibarm) (README, `lib/task-widget.ts`, `extensions/matrix.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
 
 The two demos are cosmetic recreations of TUI output, not a real pi runtime.

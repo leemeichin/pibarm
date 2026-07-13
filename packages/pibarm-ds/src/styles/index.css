@@ -1,0 +1,9 @@
+/* pibarm design system — stylesheet entry point.
+   Tokens first (fonts, colour, type, spacing, base), then the component styles
+   that consume them. Link this once; every pib-* component styles itself from it. */
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/base.css";
+@import "./components.css";

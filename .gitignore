@@ -12,3 +12,12 @@ node_modules/
 .pi/mcporter.json
 .pi/agent-presets.json
 .pi/forge.json
+
+# design-sync (claude.ai/design)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/upload-*.json
+packages/pibarm-ds/dist/

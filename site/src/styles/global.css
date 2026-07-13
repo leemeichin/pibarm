@@ -1,10 +1,5 @@
 /* pibarm site — global stylesheet entry point.
-   Mirrors the design system's styles.css @import order, then adds the shipped
-   component styles and site-level layout rules. */
-@import "./tokens/fonts.css";
-@import "./tokens/colors.css";
-@import "./tokens/typography.css";
-@import "./tokens/spacing.css";
-@import "./tokens/base.css";
-@import "./components.css";
+   The design system (tokens + component styles) ships from the pibarm-ds
+   package; site.css adds the site-level layout rules on top. */
+@import "../../../packages/pibarm-ds/src/styles/index.css";
 @import "./site.css";

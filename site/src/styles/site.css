@@ -148,3 +148,10 @@ body {
   .hero-h1 { font-size: 46px; }
   .pib-feat-grid { grid-template-columns: 1fr; }
 }
+
+/* Astro wraps slotted content passed to a framework component in <astro-slot>,
+   but only when that component is hydrated — it strips the wrapper for the
+   static render we use. Insurance: if a DS component ever gains a client:*
+   directive, the wrapper must stay transparent to the flex layouts in
+   components.css rather than becoming a flex item of its own. */
+astro-slot, astro-static-slot { display: contents; }

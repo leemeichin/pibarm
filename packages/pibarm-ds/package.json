@@ -1,0 +1,38 @@
+{
+  "name": "pibarm-ds",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The pibarm design system — React components over the pibarm token/component CSS.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles/*": "./src/styles/*",
+    "./fonts/*": "./fonts/*"
+  },
+  "sideEffects": false,
+  "files": ["dist", "src/styles", "fonts"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "lucide": "^1.24.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.5.0"
+  }
+}

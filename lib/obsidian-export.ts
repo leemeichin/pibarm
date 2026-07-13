@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
-import type { ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
+import { CONFIG_DIR_NAME, type ExtensionContext, type SessionEntry } from "@earendil-works/pi-coding-agent";
 import { getObsidianSettings } from "./pibarm-settings.js";
 
 const execFileAsync = promisify(execFile);
@@ -177,7 +177,7 @@ function renderEntry(entry: SessionEntry): string {
 
 export async function exportCurrentSessionToObsidian(ctx: ExtensionContext) {
   const settings = await getObsidianSettings(ctx);
-  if (!settings.configured) throw new Error("Obsidian vault is not configured. Set pibarm.obsidian.vault in ~/.pi/agent/settings.json or .pi/settings.json.");
+  if (!settings.configured) throw new Error(`Obsidian vault is not configured. Set pibarm.obsidian.vault in ~/${CONFIG_DIR_NAME}/agent/settings.json or ${CONFIG_DIR_NAME}/settings.json.`);
 
   const sessionId = ctx.sessionManager.getSessionId();
   const sessionName = ctx.sessionManager.getSessionName();

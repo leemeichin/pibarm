@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
+import { CONFIG_DIR_NAME, getAgentDir } from "@earendil-works/pi-coding-agent";
 
 export interface ObsidianSettings {
   vault?: string;
@@ -65,8 +66,8 @@ export function mergePibarmSettings(
 }
 
 export async function getPibarmSettings(ctx: SettingsContext): Promise<PibarmSettings> {
-  const global = await readJson(join(homedir(), ".pi", "agent", "settings.json"));
-  const project = await readJson(join(ctx.cwd, ".pi", "settings.json"));
+  const global = await readJson(join(getAgentDir(), "settings.json"));
+  const project = await readJson(join(ctx.cwd, CONFIG_DIR_NAME, "settings.json"));
   return mergePibarmSettings(global, project, ctx.isProjectTrusted());
 }
 

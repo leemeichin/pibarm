@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -47,7 +47,7 @@ async function loadConfig(ctx: McporterContext): Promise<Required<McporterConfig
   // must never be honored for untrusted projects.
   if (!ctx.isProjectTrusted()) return DEFAULT_CONFIG;
   try {
-    const raw = await readFile(join(ctx.cwd, ".pi", "mcporter.json"), "utf8");
+    const raw = await readFile(join(ctx.cwd, CONFIG_DIR_NAME, "mcporter.json"), "utf8");
     const parsed = JSON.parse(raw) as McporterConfig & { args?: string[] };
     return {
       ...DEFAULT_CONFIG,

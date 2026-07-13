@@ -11,10 +11,21 @@ const WORKSPACE_PREFIX = "matrix";
 const SPAWN_PARAMS = Type.Object({
   role: Type.String({ description: "Agent role/name, e.g. scout, planner, worker, reviewer" }),
   task: Type.String({ description: "Task or prompt for the agent" }),
-  model: Type.Optional(Type.String({ description: "Optional pi model. Defaults to the current active model, with a lighter available model for simple tasks." })),
+  model: Type.Optional(
+    Type.String({
+      description:
+        "Optional pi model. Defaults to the current active model, with a lighter available model for simple tasks.",
+    }),
+  ),
   tools: Type.Optional(Type.Array(Type.String(), { description: "Optional tool allowlist for the agent" })),
-  worktree: Type.Optional(Type.Boolean({ description: "Run in a new git worktree when this agent needs an isolated branch" })),
-  placement: Type.Optional(Type.String({ description: "Where to open it: right, down, tab, or window. Defaults to right split after the first window." })),
+  worktree: Type.Optional(
+    Type.Boolean({ description: "Run in a new git worktree when this agent needs an isolated branch" }),
+  ),
+  placement: Type.Optional(
+    Type.String({
+      description: "Where to open it: right, down, tab, or window. Defaults to right split after the first window.",
+    }),
+  ),
 });
 
 const CAPTURE_PARAMS = Type.Object({
@@ -23,13 +34,22 @@ const CAPTURE_PARAMS = Type.Object({
 });
 
 const JOIN_PARAMS = Type.Object({
-  role: Type.Optional(Type.String({ description: "Agent role/name. Omit or use all to wait for all known Matrix agents" })),
-  timeoutMs: Type.Optional(Type.Number({ description: "Maximum time to wait in milliseconds. Defaults to 10 minutes" })),
+  role: Type.Optional(
+    Type.String({ description: "Agent role/name. Omit or use all to wait for all known Matrix agents" }),
+  ),
+  timeoutMs: Type.Optional(
+    Type.Number({ description: "Maximum time to wait in milliseconds. Defaults to 10 minutes" }),
+  ),
   kill: Type.Optional(Type.Boolean({ description: "Kill panes after they finish. Defaults to true" })),
 });
 
 const KILL_PARAMS = Type.Object({
-  role: Type.Optional(Type.String({ description: "Agent role/name. Omit or use all to kill known Matrix panes and untracked panes in the Matrix workspace" })),
+  role: Type.Optional(
+    Type.String({
+      description:
+        "Agent role/name. Omit or use all to kill known Matrix panes and untracked panes in the Matrix workspace",
+    }),
+  ),
 });
 
 const ATTACH_PARAMS = Type.Object({});
@@ -61,7 +81,14 @@ type AgentPane = {
   exited?: number;
 };
 
-type WeztermPane = { pane_id: number; tab_id: number; window_id: number; workspace?: string; tab_title?: string; title?: string };
+type WeztermPane = {
+  pane_id: number;
+  tab_id: number;
+  window_id: number;
+  workspace?: string;
+  tab_title?: string;
+  title?: string;
+};
 
 const MATRIX_HELP = `Matrix is a WezTerm-native cockpit for visible parent-controlled agents.
 
@@ -94,7 +121,13 @@ Commands:
 /matrix-kill-orphans           kill Matrix panes left behind by other sessions`;
 
 function slug(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "agent";
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9_.-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "agent"
+  );
 }
 
 function placement(value: string | undefined): Placement {
@@ -120,7 +153,16 @@ async function wezterm(pi: ExtensionAPI, args: string[], timeout = 10000) {
 
 async function openWorkspaceClient(pi: ExtensionAPI, workspace: string) {
   const workspaceArg = shellQuote(workspace);
-  await pi.exec("bash", ["-lc", `(wezterm connect unix --workspace ${workspaceArg} >/dev/null 2>&1 || wezterm start --workspace ${workspaceArg} >/dev/null 2>&1) &`], { timeout: 1000 }).catch(() => undefined);
+  await pi
+    .exec(
+      "bash",
+      [
+        "-lc",
+        `(wezterm connect unix --workspace ${workspaceArg} >/dev/null 2>&1 || wezterm start --workspace ${workspaceArg} >/dev/null 2>&1) &`,
+      ],
+      { timeout: 1000 },
+    )
+    .catch(() => undefined);
 }
 
 async function hasWorkspaceClient(pi: ExtensionAPI, workspace: string) {
@@ -187,11 +229,18 @@ async function allMatrixPanes(pi: ExtensionAPI) {
   return (await listWeztermPanes(pi)).filter((pane) => isMatrixWorkspace(pane.workspace));
 }
 
-async function resolveTargetPane(pi: ExtensionAPI, workspaceName: string, lastPane: string, panes: Map<string, AgentPane>) {
+async function resolveTargetPane(
+  pi: ExtensionAPI,
+  workspaceName: string,
+  lastPane: string,
+  panes: Map<string, AgentPane>,
+) {
   const workspace = await workspacePanes(pi, workspaceName);
   const ids = new Set(workspace.map((pane) => String(pane.pane_id)));
   if (lastPane && ids.has(lastPane)) return lastPane;
-  const recentKnown = Array.from(panes.values()).reverse().find((pane) => ids.has(pane.pane));
+  const recentKnown = Array.from(panes.values())
+    .reverse()
+    .find((pane) => ids.has(pane.pane));
   return recentKnown?.pane ?? (workspace[0] ? String(workspace[0].pane_id) : "");
 }
 
@@ -233,7 +282,15 @@ function rendererPath() {
   return fileURLToPath(new URL("../scripts/matrix-render.mjs", import.meta.url));
 }
 
-function commandFor(role: string, task: string, model: string | undefined, tools: string[] | undefined, worktree: string | undefined, logPath: string, statusPath: string) {
+function commandFor(
+  role: string,
+  task: string,
+  model: string | undefined,
+  tools: string[] | undefined,
+  worktree: string | undefined,
+  logPath: string,
+  statusPath: string,
+) {
   // JSON event mode + a local renderer: print mode (-p) emits nothing until
   // the run ends, but the whole point of a pane is watching reasoning, text,
   // and tool activity stream live.
@@ -255,7 +312,7 @@ function commandFor(role: string, task: string, model: string | undefined, tools
     "code=${PIPESTATUS[0]}",
     `printf '\\n[matrix ${role} exited %s]\\n' "$code" | tee -a ${shellQuote(logPath)}`,
     `printf '%s\\n' "$code" > ${shellQuote(statusPath)}`,
-    "exit \"$code\"",
+    'exit "$code"',
   ].join("; ");
 
   return ["bash", "-lc", script];
@@ -306,7 +363,11 @@ export default function matrixExtension(pi: ExtensionAPI) {
       const status = await readStatus(pane);
       if (status === undefined) continue;
       pane.exited = status;
-      finishAgentTask(`matrix:${pane.role}`, status === 0 ? "done" : "failed", status === 0 ? undefined : `exit ${status}`);
+      finishAgentTask(
+        `matrix:${pane.role}`,
+        status === 0 ? "done" : "failed",
+        status === 0 ? undefined : `exit ${status}`,
+      );
       changed = true;
     }
     if (changed) {
@@ -330,11 +391,15 @@ export default function matrixExtension(pi: ExtensionAPI) {
     if (exact) return exact;
     const matches = Array.from(panes.values()).filter((pane) => pane.role.startsWith(`${requested}-`));
     if (matches.length === 1) return matches[0];
-    if (matches.length > 1) throw new Error(`Ambiguous Matrix agent: ${role}. Use one of: ${matches.map((pane) => pane.role).join(", ")}`);
+    if (matches.length > 1)
+      throw new Error(`Ambiguous Matrix agent: ${role}. Use one of: ${matches.map((pane) => pane.role).join(", ")}`);
     return undefined;
   }
 
-  async function spawn(ctx: ExtensionContext, params: { role: string; task: string; model?: string; tools?: string[]; worktree?: boolean; placement?: string }) {
+  async function spawn(
+    ctx: ExtensionContext,
+    params: { role: string; task: string; model?: string; tools?: string[]; worktree?: boolean; placement?: string },
+  ) {
     const baseRole = slug(params.role);
     const role = uniqueRole(baseRole);
     const workspace = workspaceName(ctx);
@@ -353,18 +418,40 @@ export default function matrixExtension(pi: ExtensionAPI) {
     const targetPane = await resolveTargetPane(pi, workspace, lastPane, panes);
     if (targetPane) await wezterm(pi, ["activate-pane", "--pane-id", targetPane]).catch(() => undefined);
 
-    const args = !targetPane || place === "window"
-      ? ["spawn", "--new-window", "--workspace", workspace, "--cwd", cwd, "--", ...command]
-      : place === "tab"
-        ? ["spawn", "--pane-id", targetPane, "--cwd", cwd, "--", ...command]
-        : ["split-pane", "--pane-id", targetPane, place === "down" ? "--bottom" : "--right", "--cwd", cwd, "--", ...command];
+    const args =
+      !targetPane || place === "window"
+        ? ["spawn", "--new-window", "--workspace", workspace, "--cwd", cwd, "--", ...command]
+        : place === "tab"
+          ? ["spawn", "--pane-id", targetPane, "--cwd", cwd, "--", ...command]
+          : [
+              "split-pane",
+              "--pane-id",
+              targetPane,
+              place === "down" ? "--bottom" : "--right",
+              "--cwd",
+              cwd,
+              "--",
+              ...command,
+            ];
 
     const result = await wezterm(pi, args, 15000);
     if (result.code !== 0) throw new Error(result.stderr || result.stdout || "wezterm spawn failed");
     const paneId = result.stdout;
     await ensureWorkspaceClient(pi, workspace);
     lastPane = paneId;
-    panes.set(role, { role, pane: paneId, workspace, cwd, model, modelSelection, tools, worktree, placement: place, logPath, statusPath });
+    panes.set(role, {
+      role,
+      pane: paneId,
+      workspace,
+      cwd,
+      model,
+      modelSelection,
+      tools,
+      worktree,
+      placement: place,
+      logPath,
+      statusPath,
+    });
     upsertAgentTask({ id: `matrix:${role}`, label: `matrix ${role}`, status: "running", session: workspace });
     await wezterm(pi, ["set-tab-title", "--pane-id", paneId, `matrix-${role}`]).catch(() => undefined);
     await wezterm(pi, ["activate-pane", "--pane-id", paneId]).catch(() => undefined);
@@ -374,11 +461,15 @@ export default function matrixExtension(pi: ExtensionAPI) {
   }
 
   async function capture(role: string | undefined, lines = 80) {
-    const targets = role ? [paneFor(role)].filter(Boolean) as AgentPane[] : Array.from(panes.values());
+    const targets = role ? ([paneFor(role)].filter(Boolean) as AgentPane[]) : Array.from(panes.values());
     if (!targets.length) throw new Error(role ? `Unknown Matrix agent: ${role}` : "No Matrix agents known");
     const blocks = [];
     for (const pane of targets) {
-      const result = await wezterm(pi, ["get-text", "--pane-id", pane.pane, "--start-line", `-${Math.max(1, lines)}`], 10000);
+      const result = await wezterm(
+        pi,
+        ["get-text", "--pane-id", pane.pane, "--start-line", `-${Math.max(1, lines)}`],
+        10000,
+      );
       const log = result.code === 0 && result.stdout ? result.stdout : await readLog(pane, lines);
       const status = await readStatus(pane);
       blocks.push(`## ${pane.role}${status !== undefined ? ` (exited ${status})` : ""}\n${log || result.stderr}`);
@@ -406,9 +497,17 @@ export default function matrixExtension(pi: ExtensionAPI) {
     return result.stdout || "opened";
   }
 
-  async function joinAgents(ctx: ExtensionContext, role?: string, timeoutMs = 600000, killDone = true, signal?: AbortSignal) {
-    const targets = !role || role === "all" ? Array.from(panes.values()) : [paneFor(role)].filter(Boolean) as AgentPane[];
-    if (!targets.length) throw new Error(role && role !== "all" ? `Unknown Matrix agent: ${role}` : "No Matrix agents known");
+  async function joinAgents(
+    ctx: ExtensionContext,
+    role?: string,
+    timeoutMs = 600000,
+    killDone = true,
+    signal?: AbortSignal,
+  ) {
+    const targets =
+      !role || role === "all" ? Array.from(panes.values()) : ([paneFor(role)].filter(Boolean) as AgentPane[]);
+    if (!targets.length)
+      throw new Error(role && role !== "all" ? `Unknown Matrix agent: ${role}` : "No Matrix agents known");
 
     const deadline = Date.now() + Math.max(0, timeoutMs);
     while (Date.now() <= deadline) {
@@ -432,7 +531,11 @@ export default function matrixExtension(pi: ExtensionAPI) {
         continue;
       }
       blocks.push(`## ${pane.role} (exited ${status})\n${await readLog(pane, 200)}`);
-      finishAgentTask(`matrix:${pane.role}`, status === 0 ? "done" : "failed", status === 0 ? undefined : `exit ${status}`);
+      finishAgentTask(
+        `matrix:${pane.role}`,
+        status === 0 ? "done" : "failed",
+        status === 0 ? undefined : `exit ${status}`,
+      );
       if (killDone) await wezterm(pi, ["kill-pane", "--pane-id", pane.pane]).catch(() => undefined);
       panes.delete(pane.role);
     }
@@ -490,9 +593,14 @@ export default function matrixExtension(pi: ExtensionAPI) {
   async function killOrphans(ctx: ExtensionContext) {
     const workspace = workspaceName(ctx);
     const known = new Set(Array.from(panes.values()).map((pane) => pane.pane));
-    const orphans = (await allMatrixPanes(pi)).filter((pane) => pane.workspace !== workspace && !known.has(String(pane.pane_id)));
-    for (const pane of orphans) await wezterm(pi, ["kill-pane", "--pane-id", String(pane.pane_id)]).catch(() => undefined);
-    return orphans.length ? `Killed ${orphans.length} orphaned Matrix pane(s) outside workspace ${workspace}.` : "No orphaned Matrix panes found.";
+    const orphans = (await allMatrixPanes(pi)).filter(
+      (pane) => pane.workspace !== workspace && !known.has(String(pane.pane_id)),
+    );
+    for (const pane of orphans)
+      await wezterm(pi, ["kill-pane", "--pane-id", String(pane.pane_id)]).catch(() => undefined);
+    return orphans.length
+      ? `Killed ${orphans.length} orphaned Matrix pane(s) outside workspace ${workspace}.`
+      : "No orphaned Matrix panes found.";
   }
 
   pi.registerCommand("matrix-help", {
@@ -552,7 +660,8 @@ export default function matrixExtension(pi: ExtensionAPI) {
   });
 
   pi.registerCommand("matrix-join", {
-    description: "Wait for Matrix agents, summarize, and clean up panes (closes the workspace when all are done): /matrix-join [role|all]",
+    description:
+      "Wait for Matrix agents, summarize, and clean up panes (closes the workspace when all are done): /matrix-join [role|all]",
     handler: async (args, ctx) => {
       try {
         ctx.ui.notify(await joinAgents(ctx, args.trim() || undefined), "info");
@@ -572,8 +681,13 @@ export default function matrixExtension(pi: ExtensionAPI) {
         const untracked = (await workspacePanes(pi, workspace)).filter((pane) => !knownIds.has(String(pane.pane_id)));
         const lines = [
           `workspace: ${workspace}`,
-          ...agents.map((pane) => `${pane.role}: ${pane.pane} ${pane.model ?? "(default model)"}${pane.worktree ? ` (${pane.worktree})` : ""}`),
-          ...untracked.map((pane) => `untracked: ${pane.pane_id} window=${pane.window_id} tab=${pane.tab_id} ${pane.title ?? ""}`.trim()),
+          ...agents.map(
+            (pane) =>
+              `${pane.role}: ${pane.pane} ${pane.model ?? "(default model)"}${pane.worktree ? ` (${pane.worktree})` : ""}`,
+          ),
+          ...untracked.map((pane) =>
+            `untracked: ${pane.pane_id} window=${pane.window_id} tab=${pane.tab_id} ${pane.title ?? ""}`.trim(),
+          ),
         ];
         ctx.ui.notify(lines.join("\n"), "info");
       } catch (error) {
@@ -615,7 +729,15 @@ export default function matrixExtension(pi: ExtensionAPI) {
     parameters: SPAWN_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const pane = await spawn(ctx, params);
-      return { content: [{ type: "text", text: `Spawned ${pane.role} in ${pane.pane}${pane.worktree ? `\nWorktree: ${pane.worktree}` : ""}` }], details: pane };
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Spawned ${pane.role} in ${pane.pane}${pane.worktree ? `\nWorktree: ${pane.worktree}` : ""}`,
+          },
+        ],
+        details: pane,
+      };
     },
   });
 
@@ -628,7 +750,10 @@ export default function matrixExtension(pi: ExtensionAPI) {
     parameters: ATTACH_PARAMS,
     async execute(_id, _params, _signal, _update, ctx) {
       const pane = await attach(ctx);
-      return { content: [{ type: "text", text: `WezTerm pane: ${pane}` }], details: { pane, workspace: workspaceName(ctx) } };
+      return {
+        content: [{ type: "text", text: `WezTerm pane: ${pane}` }],
+        details: { pane, workspace: workspaceName(ctx) },
+      };
     },
   });
 
@@ -648,13 +773,17 @@ export default function matrixExtension(pi: ExtensionAPI) {
   pi.registerTool({
     name: "matrix_join",
     label: "Matrix Join",
-    description: "Wait for one or all Matrix agents to finish, capture logs, and clean up panes. When every tracked agent is joined, the whole Matrix workspace window is closed.",
+    description:
+      "Wait for one or all Matrix agents to finish, capture logs, and clean up panes. When every tracked agent is joined, the whole Matrix workspace window is closed.",
     promptSnippet: "Wait for Matrix agents and clean up panes",
     promptGuidelines: ["Use matrix_join after spawning Matrix agents when their results are needed."],
     parameters: JOIN_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const text = await joinAgents(ctx, params.role, params.timeoutMs ?? 600000, params.kill ?? true, signal);
-      return { content: [{ type: "text", text }], details: { role: params.role, timeoutMs: params.timeoutMs ?? 600000, kill: params.kill ?? true } };
+      return {
+        content: [{ type: "text", text }],
+        details: { role: params.role, timeoutMs: params.timeoutMs ?? 600000, kill: params.kill ?? true },
+      };
     },
   });
 
@@ -671,8 +800,13 @@ export default function matrixExtension(pi: ExtensionAPI) {
       const knownIds = new Set(agents.map((pane) => pane.pane));
       const untracked = (await workspacePanes(pi, workspace)).filter((pane) => !knownIds.has(String(pane.pane_id)));
       const lines = [
-        ...agents.map((pane) => `${pane.role}: ${pane.pane} ${pane.model ?? "(default model)"}${pane.worktree ? ` (${pane.worktree})` : ""}`),
-        ...untracked.map((pane) => `untracked: ${pane.pane_id} window=${pane.window_id} tab=${pane.tab_id} ${pane.title ?? ""}`.trim()),
+        ...agents.map(
+          (pane) =>
+            `${pane.role}: ${pane.pane} ${pane.model ?? "(default model)"}${pane.worktree ? ` (${pane.worktree})` : ""}`,
+        ),
+        ...untracked.map((pane) =>
+          `untracked: ${pane.pane_id} window=${pane.window_id} tab=${pane.tab_id} ${pane.title ?? ""}`.trim(),
+        ),
       ];
       const text = lines.length ? lines.join("\n") : "No Matrix agents.";
       return { content: [{ type: "text", text }], details: { workspace, agents, untracked } };

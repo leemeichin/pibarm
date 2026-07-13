@@ -8,7 +8,18 @@ import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 import { clipHead, clipTail } from "../lib/tool-output.js";
 
-const READ_ONLY_TOOLS = ["read", "bash", "grep", "find", "ls", "mcporter_list", "mcporter_resource", "question", "elicit_plan_questions", "create_git_worktree"];
+const READ_ONLY_TOOLS = [
+  "read",
+  "bash",
+  "grep",
+  "find",
+  "ls",
+  "mcporter_list",
+  "mcporter_resource",
+  "question",
+  "elicit_plan_questions",
+  "create_git_worktree",
+];
 const WRITE_TOOLS = new Set(["edit", "write"]);
 
 const PLAN_OPTION = Type.Union([
@@ -26,10 +37,23 @@ const PLAN_QUESTION = Type.Object({
   label: Type.Optional(Type.String({ description: "Short tab label" })),
   question: Type.Optional(Type.String({ description: "Question text" })),
   prompt: Type.Optional(Type.String({ description: "Alias for question" })),
-  type: Type.Optional(StringEnum(
-    ["text", "free_text", "select", "select_one", "multi", "select_many", "confirm", "bool", "boolean", "number"] as const,
-    { description: "Input type. Defaults to free_text." },
-  )),
+  type: Type.Optional(
+    StringEnum(
+      [
+        "text",
+        "free_text",
+        "select",
+        "select_one",
+        "multi",
+        "select_many",
+        "confirm",
+        "bool",
+        "boolean",
+        "number",
+      ] as const,
+      { description: "Input type. Defaults to free_text." },
+    ),
+  ),
   options: Type.Optional(Type.Array(PLAN_OPTION, { description: "Options for select/select_many/confirm inputs" })),
   default: Type.Optional(Type.Unknown({ description: "Default answer/value" })),
   min: Type.Optional(Type.Number({ description: "Minimum number value" })),
@@ -38,13 +62,20 @@ const PLAN_QUESTION = Type.Object({
   preview: Type.Optional(Type.String({ description: "Preview of the intended action or consequences" })),
   actionPreview: Type.Optional(Type.String({ description: "Alias for preview" })),
   notes: Type.Optional(Type.Boolean({ description: "Enable per-question notes. Defaults to true." })),
-  allowCustom: Type.Optional(Type.Boolean({ description: "Allow custom text for select_one/select_many. Defaults to false." })),
+  allowCustom: Type.Optional(
+    Type.Boolean({ description: "Allow custom text for select_one/select_many. Defaults to false." }),
+  ),
 });
 
 const ELICIT_PARAMS = Type.Object({
-  questions: Type.Array(Type.Union([Type.String(), PLAN_QUESTION]), { description: "Specific questions to ask before finalizing or executing a plan. Strings become free_text questions; objects may request select_one/select_many/confirm/boolean/number/free_text." }),
+  questions: Type.Array(Type.Union([Type.String(), PLAN_QUESTION]), {
+    description:
+      "Specific questions to ask before finalizing or executing a plan. Strings become free_text questions; objects may request select_one/select_many/confirm/boolean/number/free_text.",
+  }),
   context: Type.Optional(Type.String({ description: "Short context explaining why these answers are needed" })),
-  edit: Type.Optional(Type.Boolean({ description: "Use a rich tabbed multi-question UI when available. Defaults to true." })),
+  edit: Type.Optional(
+    Type.Boolean({ description: "Use a rich tabbed multi-question UI when available. Defaults to true." }),
+  ),
 });
 
 type PlanQuestionType = "free_text" | "select_one" | "select_many" | "confirm" | "boolean" | "number";
@@ -109,10 +140,14 @@ const NF = {
 
 function normalizeQuestionType(type: unknown, options: PlanOption[]): PlanQuestionType {
   switch (type) {
-    case "select": return "select_one";
-    case "multi": return "select_many";
-    case "bool": return "boolean";
-    case "text": return "free_text";
+    case "select":
+      return "select_one";
+    case "multi":
+      return "select_many";
+    case "bool":
+      return "boolean";
+    case "text":
+      return "free_text";
     case "free_text":
     case "select_one":
     case "select_many":
@@ -154,9 +189,15 @@ function normalizePlanQuestions(input: Array<string | Record<string, unknown>>):
     const options = Array.isArray(raw.options) ? raw.options.map(normalizePlanOption) : [];
     const type = normalizeQuestionType(raw.type, options);
     const question = String(raw.question ?? raw.prompt ?? raw.label ?? `Question ${index + 1}`);
-    const defaultOptions = type === "confirm" || type === "boolean"
-      ? (options.length ? options : [{ label: "Yes", value: true }, { label: "No", value: false }])
-      : options;
+    const defaultOptions =
+      type === "confirm" || type === "boolean"
+        ? options.length
+          ? options
+          : [
+              { label: "Yes", value: true },
+              { label: "No", value: false },
+            ]
+        : options;
     return {
       id: String(raw.id ?? `q${index + 1}`),
       label: String(raw.label ?? `Q${index + 1}`),
@@ -167,7 +208,12 @@ function normalizePlanQuestions(input: Array<string | Record<string, unknown>>):
       min: typeof raw.min === "number" ? raw.min : undefined,
       max: typeof raw.max === "number" ? raw.max : undefined,
       placeholder: typeof raw.placeholder === "string" ? raw.placeholder : undefined,
-      preview: typeof raw.preview === "string" ? raw.preview : typeof raw.actionPreview === "string" ? raw.actionPreview : undefined,
+      preview:
+        typeof raw.preview === "string"
+          ? raw.preview
+          : typeof raw.actionPreview === "string"
+            ? raw.actionPreview
+            : undefined,
       notes: raw.notes !== false,
       allowCustom: raw.allowCustom === true,
     };
@@ -179,12 +225,19 @@ function initialAnswer(question: PlanQuestion): PlanAnswerState {
   if (question.default === undefined) return state;
   if (question.type === "select_many" && Array.isArray(question.default)) {
     const defaults = question.default;
-    state.selected = question.options.flatMap((option, index) => defaults.includes(option.value) || defaults.includes(option.label) ? [index] : []);
-    state.answer = state.selected.map((i) => question.options[i]?.label).filter(Boolean).join(", ");
+    state.selected = question.options.flatMap((option, index) =>
+      defaults.includes(option.value) || defaults.includes(option.label) ? [index] : [],
+    );
+    state.answer = state.selected
+      .map((i) => question.options[i]?.label)
+      .filter(Boolean)
+      .join(", ");
     state.value = state.selected.map((i) => question.options[i]?.value);
     return state;
   }
-  const selectedIndex = question.options.findIndex((option) => option.value === question.default || option.label === question.default);
+  const selectedIndex = question.options.findIndex(
+    (option) => option.value === question.default || option.label === question.default,
+  );
   if (selectedIndex >= 0) {
     const option = question.options[selectedIndex]!;
     state.selected = [selectedIndex];
@@ -196,33 +249,6 @@ function initialAnswer(question: PlanQuestion): PlanAnswerState {
   state.answer = String(question.default);
   state.value = question.default;
   return state;
-}
-
-function parseNumberedAnswers(questions: PlanQuestion[], text: string): RichPlanAnswer[] {
-  const answers = questions.map((question) => ({ id: question.id, question: question.question, answer: "", value: "" }));
-  let currentIndex = -1;
-  for (const line of text.split("\n")) {
-    const numbered = line.match(/^\s*(\d+)[.)]?\s*(.*)$/);
-    if (numbered) {
-      currentIndex = Number(numbered[1]) - 1;
-      const rest = numbered[2]?.trim() ?? "";
-      if (answers[currentIndex] && rest && rest !== questions[currentIndex]!.question && !questions[currentIndex]!.question.startsWith(rest)) {
-        answers[currentIndex]!.answer = rest.replace(/^Answer:\s*/i, "");
-        answers[currentIndex]!.value = answers[currentIndex]!.answer;
-      }
-      continue;
-    }
-    const answerLine = line.match(/^\s*(?:Answer:)?\s*(.+?)\s*$/i);
-    if (currentIndex >= 0 && answers[currentIndex] && answerLine?.[1] && !answers[currentIndex]!.answer) {
-      answers[currentIndex]!.answer = answerLine[1].trim();
-      answers[currentIndex]!.value = answers[currentIndex]!.answer;
-    }
-  }
-  if (questions.length === 1 && !answers[0]!.answer) {
-    answers[0]!.answer = text.trim();
-    answers[0]!.value = answers[0]!.answer;
-  }
-  return answers;
 }
 
 async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQuestion[], context?: string) {
@@ -312,7 +338,12 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
       const selected = state.selected.map((i) => question.options[i]).filter((o): o is PlanOption => Boolean(o));
       state.answer = selected.map((option) => option.label).join(", ");
       state.value = question.type === "select_many" ? selected.map((option) => option.value) : selected[0]?.value;
-      state.index = question.type === "select_many" ? undefined : state.selected[0] === undefined ? undefined : state.selected[0] + 1;
+      state.index =
+        question.type === "select_many"
+          ? undefined
+          : state.selected[0] === undefined
+            ? undefined
+            : state.selected[0] + 1;
       state.wasCustom = false;
     }
 
@@ -368,8 +399,12 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
       const state = currentState();
       if (!question || !state || question.type !== "number") return false;
       saveEditor();
-      const base = typeof state.value === "number" && Number.isFinite(state.value) ? state.value : Number(state.answer) || 0;
-      const next = Math.max(question.min ?? Number.NEGATIVE_INFINITY, Math.min(question.max ?? Number.POSITIVE_INFINITY, base + delta));
+      const base =
+        typeof state.value === "number" && Number.isFinite(state.value) ? state.value : Number(state.answer) || 0;
+      const next = Math.max(
+        question.min ?? Number.NEGATIVE_INFINITY,
+        Math.min(question.max ?? Number.POSITIVE_INFINITY, base + delta),
+      );
       state.answer = String(next);
       state.value = next;
       editor.setText(state.answer);
@@ -416,7 +451,8 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
         return done({ answers: finalAnswers(), cancelled: true });
       }
       if (matchesKey(data, Key.tab) || matchesKey(data, Key.right)) return goto((current + 1) % (questions.length + 1));
-      if (matchesKey(data, Key.shift("tab")) || matchesKey(data, Key.left)) return goto((current - 1 + questions.length + 1) % (questions.length + 1));
+      if (matchesKey(data, Key.shift("tab")) || matchesKey(data, Key.left))
+        return goto((current - 1 + questions.length + 1) % (questions.length + 1));
       if (current === questions.length) {
         if (matchesKey(data, Key.enter)) submit();
         return;
@@ -471,11 +507,13 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
     }
 
     function renderOptions(lines: string[], width: number, question: PlanQuestion, state: PlanAnswerState) {
-      const options = question.allowCustom ? [...question.options, { label: "Other / custom", value: "", custom: true }] : question.options;
+      const options = question.allowCustom
+        ? [...question.options, { label: "Other / custom", value: "", custom: true }]
+        : question.options;
       options.forEach((option, index) => {
         const selected = state.selected.includes(index) || (option.custom && state.wasCustom);
         const active = index === optionIndex;
-        const box = question.type === "select_many" ? (selected ? NF.done : NF.empty) : (selected ? NF.dot : " ");
+        const box = question.type === "select_many" ? (selected ? NF.done : NF.empty) : selected ? NF.dot : " ";
         const prefix = active ? theme.fg("accent", `${NF.cursor} `) : "  ";
         const label = `${box} ${index + 1}. ${option.label}${option.custom && customMode ? " 󰏫" : ""}`;
         addWrapped(lines, prefix, theme.fg(active ? "accent" : selected ? "success" : "text", label), width);
@@ -491,10 +529,16 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
       const tabs = questions.map((question, i) => {
         const answered = states[i]?.answer || states[i]?.selected.length;
         const label = ` ${answered ? NF.done : NF.empty} ${question.label} `;
-        return i === current ? theme.bg("selectedBg", theme.fg("text", label)) : theme.fg(answered ? "success" : "muted", label);
+        return i === current
+          ? theme.bg("selectedBg", theme.fg("text", label))
+          : theme.fg(answered ? "success" : "muted", label);
       });
       const submitLabel = ` ${NF.submit} Submit `;
-      tabs.push(current === questions.length ? theme.bg("selectedBg", theme.fg("text", submitLabel)) : theme.fg("success", submitLabel));
+      tabs.push(
+        current === questions.length
+          ? theme.bg("selectedBg", theme.fg("text", submitLabel))
+          : theme.fg("success", submitLabel),
+      );
       addWrapped(lines, " ", tabs.join(" "), w);
       lines.push("");
       if (context) {
@@ -515,14 +559,23 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
       } else {
         const question = currentQuestion()!;
         const state = currentState()!;
-        addWrapped(lines, " ", theme.fg("accent", `${questionIcon(question)} ${question.label}  ${theme.fg("muted", `${current + 1}/${questions.length}`)}`), w);
+        addWrapped(
+          lines,
+          " ",
+          theme.fg(
+            "accent",
+            `${questionIcon(question)} ${question.label}  ${theme.fg("muted", `${current + 1}/${questions.length}`)}`,
+          ),
+          w,
+        );
         addWrapped(lines, " ", question.question, w);
         if (question.preview) {
           lines.push("");
           addWrapped(lines, " ", theme.fg("muted", `${NF.preview} Preview: ${question.preview}`), w);
         }
         const highlighted = question.options[optionIndex];
-        if (highlighted?.preview) addWrapped(lines, " ", theme.fg("muted", `${NF.preview} Option: ${highlighted.preview}`), w);
+        if (highlighted?.preview)
+          addWrapped(lines, " ", theme.fg("muted", `${NF.preview} Option: ${highlighted.preview}`), w);
         lines.push("");
         if (noteMode) {
           addWrapped(lines, " ", theme.fg("muted", `${NF.note} Notes:`), w);
@@ -532,23 +585,35 @@ async function askTabbedPlanQuestions(ctx: ExtensionContext, questions: PlanQues
           for (const line of editor.render(Math.max(1, w - 2))) lines.push(` ${line}`);
         } else if (question.type === "free_text" || question.type === "number") {
           const label = question.type === "number" ? `${NF.number} Number:` : `${NF.text} Answer:`;
-          addWrapped(lines, " ", theme.fg("muted", question.placeholder ? `${label} ${question.placeholder}` : label), w);
+          addWrapped(
+            lines,
+            " ",
+            theme.fg("muted", question.placeholder ? `${label} ${question.placeholder}` : label),
+            w,
+          );
           for (const line of editor.render(Math.max(1, w - 2))) lines.push(` ${line}`);
         } else {
           renderOptions(lines, w, question, state);
         }
       }
       lines.push("");
-      const help = current === questions.length
-        ? "Enter submit • Tab/←→ navigate • Esc cancel"
-        : "Tab/←→ navigate • ↑↓ select/nudge • Space multi-toggle • Enter next/select • n notes • Esc cancel";
+      const help =
+        current === questions.length
+          ? "Enter submit • Tab/←→ navigate • Esc cancel"
+          : "Tab/←→ navigate • ↑↓ select/nudge • Space multi-toggle • Enter next/select • n notes • Esc cancel";
       addWrapped(lines, " ", theme.fg("dim", help), w);
       lines.push(theme.fg("accent", NF.border.repeat(w)));
       cached = lines;
       return lines;
     }
 
-    return { render, invalidate: () => { cached = undefined; }, handleInput };
+    return {
+      render,
+      invalidate: () => {
+        cached = undefined;
+      },
+      handleInput,
+    };
   });
 
   if (result.cancelled) return undefined;
@@ -563,7 +628,12 @@ const WORKTREE_PARAMS = Type.Object({
 const WORKTREE_AGENT_PARAMS = Type.Object({
   task: Type.String({ description: "Self-contained task for the subagent to run in an isolated git worktree" }),
   name: Type.String({ description: "Short slug/name for the worktree and branch" }),
-  model: Type.Optional(Type.String({ description: "Optional pi model pattern for the subagent. Defaults to the current active model, with a lighter available model for simple tasks." })),
+  model: Type.Optional(
+    Type.String({
+      description:
+        "Optional pi model pattern for the subagent. Defaults to the current active model, with a lighter available model for simple tasks.",
+    }),
+  ),
   baseRef: Type.Optional(Type.String({ description: "Git ref to branch from. Defaults to HEAD" })),
   timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds" })),
 });
@@ -579,7 +649,11 @@ const WORKTREE_REMOVE_PARAMS = Type.Object({
 });
 
 function slugify(input: string): string {
-  const slug = input.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48);
+  const slug = input
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
   return slug || `task-${Date.now()}`;
 }
 
@@ -588,10 +662,16 @@ function shellQuote(value: string): string {
 }
 
 function modelLabel(model: string | undefined) {
-  return model?.split("/").pop()?.replace(/^claude-/, "") ?? "default";
+  return (
+    model
+      ?.split("/")
+      .pop()
+      ?.replace(/^claude-/, "") ?? "default"
+  );
 }
 
-const READ_ONLY_SEGMENT = /^(pwd|ls|find|rg|grep|cat|head|tail|wc|sed\s+-n|awk|git\s+(status|diff|log|show|branch|rev-parse|worktree\s+list)\b)/;
+const READ_ONLY_SEGMENT =
+  /^(pwd|ls|find|rg|grep|cat|head|tail|wc|sed\s+-n|awk|git\s+(status|diff|log|show|branch|rev-parse|worktree\s+list)\b)/;
 
 export function isReadOnlyCommand(command: string): boolean {
   const trimmed = command.trim();
@@ -622,7 +702,10 @@ function extractPlanSteps(text: string): string[] {
 function assistantText(messages: any[]): string {
   const last = [...messages].reverse().find((m) => m.role === "assistant" && Array.isArray(m.content));
   if (!last) return "";
-  return last.content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n");
+  return last.content
+    .filter((c: any) => c.type === "text")
+    .map((c: any) => c.text)
+    .join("\n");
 }
 
 async function gitRoot(pi: ExtensionAPI): Promise<string> {
@@ -652,7 +735,11 @@ async function createWorktree(pi: ExtensionAPI, cwd: string, name: string, baseR
   }
   const reattach = await pi.exec("git", ["-C", root, "worktree", "add", path, branch], { timeout: 30000 });
   if (reattach.code !== 0) {
-    throw new Error(reattach.stderr || reattach.stdout || `Branch ${branch} exists but its worktree is gone and could not be recreated. Remove the branch or run 'git worktree prune' and retry.`);
+    throw new Error(
+      reattach.stderr ||
+        reattach.stdout ||
+        `Branch ${branch} exists but its worktree is gone and could not be recreated. Remove the branch or run 'git worktree prune' and retry.`,
+    );
   }
   return { root, path, branch, reused: true, stdout: reattach.stdout, stderr: reattach.stderr };
 }
@@ -684,13 +771,20 @@ async function listWorktrees(pi: ExtensionAPI) {
 async function summarizeWorktree(pi: ExtensionAPI, path: string, statOnly = false) {
   const status = await pi.exec("git", ["-C", path, "status", "--short", "--branch"], { timeout: 10000 });
   const stat = await pi.exec("git", ["-C", path, "diff", "--stat"], { timeout: 10000 });
-  const diff = statOnly ? undefined : await pi.exec("git", ["-C", path, "diff", "--", ":!package-lock.json", ":!pnpm-lock.yaml", ":!yarn.lock"], { timeout: 30000 });
+  const diff = statOnly
+    ? undefined
+    : await pi.exec("git", ["-C", path, "diff", "--", ":!package-lock.json", ":!pnpm-lock.yaml", ":!yarn.lock"], {
+        timeout: 30000,
+      });
   return {
     path,
     status: status.stdout.trim(),
     stat: stat.stdout.trim(),
     diff: diff?.stdout.trim(),
-    stderr: [status.stderr, stat.stderr, diff?.stderr].map((err) => err?.trim()).filter(Boolean).join("\n"),
+    stderr: [status.stderr, stat.stderr, diff?.stderr]
+      .map((err) => err?.trim())
+      .filter(Boolean)
+      .join("\n"),
     code: Math.max(status.code ?? 0, stat.code ?? 0, diff?.code ?? 0),
   };
 }
@@ -711,13 +805,20 @@ export default function planWorktree(pi: ExtensionAPI) {
       return;
     }
     const status = planStatus === "approved" ? "approved" : planStatus === "refining" ? "refining" : "pending approval";
-    const steps = planSteps.length ? planSteps.map((step, index) => `${index + 1}. ${step}`) : [lastPlan.split("\n").find(Boolean) ?? "Captured plan"];
+    const steps = planSteps.length
+      ? planSteps.map((step, index) => `${index + 1}. ${step}`)
+      : [lastPlan.split("\n").find(Boolean) ?? "Captured plan"];
     ctx.ui.setWidget("pibarm-plan-steps", [`Plan ${status}:`, ...steps]);
   }
 
   function persistPlan(status: PlanStatus = planStatus) {
     if (!lastPlan) return;
-    pi.appendEntry("pibarm-plan", { plan: lastPlan, steps: planSteps, status, capturedAt: planCapturedAt || Date.now() });
+    pi.appendEntry("pibarm-plan", {
+      plan: lastPlan,
+      steps: planSteps,
+      status,
+      capturedAt: planCapturedAt || Date.now(),
+    });
   }
 
   function capturePlan(ctx: ExtensionContext, text: string) {
@@ -744,7 +845,10 @@ export default function planWorktree(pi: ExtensionAPI) {
     planStatus = "refining";
     persistPlan("refining");
     updatePlanWidget(ctx);
-    pi.sendUserMessage(`Revise the captured plan based on the feedback below. Keep plan mode active, do not edit files, and return a complete revised plan that can be approved afterwards.\n\nCurrent captured plan:\n${lastPlan}\n\nFeedback/refinement request:\n${feedback}`, { deliverAs: "followUp" });
+    pi.sendUserMessage(
+      `Revise the captured plan based on the feedback below. Keep plan mode active, do not edit files, and return a complete revised plan that can be approved afterwards.\n\nCurrent captured plan:\n${lastPlan}\n\nFeedback/refinement request:\n${feedback}`,
+      { deliverAs: "followUp" },
+    );
   }
 
   function enablePlanMode(ctx: ExtensionContext) {
@@ -771,14 +875,17 @@ export default function planWorktree(pi: ExtensionAPI) {
       enablePlanMode(ctx);
       const task = args.trim();
       if (task) {
-        pi.sendUserMessage(`Plan this task. Ask clarifying questions first if needed. Do not edit files.\n\nTask: ${task}`, { deliverAs: "followUp" });
+        pi.sendUserMessage(
+          `Plan this task. Ask clarifying questions first if needed. Do not edit files.\n\nTask: ${task}`,
+          { deliverAs: "followUp" },
+        );
       }
     },
   });
 
   pi.registerCommand("plan-mode", {
     description: "Toggle read-only plan mode",
-    handler: async (_args, ctx) => planMode ? disablePlanMode(ctx) : enablePlanMode(ctx),
+    handler: async (_args, ctx) => (planMode ? disablePlanMode(ctx) : enablePlanMode(ctx)),
   });
 
   pi.registerCommand("plan-show", {
@@ -788,8 +895,13 @@ export default function planWorktree(pi: ExtensionAPI) {
         ctx.ui.notify("No captured plan yet. Use /plan first.", "warning");
         return;
       }
-      const steps = planSteps.length ? `\n\nParsed steps:\n${planSteps.map((step, i) => `${i + 1}. ${step}`).join("\n")}` : "";
-      ctx.ui.notify(`Status: ${planStatus}\n\n${lastPlan}${steps}\n\nNext: /approve-plan [active|worktree <name>] or /refine-plan <feedback>`, "info");
+      const steps = planSteps.length
+        ? `\n\nParsed steps:\n${planSteps.map((step, i) => `${i + 1}. ${step}`).join("\n")}`
+        : "";
+      ctx.ui.notify(
+        `Status: ${planStatus}\n\n${lastPlan}${steps}\n\nNext: /approve-plan [active|worktree <name>] or /refine-plan <feedback>`,
+        "info",
+      );
     },
   });
 
@@ -802,10 +914,15 @@ export default function planWorktree(pi: ExtensionAPI) {
     disablePlanMode(ctx);
     if (worktreeName) {
       const wt = await createWorktree(pi, ctx.cwd, worktreeName);
-      pi.sendUserMessage(`Execute the approved plan in the isolated git worktree at ${wt.path}. Make all file changes under that path, not the active repo.\n\nApproved plan:\n${lastPlan}`, { deliverAs: "followUp" });
+      pi.sendUserMessage(
+        `Execute the approved plan in the isolated git worktree at ${wt.path}. Make all file changes under that path, not the active repo.\n\nApproved plan:\n${lastPlan}`,
+        { deliverAs: "followUp" },
+      );
       return;
     }
-    pi.sendUserMessage(`Execute the approved plan in the active checkout.\n\nApproved plan:\n${lastPlan}`, { deliverAs: "followUp" });
+    pi.sendUserMessage(`Execute the approved plan in the active checkout.\n\nApproved plan:\n${lastPlan}`, {
+      deliverAs: "followUp",
+    });
   }
 
   async function approvePlanCommand(args: string, ctx: ExtensionContext) {
@@ -834,7 +951,8 @@ export default function planWorktree(pi: ExtensionAPI) {
   pi.registerCommand("refine-plan", {
     description: "Refine the captured plan and require re-approval: /refine-plan <feedback>",
     handler: async (args, ctx) => {
-      const feedback = args.trim() || await ctx.ui.editor("Refine captured plan", "Describe what should change before approval:\n");
+      const feedback =
+        args.trim() || (await ctx.ui.editor("Refine captured plan", "Describe what should change before approval:\n"));
       if (feedback?.trim()) await refineCapturedPlan(ctx, feedback.trim());
       else ctx.ui.notify("Plan retained unchanged. Use /approve-plan or /refine-plan when ready.", "info");
     },
@@ -845,7 +963,9 @@ export default function planWorktree(pi: ExtensionAPI) {
     handler: async (_args, ctx) => {
       try {
         const { worktrees } = await listWorktrees(pi);
-        const text = worktrees.map((wt) => `${wt.path}${wt.branch ? `  [${wt.branch}]` : ""}${wt.detached ? "  (detached)" : ""}`).join("\n");
+        const text = worktrees
+          .map((wt) => `${wt.path}${wt.branch ? `  [${wt.branch}]` : ""}${wt.detached ? "  (detached)" : ""}`)
+          .join("\n");
         ctx.ui.notify(text || "No worktrees found", "info");
       } catch (error) {
         ctx.ui.notify((error as Error).message, "error");
@@ -885,8 +1005,13 @@ export default function planWorktree(pi: ExtensionAPI) {
         if (!ok) return;
       }
       const root = await gitRoot(pi);
-      const result = await pi.exec("git", ["-C", root, "worktree", "remove", ...(force ? ["--force"] : []), path], { timeout: 30000 });
-      ctx.ui.notify(result.code === 0 ? `Removed ${path}` : (result.stderr || result.stdout || "remove failed"), result.code === 0 ? "info" : "error");
+      const result = await pi.exec("git", ["-C", root, "worktree", "remove", ...(force ? ["--force"] : []), path], {
+        timeout: 30000,
+      });
+      ctx.ui.notify(
+        result.code === 0 ? `Removed ${path}` : result.stderr || result.stdout || "remove failed",
+        result.code === 0 ? "info" : "error",
+      );
     },
   });
 
@@ -895,14 +1020,18 @@ export default function planWorktree(pi: ExtensionAPI) {
     label: "Elicit Plan Questions",
     description: "Ask the user specific questions before finalizing or executing a plan.",
     promptSnippet: "Ask the user clarifying questions for plan elicitation",
-    promptGuidelines: ["Use elicit_plan_questions in plan mode before finalizing a plan when requirements, risks, scope, or execution location are unclear."],
+    promptGuidelines: [
+      "Use elicit_plan_questions in plan mode before finalizing a plan when requirements, risks, scope, or execution location are unclear.",
+    ],
     parameters: ELICIT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const questions = normalizePlanQuestions(params.questions as Array<string | Record<string, unknown>>);
-      const prompt = `${params.context ? `${params.context}\n\n` : ""}${questions.map((q, i) => {
-        const options = q.options.length ? ` [${q.options.map((o) => o.label).join(" / ")}]` : "";
-        return `${i + 1}. ${q.question}${options}`;
-      }).join("\n")}`;
+      const prompt = `${params.context ? `${params.context}\n\n` : ""}${questions
+        .map((q, i) => {
+          const options = q.options.length ? ` [${q.options.map((o) => o.label).join(" / ")}]` : "";
+          return `${i + 1}. ${q.question}${options}`;
+        })
+        .join("\n")}`;
       if (!ctx.hasUI) {
         return { content: [{ type: "text", text: `Questions needing answers:\n${prompt}` }], details: undefined };
       }
@@ -910,10 +1039,20 @@ export default function planWorktree(pi: ExtensionAPI) {
       if (params.edit !== false && ctx.mode === "tui") {
         const answers = await askTabbedPlanQuestions(ctx, questions, params.context);
         if (!answers) {
-          return { content: [{ type: "text", text: "User cancelled the planning questions." }], details: { questions, answers: [], answer: null } };
+          return {
+            content: [{ type: "text", text: "User cancelled the planning questions." }],
+            details: { questions, answers: [], answer: null },
+          };
         }
         return {
-          content: [{ type: "text", text: answers.some((a) => a.answer) ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}${a.notes ? ` — note: ${a.notes}` : ""}`).join("\n")}` : "User did not provide answers." }],
+          content: [
+            {
+              type: "text",
+              text: answers.some((a) => a.answer)
+                ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}${a.notes ? ` — note: ${a.notes}` : ""}`).join("\n")}`
+                : "User did not provide answers.",
+            },
+          ],
           details: { questions, answers, answer: answers.map((a, i) => `${i + 1}. ${a.answer}`).join("\n") },
         };
       }
@@ -922,10 +1061,22 @@ export default function planWorktree(pi: ExtensionAPI) {
       for (let i = 0; i < questions.length; i++) {
         const prefix = params.context ? `${params.context}\n\n` : "";
         const answer = await ctx.ui.input(`${prefix}${i + 1}/${questions.length}: ${questions[i]!.question}`, "");
-        answers.push({ id: questions[i]!.id, question: questions[i]!.question, answer: answer?.trim() ?? "", value: answer?.trim() ?? "" });
+        answers.push({
+          id: questions[i]!.id,
+          question: questions[i]!.question,
+          answer: answer?.trim() ?? "",
+          value: answer?.trim() ?? "",
+        });
       }
       return {
-        content: [{ type: "text", text: answers.some((a) => a.answer) ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}` : "User did not provide answers." }],
+        content: [
+          {
+            type: "text",
+            text: answers.some((a) => a.answer)
+              ? `User answered:\n${answers.map((a, i) => `${i + 1}. ${a.answer || "(blank)"}`).join("\n")}`
+              : "User did not provide answers.",
+          },
+        ],
         details: { questions, answers, answer: answers.map((a, i) => `${i + 1}. ${a.answer}`).join("\n") },
       };
     },
@@ -936,31 +1087,48 @@ export default function planWorktree(pi: ExtensionAPI) {
     label: "Create Git Worktree",
     description: "Create an isolated git worktree for safe execution without modifying the active checkout.",
     promptSnippet: "Create an isolated git worktree for implementation or subagent work",
-    promptGuidelines: ["Use create_git_worktree before executing risky or parallel work that should not touch the active checkout."],
+    promptGuidelines: [
+      "Use create_git_worktree before executing risky or parallel work that should not touch the active checkout.",
+    ],
     parameters: WORKTREE_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");
-      return { content: [{ type: "text", text: `Worktree ready: ${wt.path}\nBranch: ${wt.branch}${wt.reused ? "\n(reused existing worktree/branch)" : ""}` }], details: wt };
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Worktree ready: ${wt.path}\nBranch: ${wt.branch}${wt.reused ? "\n(reused existing worktree/branch)" : ""}`,
+          },
+        ],
+        details: wt,
+      };
     },
   });
 
   pi.registerTool({
     name: "summarize_worktree_diff",
     label: "Summarize Worktree Diff",
-    description: "Return git status, diff stat, and optionally diff for a worktree. Large diffs are truncated to the first ~50KB/2000 lines.",
+    description:
+      "Return git status, diff stat, and optionally diff for a worktree. Large diffs are truncated to the first ~50KB/2000 lines.",
     promptSnippet: "Summarize changes in an isolated git worktree",
-    promptGuidelines: ["Use summarize_worktree_diff after worktree execution to report changed files and review the diff before merge."],
+    promptGuidelines: [
+      "Use summarize_worktree_diff after worktree execution to report changed files and review the diff before merge.",
+    ],
     parameters: WORKTREE_DIFF_PARAMS,
     async execute(_id, params) {
       const summary = await summarizeWorktree(pi, params.path, params.statOnly ?? false);
       if (summary.code !== 0) {
-        throw new Error(`git failed while summarizing ${params.path} (exit ${summary.code}).${summary.stderr ? `\n${summary.stderr}` : ""}`);
+        throw new Error(
+          `git failed while summarizing ${params.path} (exit ${summary.code}).${summary.stderr ? `\n${summary.stderr}` : ""}`,
+        );
       }
       const text = [
         `Status:\n${summary.status || "(clean)"}`,
         `Diff stat:\n${summary.stat || "(none)"}`,
         summary.diff && `Diff:\n${clipHead(summary.diff)}`,
-      ].filter(Boolean).join("\n\n");
+      ]
+        .filter(Boolean)
+        .join("\n\n");
       return { content: [{ type: "text", text }], details: summary };
     },
   });
@@ -974,7 +1142,11 @@ export default function planWorktree(pi: ExtensionAPI) {
     parameters: WORKTREE_REMOVE_PARAMS,
     async execute(_id, params) {
       const root = await gitRoot(pi);
-      const result = await pi.exec("git", ["-C", root, "worktree", "remove", ...(params.force ? ["--force"] : []), params.path], { timeout: 30000 });
+      const result = await pi.exec(
+        "git",
+        ["-C", root, "worktree", "remove", ...(params.force ? ["--force"] : []), params.path],
+        { timeout: 30000 },
+      );
       if (result.code !== 0) {
         throw new Error(result.stderr || result.stdout || `git worktree remove failed (exit ${result.code})`);
       }
@@ -990,13 +1162,20 @@ export default function planWorktree(pi: ExtensionAPI) {
     label: "Run Worktree Agent",
     description: "Create an isolated git worktree and run a non-interactive pi subagent inside it.",
     promptSnippet: "Run a subagent in a separate git worktree",
-    promptGuidelines: ["Use run_worktree_agent for parallel implementation, verification, or exploratory changes that must not affect the active checkout."],
+    promptGuidelines: [
+      "Use run_worktree_agent for parallel implementation, verification, or exploratory changes that must not affect the active checkout.",
+    ],
     parameters: WORKTREE_AGENT_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");
       const modelSelection = selectAgentModelRef(ctx, params.model, params.task);
       const taskId = `worktree-agent:${params.name}`;
-      upsertAgentTask({ id: taskId, label: `wt ${params.name}`, status: "running", session: modelLabel(modelSelection.model) });
+      upsertAgentTask({
+        id: taskId,
+        label: `wt ${params.name}`,
+        status: "running",
+        session: modelLabel(modelSelection.model),
+      });
       updateTaskWidget(ctx);
       const piArgs = ["-p"];
       if (modelSelection.model) piArgs.push("--model", modelSelection.model);
@@ -1010,21 +1189,30 @@ export default function planWorktree(pi: ExtensionAPI) {
       if (failed) {
         throw new Error(`Worktree subagent failed (exit ${result.code}).${text ? `\n\n${clipTail(text)}` : ""}`);
       }
-      return { content: [{ type: "text", text: clipTail(text) || "(subagent produced no output)" }], details: { worktree: wt, modelSelection, result } };
+      return {
+        content: [{ type: "text", text: clipTail(text) || "(subagent produced no output)" }],
+        details: { worktree: wt, modelSelection, result },
+      };
     },
   });
 
   pi.on("tool_call", async (event) => {
     if (!planMode) return;
-    if (WRITE_TOOLS.has(event.toolName)) return { block: true, reason: "Plan mode is read-only. Approve/execute the plan before editing files." };
+    if (WRITE_TOOLS.has(event.toolName))
+      return { block: true, reason: "Plan mode is read-only. Approve/execute the plan before editing files." };
     if (event.toolName === "bash" && !isReadOnlyCommand(String((event.input as any).command ?? ""))) {
-      return { block: true, reason: "Plan mode blocks non-read-only bash commands. Use /execute-plan or create a worktree after approval." };
+      return {
+        block: true,
+        reason: "Plan mode blocks non-read-only bash commands. Use /execute-plan or create a worktree after approval.",
+      };
     }
   });
 
   pi.on("before_agent_start", async () => {
     if (!planMode) return;
-    const pending = lastPlan ? `\n- A captured plan is ${planStatus}; if the user gives feedback, revise the full plan and require approval again before execution.\n- Current captured plan:\n${lastPlan}` : "";
+    const pending = lastPlan
+      ? `\n- A captured plan is ${planStatus}; if the user gives feedback, revise the full plan and require approval again before execution.\n- Current captured plan:\n${lastPlan}`
+      : "";
     return {
       message: {
         customType: "pibarm-plan-mode",
@@ -1063,8 +1251,11 @@ export default function planWorktree(pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     // Restore from the active branch only, so plans from abandoned /tree or
     // /fork branches don't come back.
-    const restored = ctx.sessionManager.getBranch()
-      .filter((entry: { type: string; customType?: string }) => entry.type === "custom" && entry.customType === "pibarm-plan")
+    const restored = ctx.sessionManager
+      .getBranch()
+      .filter(
+        (entry: { type: string; customType?: string }) => entry.type === "custom" && entry.customType === "pibarm-plan",
+      )
       .pop() as { data?: { plan?: string; steps?: string[]; status?: PlanStatus; capturedAt?: number } } | undefined;
     if (restored?.data?.plan) lastPlan = restored.data.plan;
     if (restored?.data?.steps) planSteps = restored.data.steps;

@@ -112,7 +112,10 @@ async function runMcporter(
   const commandArgs = hasCustomEnv
     ? [...Object.entries(config.env).map(([key]) => `${key}=${env[key]}`), config.command, ...args]
     : args;
-  const result = await pi.exec(command, commandArgs, { signal: options.signal, timeout: options.timeoutMs ?? config.timeoutMs });
+  const result = await pi.exec(command, commandArgs, {
+    signal: options.signal,
+    timeout: options.timeoutMs ?? config.timeoutMs,
+  });
   return {
     command,
     args: commandArgs,
@@ -132,18 +135,24 @@ export default function mcporterExtension(pi: ExtensionAPI) {
     label: "Mcporter List",
     description: "List configured MCP servers through mcporter, optionally including tool schemas.",
     promptSnippet: "Discover configured MCP servers and tool schemas through mcporter",
-    promptGuidelines: ["Use mcporter_list before mcporter_call when you need to discover available MCP servers, tools, or schemas."],
+    promptGuidelines: [
+      "Use mcporter_list before mcporter_call when you need to discover available MCP servers, tools, or schemas.",
+    ],
     parameters: LIST_PARAMS,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const config = await loadConfig(ctx);
-      const args = compactArgs(config.listArgs.map((arg) => expandArg(arg, {
-        server: params.server ?? "",
-        tool: "",
-        selector: "",
-        argumentsJson: "{}",
-        schemaFlag: params.schema ? "--schema" : "",
-        uri: "",
-      })));
+      const args = compactArgs(
+        config.listArgs.map((arg) =>
+          expandArg(arg, {
+            server: params.server ?? "",
+            tool: "",
+            selector: "",
+            argumentsJson: "{}",
+            schemaFlag: params.schema ? "--schema" : "",
+            uri: "",
+          }),
+        ),
+      );
       const result = await runMcporter(pi, ctx, args, { signal });
       if (result.code !== 0) {
         // Throw so failures are flagged to the model; a returned isError is ignored.
@@ -167,14 +176,18 @@ export default function mcporterExtension(pi: ExtensionAPI) {
       const config = await loadConfig(ctx);
       const argumentsJson = JSON.stringify(params.arguments ?? {});
       const selector = `${params.server}.${params.tool}`;
-      const args = compactArgs(config.callArgs.map((arg) => expandArg(arg, {
-        server: params.server,
-        tool: params.tool,
-        selector,
-        argumentsJson,
-        schemaFlag: "",
-        uri: "",
-      })));
+      const args = compactArgs(
+        config.callArgs.map((arg) =>
+          expandArg(arg, {
+            server: params.server,
+            tool: params.tool,
+            selector,
+            argumentsJson,
+            schemaFlag: "",
+            uri: "",
+          }),
+        ),
+      );
       const result = await runMcporter(pi, ctx, args, { signal });
       if (result.code !== 0) {
         // Throw so failures are flagged to the model; a returned isError is ignored.
@@ -196,14 +209,18 @@ export default function mcporterExtension(pi: ExtensionAPI) {
     parameters: RESOURCE_PARAMS,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const config = await loadConfig(ctx);
-      const args = compactArgs(config.resourceArgs.map((arg) => expandArg(arg, {
-        server: params.server,
-        tool: "",
-        selector: "",
-        argumentsJson: "{}",
-        schemaFlag: "",
-        uri: params.uri ?? "",
-      })));
+      const args = compactArgs(
+        config.resourceArgs.map((arg) =>
+          expandArg(arg, {
+            server: params.server,
+            tool: "",
+            selector: "",
+            argumentsJson: "{}",
+            schemaFlag: "",
+            uri: params.uri ?? "",
+          }),
+        ),
+      );
       const result = await runMcporter(pi, ctx, args, { signal });
       if (result.code !== 0) {
         // Throw so failures are flagged to the model; a returned isError is ignored.
@@ -221,7 +238,10 @@ export default function mcporterExtension(pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const config = await loadConfig(ctx);
       if (!args.trim()) {
-        ctx.ui.notify(`mcporter command: ${config.command}\ncall: ${config.callArgs.join(" ")}\nlist: ${config.listArgs.join(" ")}`, "info");
+        ctx.ui.notify(
+          `mcporter command: ${config.command}\ncall: ${config.callArgs.join(" ")}\nlist: ${config.listArgs.join(" ")}`,
+          "info",
+        );
         return;
       }
       const result = await runMcporter(pi, ctx, tokenizeArgs(args));

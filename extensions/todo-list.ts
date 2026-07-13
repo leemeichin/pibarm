@@ -1,7 +1,20 @@
 import { StringEnum } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { addTodos, clearAgentTasks, clearTodos, getTodos, markTodoDone, restoreTodos, setTodos, taskSummaryLines, todoLines, todoSummary, updateTaskWidget, type TodoItem } from "../lib/task-widget.js";
+import {
+  addTodos,
+  clearAgentTasks,
+  clearTodos,
+  getTodos,
+  markTodoDone,
+  restoreTodos,
+  setTodos,
+  taskSummaryLines,
+  todoLines,
+  todoSummary,
+  updateTaskWidget,
+  type TodoItem,
+} from "../lib/task-widget.js";
 
 const TODO_PARAMS = Type.Object({
   action: StringEnum(["set", "add", "done", "list", "clear"] as const),
@@ -12,7 +25,10 @@ const TODO_PARAMS = Type.Object({
 function looksMultiAsk(prompt: string): boolean {
   const taskLines = prompt.split("\n").filter((line) => /^\s*(?:[-*]|\d+[.)])\s+\S/.test(line));
   if (taskLines.length >= 2) return true;
-  return /\b(and then|also|after that)\b/i.test(prompt) && /\b(add|fix|update|change|implement|test|commit|push|check)\b/i.test(prompt);
+  return (
+    /\b(and then|also|after that)\b/i.test(prompt) &&
+    /\b(add|fix|update|change|implement|test|commit|push|check)\b/i.test(prompt)
+  );
 }
 
 export default function todoListExtension(pi: ExtensionAPI) {
@@ -43,9 +59,14 @@ export default function todoListExtension(pi: ExtensionAPI) {
       }
       updateTaskWidget(ctx);
       const todos = getTodos();
-      const text = params.action === "list"
-        ? (todos.length ? todoLines().join("\n") : "No todos.")
-        : (todos.length ? `Todo updated: ${todoSummary()}` : "Todos cleared.");
+      const text =
+        params.action === "list"
+          ? todos.length
+            ? todoLines().join("\n")
+            : "No todos."
+          : todos.length
+            ? `Todo updated: ${todoSummary()}`
+            : "Todos cleared.";
       return { content: [{ type: "text", text }], details: { todos } };
     },
   });
@@ -71,7 +92,10 @@ export default function todoListExtension(pi: ExtensionAPI) {
 function latestTodoSnapshot(ctx: ExtensionContext): TodoItem[] | undefined {
   const entries = ctx.sessionManager.getBranch();
   for (let i = entries.length - 1; i >= 0; i--) {
-    const entry = entries[i] as { type: string; message?: { role?: string; toolName?: string; details?: { todos?: unknown } } };
+    const entry = entries[i] as {
+      type: string;
+      message?: { role?: string; toolName?: string; details?: { todos?: unknown } };
+    };
     if (entry.type !== "message") continue;
     const message = entry.message;
     if (message?.role !== "toolResult" || message.toolName !== "todo_list") continue;

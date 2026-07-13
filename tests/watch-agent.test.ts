@@ -27,8 +27,15 @@ async function makeScript(overrides: Partial<WatcherScriptOptions> = {}) {
 describe("buildWatcherScript", () => {
   test("falls back across sha256sum/shasum/cksum instead of requiring shasum", () => {
     const script = buildWatcherScript({
-      name: "t", dir: "/d", logPath: "/d/l", stopPath: "/d/s", statusPath: "/d/st",
-      watchCommand: "true", piCommand: "true", intervalSeconds: 15, maxIterations: 1,
+      name: "t",
+      dir: "/d",
+      logPath: "/d/l",
+      stopPath: "/d/s",
+      statusPath: "/d/st",
+      watchCommand: "true",
+      piCommand: "true",
+      intervalSeconds: 15,
+      maxIterations: 1,
     });
     expect(script).toContain("command -v sha256sum");
     expect(script).toContain("command -v shasum");

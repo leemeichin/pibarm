@@ -31,6 +31,7 @@ gh pr create --title "..." --body-file "$tmp"
 ```
 
 Rules:
+
 - Never pass multiline Markdown through `--body "...\n..."`.
 - Use `--draft` if the user asks for draft or checks are unfinished.
 - If a PR already exists for the branch, use `gh pr edit --body-file "$tmp"` instead of creating a duplicate.

@@ -7,6 +7,7 @@ export function sanitizeOscField(value: string, maxChars = 180): string {
   // Strip control bytes and the OSC field separator so tool-controlled text
   // cannot shift escape-sequence fields, and slice by code points so
   // multi-byte sequences are never cut in half.
+  // oxlint-disable-next-line no-control-regex -- control bytes are matched deliberately
   const cleaned = value.replace(/[\u0000-\u001f\u007f;]/g, " ");
   return [...cleaned].slice(0, maxChars).join("");
 }
@@ -19,7 +20,11 @@ export function cooldownMs(raw: string | undefined): number {
 
 function isKitty(): boolean {
   // kitty sets TERM=xterm-kitty and KITTY_WINDOW_ID, not TERM_PROGRAM.
-  return Boolean(process.env.KITTY_WINDOW_ID) || /kitty/i.test(process.env.TERM ?? "") || process.env.TERM_PROGRAM === "kitty";
+  return (
+    Boolean(process.env.KITTY_WINDOW_ID) ||
+    /kitty/i.test(process.env.TERM ?? "") ||
+    process.env.TERM_PROGRAM === "kitty"
+  );
 }
 
 async function nativeNotify(pi: ExtensionAPI, canWriteEscapes: boolean, title: string, body: string) {
@@ -54,9 +59,10 @@ export default function waitingNotify(pi: ExtensionAPI) {
     lastNotification = now;
 
     const title = "Pi is waiting";
-    const body = process.env.PI_NOTIFY_INCLUDE_QUESTION === "1"
-      ? sanitizeOscField(`${event.toolName}: ${JSON.stringify(event.args)}`)
-      : "A question is waiting for your input.";
+    const body =
+      process.env.PI_NOTIFY_INCLUDE_QUESTION === "1"
+        ? sanitizeOscField(`${event.toolName}: ${JSON.stringify(event.args)}`)
+        : "A question is waiting for your input.";
 
     await nativeNotify(pi, canWriteEscapes, title, body).catch(() => undefined);
   });

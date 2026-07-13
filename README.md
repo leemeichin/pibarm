@@ -34,7 +34,6 @@ pi
 
 `bun run setup` copies missing local config examples and runs the setup doctor. Use `bun run doctor` later to re-check your environment.
 
-
 ## External pi packages
 
 This project asks pi to load one external package from `.pi/settings.json`:
@@ -63,14 +62,14 @@ Required for core usage:
 
 Feature-specific tools:
 
-| Tool | Enables | Install/auth hint |
-|---|---|---|
-| `bun` | local development checks | `curl -fsSL https://bun.sh/install \| bash` |
-| `gh` | GitHub-backed `forge_*` tools and statusline PR checks | `brew install gh && gh auth login` |
-| `hut` | SourceHut-backed `forge_*` tools | `brew install hut && hut init` |
-| `mcporter` | MCP bridge tools | install/configure `mcporter`, then edit `.pi/mcporter.json` |
-| `wezterm` | Matrix visible agent panes | `brew install --cask wezterm` |
-| `terminal-notifier` | optional native macOS notifications | `brew install terminal-notifier` |
+| Tool                | Enables                                                | Install/auth hint                                           |
+| ------------------- | ------------------------------------------------------ | ----------------------------------------------------------- |
+| `bun`               | local development checks                               | `curl -fsSL https://bun.sh/install \| bash`                 |
+| `gh`                | GitHub-backed `forge_*` tools and statusline PR checks | `brew install gh && gh auth login`                          |
+| `hut`               | SourceHut-backed `forge_*` tools                       | `brew install hut && hut init`                              |
+| `mcporter`          | MCP bridge tools                                       | install/configure `mcporter`, then edit `.pi/mcporter.json` |
+| `wezterm`           | Matrix visible agent panes                             | `brew install --cask wezterm`                               |
+| `terminal-notifier` | optional native macOS notifications                    | `brew install terminal-notifier`                            |
 
 The TUI uses Nerd Font glyphs for the statusline, Matrix/task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
 
@@ -120,73 +119,73 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `/plan <task>` | Enter read-only plan mode and ask for a plan. |
-| `/plan-mode` | Toggle read-only plan mode manually. |
-| `/plan-show` | Show the last captured plan, status, and parsed steps. |
-| `/approve-plan [active\|worktree <name>]` | Approve and execute the captured plan. |
-| `/refine-plan <feedback>` | Revise the captured plan and require approval again. |
-| `/execute-plan` | Execute the last captured plan in the active checkout. |
-| `/execute-plan worktree <name>` | Execute the last captured plan in a new repo-local git worktree. |
-| `/worktrees` | List git worktrees for this repo. |
-| `/worktree-diff <path>` | Show status + diff stat for a worktree. |
-| `/worktree-remove [--force] <path>` | Remove a worktree after review/merge/abandoning it. |
-| `/tasks` | Show all todo and delegated agent task widget items. |
-| `/watchers` | List active watcher sibling agents. |
-| `/watcher-stop [name]` | Stop watcher sibling agents. |
-| `/preset` | List configured role presets. |
-| `/preset planner` | Apply planner model/tool/thinking preset. |
-| `/preset executor` | Apply executor model/tool/thinking preset. |
-| `/mcporter` | Show configured mcporter command templates. |
-| `/mcporter <args...>` | Run raw mcporter args from inside pi. |
-| `/repo-status` | Show git/forge/CI status and update pi statusline. |
-| `/forge [github\|sourcehut\|auto]` | Show, set, or reset the remembered forge for this repo. |
-| `/forge-prs` | List PRs/patches using the detected/configured forge. |
-| `/forge-ci` | List CI/builds using the detected/configured forge. |
-| `/forge-tickets` | List issues/tickets using the detected/configured forge. |
-| `/review [#number\|url\|branch]` | Start a PR/patch review; GitHub findings are posted inline when possible. |
-| `/obsidian-status` | Show Obsidian export settings resolved from Pi settings. |
-| `/obsidian-export` | Export the current session to the configured Obsidian vault. |
-| `/matrix-help` | Explain when/how to use Matrix and its prior art. |
-| `/matrix <task>` | Start a WezTerm Matrix with scout/planner panes. |
-| `/matrix-attach` | Open/focus the session-specific Matrix workspace window. |
-| `/matrix-spawn <role> <task>` | Spawn one Matrix agent in a WezTerm pane. |
-| `/matrix-capture [role]` | Capture recent output from Matrix panes/logs. |
-| `/matrix-join [role\|all]` | Wait for Matrix agents, capture logs, clean up panes; closes the workspace when all are done. |
-| `/matrix-list` | List Matrix agents and panes for this session. |
-| `/matrix-kill [role\|all]` | Kill this session's Matrix panes. |
-| `/matrix-kill-orphans` | Kill Matrix panes left behind by other sessions. |
+| Command                                   | What it does                                                                                  |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `/plan <task>`                            | Enter read-only plan mode and ask for a plan.                                                 |
+| `/plan-mode`                              | Toggle read-only plan mode manually.                                                          |
+| `/plan-show`                              | Show the last captured plan, status, and parsed steps.                                        |
+| `/approve-plan [active\|worktree <name>]` | Approve and execute the captured plan.                                                        |
+| `/refine-plan <feedback>`                 | Revise the captured plan and require approval again.                                          |
+| `/execute-plan`                           | Execute the last captured plan in the active checkout.                                        |
+| `/execute-plan worktree <name>`           | Execute the last captured plan in a new repo-local git worktree.                              |
+| `/worktrees`                              | List git worktrees for this repo.                                                             |
+| `/worktree-diff <path>`                   | Show status + diff stat for a worktree.                                                       |
+| `/worktree-remove [--force] <path>`       | Remove a worktree after review/merge/abandoning it.                                           |
+| `/tasks`                                  | Show all todo and delegated agent task widget items.                                          |
+| `/watchers`                               | List active watcher sibling agents.                                                           |
+| `/watcher-stop [name]`                    | Stop watcher sibling agents.                                                                  |
+| `/preset`                                 | List configured role presets.                                                                 |
+| `/preset planner`                         | Apply planner model/tool/thinking preset.                                                     |
+| `/preset executor`                        | Apply executor model/tool/thinking preset.                                                    |
+| `/mcporter`                               | Show configured mcporter command templates.                                                   |
+| `/mcporter <args...>`                     | Run raw mcporter args from inside pi.                                                         |
+| `/repo-status`                            | Show git/forge/CI status and update pi statusline.                                            |
+| `/forge [github\|sourcehut\|auto]`        | Show, set, or reset the remembered forge for this repo.                                       |
+| `/forge-prs`                              | List PRs/patches using the detected/configured forge.                                         |
+| `/forge-ci`                               | List CI/builds using the detected/configured forge.                                           |
+| `/forge-tickets`                          | List issues/tickets using the detected/configured forge.                                      |
+| `/review [#number\|url\|branch]`          | Start a PR/patch review; GitHub findings are posted inline when possible.                     |
+| `/obsidian-status`                        | Show Obsidian export settings resolved from Pi settings.                                      |
+| `/obsidian-export`                        | Export the current session to the configured Obsidian vault.                                  |
+| `/matrix-help`                            | Explain when/how to use Matrix and its prior art.                                             |
+| `/matrix <task>`                          | Start a WezTerm Matrix with scout/planner panes.                                              |
+| `/matrix-attach`                          | Open/focus the session-specific Matrix workspace window.                                      |
+| `/matrix-spawn <role> <task>`             | Spawn one Matrix agent in a WezTerm pane.                                                     |
+| `/matrix-capture [role]`                  | Capture recent output from Matrix panes/logs.                                                 |
+| `/matrix-join [role\|all]`                | Wait for Matrix agents, capture logs, clean up panes; closes the workspace when all are done. |
+| `/matrix-list`                            | List Matrix agents and panes for this session.                                                |
+| `/matrix-kill [role\|all]`                | Kill this session's Matrix panes.                                                             |
+| `/matrix-kill-orphans`                    | Kill Matrix panes left behind by other sessions.                                              |
 
 ## Tools exposed to the agent
 
-| Tool | Purpose |
-|---|---|
-| `elicit_plan_questions` | Ask several planning questions before finalizing/executing a plan, with rich TUI inputs for free text, select, multi-select, confirm/boolean, and number answers. |
-| `question` | Ask one focused question with optional choices. |
-| `create_git_worktree` | Create an isolated repo-local git worktree and branch. |
-| `summarize_worktree_diff` | Summarize status/diff for a worktree. |
-| `remove_git_worktree` | Remove an isolated worktree after confirmation/review. |
-| `run_worktree_agent` | Create/use a worktree and run `pi -p` there; simple tasks may use a lighter available model. |
-| `run_subagent` | Run an isolated non-interactive `pi -p` subagent; simple tasks may use a lighter available model. Defaults to a 10 minute timeout unless `timeoutMs` is set. |
-| `run_subagents` | Run several isolated `pi -p` subagents in parallel; simple jobs may use lighter available models unless set. Defaults to a 10 minute timeout unless `timeoutMs` is set. |
-| `watch_agent` | Start/list/stop a sibling watcher agent for PR reviews, checks, or external state changes. |
-| `mcporter_list` | Discover MCP servers/tools through `mcporter`. |
-| `mcporter_call` | Call MCP tools through `mcporter`. |
-| `mcporter_resource` | List/read MCP resources through `mcporter`. |
-| `repo_status` | Summarize branch, dirty files, forge, PR, and CI status. |
-| `forge_status` | Detect/show the configured forge for the current repository. |
-| `forge_prs` | List PRs/patches using the detected/configured forge. |
-| `forge_pr_status` | Inspect current/selected PR/patch review and check status. |
-| `forge_ci_status` | List CI/builds using the detected/configured forge. |
-| `forge_tickets` | List issues/tickets using the detected/configured forge. |
-| `todo_list` | Track progress when one prompt contains multiple requested tasks in the shared task widget. |
-| `matrix_spawn` | Spawn a parent-controlled pi agent in a WezTerm Matrix pane. |
-| `matrix_attach` | Open the Matrix WezTerm workspace. |
-| `matrix_capture` | Capture recent output from Matrix WezTerm panes/logs. |
-| `matrix_join` | Wait for Matrix agents to finish, capture logs, clean up panes, and close the finished workspace. |
-| `matrix_list` | List known Matrix agents and untracked Matrix workspace panes. |
-| `matrix_kill` | Kill Matrix WezTerm panes. |
+| Tool                      | Purpose                                                                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `elicit_plan_questions`   | Ask several planning questions before finalizing/executing a plan, with rich TUI inputs for free text, select, multi-select, confirm/boolean, and number answers.       |
+| `question`                | Ask one focused question with optional choices.                                                                                                                         |
+| `create_git_worktree`     | Create an isolated repo-local git worktree and branch.                                                                                                                  |
+| `summarize_worktree_diff` | Summarize status/diff for a worktree.                                                                                                                                   |
+| `remove_git_worktree`     | Remove an isolated worktree after confirmation/review.                                                                                                                  |
+| `run_worktree_agent`      | Create/use a worktree and run `pi -p` there; simple tasks may use a lighter available model.                                                                            |
+| `run_subagent`            | Run an isolated non-interactive `pi -p` subagent; simple tasks may use a lighter available model. Defaults to a 10 minute timeout unless `timeoutMs` is set.            |
+| `run_subagents`           | Run several isolated `pi -p` subagents in parallel; simple jobs may use lighter available models unless set. Defaults to a 10 minute timeout unless `timeoutMs` is set. |
+| `watch_agent`             | Start/list/stop a sibling watcher agent for PR reviews, checks, or external state changes.                                                                              |
+| `mcporter_list`           | Discover MCP servers/tools through `mcporter`.                                                                                                                          |
+| `mcporter_call`           | Call MCP tools through `mcporter`.                                                                                                                                      |
+| `mcporter_resource`       | List/read MCP resources through `mcporter`.                                                                                                                             |
+| `repo_status`             | Summarize branch, dirty files, forge, PR, and CI status.                                                                                                                |
+| `forge_status`            | Detect/show the configured forge for the current repository.                                                                                                            |
+| `forge_prs`               | List PRs/patches using the detected/configured forge.                                                                                                                   |
+| `forge_pr_status`         | Inspect current/selected PR/patch review and check status.                                                                                                              |
+| `forge_ci_status`         | List CI/builds using the detected/configured forge.                                                                                                                     |
+| `forge_tickets`           | List issues/tickets using the detected/configured forge.                                                                                                                |
+| `todo_list`               | Track progress when one prompt contains multiple requested tasks in the shared task widget.                                                                             |
+| `matrix_spawn`            | Spawn a parent-controlled pi agent in a WezTerm Matrix pane.                                                                                                            |
+| `matrix_attach`           | Open the Matrix WezTerm workspace.                                                                                                                                      |
+| `matrix_capture`          | Capture recent output from Matrix WezTerm panes/logs.                                                                                                                   |
+| `matrix_join`             | Wait for Matrix agents to finish, capture logs, clean up panes, and close the finished workspace.                                                                       |
+| `matrix_list`             | List known Matrix agents and untracked Matrix workspace panes.                                                                                                          |
+| `matrix_kill`             | Kill Matrix WezTerm panes.                                                                                                                                              |
 
 ## Rich planning questions
 
@@ -195,8 +194,18 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 ```json
 {
   "questions": [
-    { "label": "Scope", "question": "What should change?", "type": "select_many", "options": ["UI", "Tool schema", "Docs"] },
-    { "label": "Proceed", "question": "Apply schema changes?", "type": "confirm", "preview": "Keeps string questions backward-compatible." },
+    {
+      "label": "Scope",
+      "question": "What should change?",
+      "type": "select_many",
+      "options": ["UI", "Tool schema", "Docs"]
+    },
+    {
+      "label": "Proceed",
+      "question": "Apply schema changes?",
+      "type": "confirm",
+      "preview": "Keeps string questions backward-compatible."
+    },
     { "label": "Retries", "question": "How many retries?", "type": "number", "default": 2, "min": 0, "max": 5 }
   ]
 }
@@ -261,7 +270,6 @@ Review and cleanup:
 ```
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
-
 
 ## Matrix WezTerm agents
 

@@ -20,7 +20,11 @@ interface SessionIndex {
 }
 
 function slug(input: string) {
-  return input.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
 }
 
 function pathSegment(input: string): string | undefined {
@@ -34,7 +38,10 @@ function insideVault(vault: string, path: string) {
 }
 
 export function parseForgeRemote(url: string): { org: string; repo: string } | undefined {
-  const trimmed = url.trim().replace(/\/+$/, "").replace(/\.git$/i, "");
+  const trimmed = url
+    .trim()
+    .replace(/\/+$/, "")
+    .replace(/\.git$/i, "");
   if (!trimmed) return undefined;
   const scp = trimmed.match(/^[^@\s]+@[^:/\s]+:(.+)$/);
   let path = scp?.[1];
@@ -62,7 +69,10 @@ async function gitRemoteUrl(cwd: string): Promise<string | undefined> {
   } catch {
     try {
       const { stdout } = await execFileAsync("git", ["-C", cwd, "remote"], { timeout: 5000 });
-      const first = stdout.split("\n").map((line) => line.trim()).filter(Boolean)[0];
+      const first = stdout
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)[0];
       return first ? await getUrl(first) : undefined;
     } catch {
       return undefined;
@@ -80,7 +90,9 @@ async function resolveRepoDir(cwd: string): Promise<string> {
 // Index paths use forward slashes so the vault index stays portable across machines.
 export function claimNotePath(index: SessionIndex, sessionId: string, dir: string, base: string): string {
   const taken = new Set(
-    Object.entries(index.sessions).filter(([id]) => id !== sessionId).map(([, entry]) => entry.path),
+    Object.entries(index.sessions)
+      .filter(([id]) => id !== sessionId)
+      .map(([, entry]) => entry.path),
   );
   const candidate = `${dir}/${base}.md`;
   if (!taken.has(candidate)) return candidate;
@@ -107,14 +119,21 @@ async function writeIndex(root: string, index: SessionIndex) {
   await writeFile(join(root, INDEX_FILE), `${JSON.stringify(index, null, 2)}\n`, "utf8");
 }
 
-async function resolveNotePath(vault: string, root: string, repoDir: string, sessionId: string, sessionName: string | undefined) {
+async function resolveNotePath(
+  vault: string,
+  root: string,
+  repoDir: string,
+  sessionId: string,
+  sessionName: string | undefined,
+) {
   const index = await readIndex(root);
   const recorded = index.sessions[sessionId];
   // The index lives inside the vault and syncs across machines; distrust entries
   // whose path would land outside the vault.
-  const existing = recorded && typeof recorded.path === "string" && insideVault(vault, join(root, recorded.path))
-    ? recorded
-    : undefined;
+  const existing =
+    recorded && typeof recorded.path === "string" && insideVault(vault, join(root, recorded.path))
+      ? recorded
+      : undefined;
 
   if (existing?.named || (existing && !sessionName)) return existing.path;
 
@@ -143,15 +162,18 @@ function yamlString(value: string) {
 function textContent(content: unknown): string {
   if (typeof content === "string") return content;
   if (!Array.isArray(content)) return JSON.stringify(content ?? "");
-  return content.map((part) => {
-    if (typeof part === "string") return part;
-    if (part && typeof part === "object" && "type" in part) {
-      const typed = part as { type?: unknown; text?: unknown; source?: unknown };
-      if (typed.type === "text" && typeof typed.text === "string") return typed.text;
-      if (typed.type === "image") return "[image]";
-    }
-    return JSON.stringify(part);
-  }).filter(Boolean).join("\n");
+  return content
+    .map((part) => {
+      if (typeof part === "string") return part;
+      if (part && typeof part === "object" && "type" in part) {
+        const typed = part as { type?: unknown; text?: unknown; source?: unknown };
+        if (typed.type === "text" && typeof typed.text === "string") return typed.text;
+        if (typed.type === "image") return "[image]";
+      }
+      return JSON.stringify(part);
+    })
+    .filter(Boolean)
+    .join("\n");
 }
 
 function renderEntry(entry: SessionEntry): string {
@@ -177,7 +199,10 @@ function renderEntry(entry: SessionEntry): string {
 
 export async function exportCurrentSessionToObsidian(ctx: ExtensionContext) {
   const settings = await getObsidianSettings(ctx);
-  if (!settings.configured) throw new Error(`Obsidian vault is not configured. Set pibarm.obsidian.vault in ~/${CONFIG_DIR_NAME}/agent/settings.json or ${CONFIG_DIR_NAME}/settings.json.`);
+  if (!settings.configured)
+    throw new Error(
+      `Obsidian vault is not configured. Set pibarm.obsidian.vault in ~/${CONFIG_DIR_NAME}/agent/settings.json or ${CONFIG_DIR_NAME}/settings.json.`,
+    );
 
   const sessionId = ctx.sessionManager.getSessionId();
   const sessionName = ctx.sessionManager.getSessionName();
@@ -213,7 +238,9 @@ export async function exportCurrentSessionToObsidian(ctx: ExtensionContext) {
     `- Entries: ${entries.length}`,
     "",
     ...entries.map(renderEntry).filter(Boolean),
-  ].filter((line): line is string => line !== undefined).join("\n");
+  ]
+    .filter((line): line is string => line !== undefined)
+    .join("\n");
 
   await writeFile(path, `${body.trimEnd()}\n`, "utf8");
   return { path, settings, entries: entries.length };

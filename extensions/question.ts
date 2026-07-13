@@ -9,7 +9,9 @@ const OPTION = Type.Object({
 const QUESTION_PARAMS = Type.Object({
   question: Type.String({ description: "The question to ask the user" }),
   options: Type.Optional(Type.Array(OPTION, { description: "Optional choices for the user to pick from" })),
-  allowCustom: Type.Optional(Type.Boolean({ description: "Allow the user to type a custom answer. Defaults to true." })),
+  allowCustom: Type.Optional(
+    Type.Boolean({ description: "Allow the user to type a custom answer. Defaults to true." }),
+  ),
 });
 
 export default function questionExtension(pi: ExtensionAPI) {
@@ -28,14 +30,20 @@ export default function questionExtension(pi: ExtensionAPI) {
       const allowCustom = params.allowCustom !== false;
 
       if (!ctx.hasUI) {
-        const choices = options.length ? `\nOptions:\n${options.map((o, i) => `${i + 1}. ${o.label}${o.description ? ` — ${o.description}` : ""}`).join("\n")}` : "";
+        const choices = options.length
+          ? `\nOptions:\n${options.map((o, i) => `${i + 1}. ${o.label}${o.description ? ` — ${o.description}` : ""}`).join("\n")}`
+          : "";
         // Throw so the failure is actually flagged to the model; a returned
         // isError is ignored and would read as a successful (non-)answer.
-        throw new Error(`Question requires user input in interactive mode; no user is available to answer:\n${params.question}${choices}`);
+        throw new Error(
+          `Question requires user input in interactive mode; no user is available to answer:\n${params.question}${choices}`,
+        );
       }
 
       if (options.length > 0) {
-        const labels = options.map((option) => option.description ? `${option.label} — ${option.description}` : option.label);
+        const labels = options.map((option) =>
+          option.description ? `${option.label} — ${option.description}` : option.label,
+        );
         const customLabel = "Type a custom answer";
         const choice = await ctx.ui.select(params.question, allowCustom ? [...labels, customLabel] : labels);
         if (!choice) {
@@ -47,7 +55,9 @@ export default function questionExtension(pi: ExtensionAPI) {
         if (choice === customLabel) {
           const answer = await ctx.ui.input(params.question, "");
           return {
-            content: [{ type: "text", text: answer?.trim() ? `User answered: ${answer.trim()}` : "User provided no answer." }],
+            content: [
+              { type: "text", text: answer?.trim() ? `User answered: ${answer.trim()}` : "User provided no answer." },
+            ],
             details: { question: params.question, options, answer: answer?.trim() || null, wasCustom: true },
           };
         }
@@ -61,7 +71,9 @@ export default function questionExtension(pi: ExtensionAPI) {
 
       const answer = await ctx.ui.input(params.question, "");
       return {
-        content: [{ type: "text", text: answer?.trim() ? `User answered: ${answer.trim()}` : "User provided no answer." }],
+        content: [
+          { type: "text", text: answer?.trim() ? `User answered: ${answer.trim()}` : "User provided no answer." },
+        ],
         details: { question: params.question, options, answer: answer?.trim() || null, wasCustom: true },
       };
     },

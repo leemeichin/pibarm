@@ -62,7 +62,7 @@ export function mergePibarmSettings(
   // Project settings can redirect exports (and future behavior) to attacker
   // chosen paths, so only honor them once the project is trusted.
   const merged = projectTrusted ? deepMerge(global, project) : global;
-  return isRecord(merged.pibarm) ? merged.pibarm as PibarmSettings : {};
+  return isRecord(merged.pibarm) ? (merged.pibarm as PibarmSettings) : {};
 }
 
 export async function getPibarmSettings(ctx: SettingsContext): Promise<PibarmSettings> {
@@ -75,7 +75,8 @@ export function normalizeObsidianSettings(
   settings: ObsidianSettings,
   cwd: string,
 ): Required<ObsidianSettings> & { configured: boolean } {
-  const vault = typeof settings.vault === "string" && settings.vault.trim() ? expandPath(settings.vault.trim(), cwd) : "";
+  const vault =
+    typeof settings.vault === "string" && settings.vault.trim() ? expandPath(settings.vault.trim(), cwd) : "";
   const basePath = (typeof settings.basePath === "string" ? sanitizeBasePath(settings.basePath.trim()) : "") || "Pi";
   return {
     vault,
@@ -87,6 +88,8 @@ export function normalizeObsidianSettings(
   };
 }
 
-export async function getObsidianSettings(ctx: SettingsContext): Promise<Required<ObsidianSettings> & { configured: boolean }> {
+export async function getObsidianSettings(
+  ctx: SettingsContext,
+): Promise<Required<ObsidianSettings> & { configured: boolean }> {
   return normalizeObsidianSettings((await getPibarmSettings(ctx)).obsidian ?? {}, ctx.cwd);
 }

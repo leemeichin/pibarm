@@ -10,7 +10,8 @@ const DANGEROUS_BASH = [
   /\b(curl|wget)\b.*\|\s*(sh|bash|zsh)/,
 ];
 
-const MUTATING_BASH = /\b(rm|mv|cp|mkdir|touch|tee|chmod|chown|npm\s+install|pnpm\s+install|yarn\s+install|bun\s+install|git\s+(apply|am|merge|rebase|checkout|switch|stash|commit|push|clean|reset))\b|\bsed\s+-i\b|>\s*[^&]/;
+const MUTATING_BASH =
+  /\b(rm|mv|cp|mkdir|touch|tee|chmod|chown|npm\s+install|pnpm\s+install|yarn\s+install|bun\s+install|git\s+(apply|am|merge|rebase|checkout|switch|stash|commit|push|clean|reset))\b|\bsed\s+-i\b|>\s*[^&]/;
 const SENSITIVE_PATH = /(^|\/)(\.env|\.git|node_modules|\.ssh|\.aws|\.gnupg)(\/|$)|\.(pem|key)$/i;
 const PATH_TOKEN = /(^|[\s=:])([~./][^\s"'`;$|&<>]*)/g;
 
@@ -36,7 +37,8 @@ export function expandsOutsideProject(command: string, cwd: string): boolean {
 function riskyBash(command: string, cwd: string): string | undefined {
   if (DANGEROUS_BASH.some((pattern) => pattern.test(command))) return "dangerous shell command";
   if (SENSITIVE_PATH.test(command)) return "sensitive path";
-  if (expandsOutsideProject(command, cwd)) return MUTATING_BASH.test(command) ? "mutates outside project" : "references outside project";
+  if (expandsOutsideProject(command, cwd))
+    return MUTATING_BASH.test(command) ? "mutates outside project" : "references outside project";
   return undefined;
 }
 

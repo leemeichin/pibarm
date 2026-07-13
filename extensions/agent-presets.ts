@@ -26,17 +26,30 @@ function agentExitDetail(code: number | null | undefined, timeoutMs: number) {
 
 const SUBAGENT_PARAMS = Type.Object({
   prompt: Type.String({ description: "Self-contained prompt for the subagent" }),
-  model: Type.Optional(Type.String({ description: "Optional pi model pattern. Defaults to the current active model, with a lighter available model for simple tasks." })),
+  model: Type.Optional(
+    Type.String({
+      description:
+        "Optional pi model pattern. Defaults to the current active model, with a lighter available model for simple tasks.",
+    }),
+  ),
   timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds" })),
 });
 
 const SUBAGENTS_PARAMS = Type.Object({
-  jobs: Type.Array(Type.Object({
-    name: Type.Optional(Type.String({ description: "Short label for this subagent" })),
-    prompt: Type.String({ description: "Self-contained prompt for this subagent" }),
-    model: Type.Optional(Type.String({ description: "Optional pi model pattern for this subagent. Defaults to the current active model, with a lighter available model for simple tasks." })),
-    timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds for this subagent" })),
-  }), { description: "Subagent jobs to run in parallel" }),
+  jobs: Type.Array(
+    Type.Object({
+      name: Type.Optional(Type.String({ description: "Short label for this subagent" })),
+      prompt: Type.String({ description: "Self-contained prompt for this subagent" }),
+      model: Type.Optional(
+        Type.String({
+          description:
+            "Optional pi model pattern for this subagent. Defaults to the current active model, with a lighter available model for simple tasks.",
+        }),
+      ),
+      timeoutMs: Type.Optional(Type.Number({ description: "Timeout in milliseconds for this subagent" })),
+    }),
+    { description: "Subagent jobs to run in parallel" },
+  ),
   timeoutMs: Type.Optional(Type.Number({ description: "Default timeout per subagent in milliseconds" })),
 });
 
@@ -54,10 +67,21 @@ function splitModel(provider: string | undefined, model: string | undefined): { 
 }
 
 function modelLabel(model: string | undefined) {
-  return model?.split("/").pop()?.replace(/^claude-/, "") ?? "default";
+  return (
+    model
+      ?.split("/")
+      .pop()
+      ?.replace(/^claude-/, "") ?? "default"
+  );
 }
 
-async function runPiPrompt(pi: ExtensionAPI, prompt: string, model: string | undefined, signal: AbortSignal | undefined, timeoutMs: number) {
+async function runPiPrompt(
+  pi: ExtensionAPI,
+  prompt: string,
+  model: string | undefined,
+  signal: AbortSignal | undefined,
+  timeoutMs: number,
+) {
   const args = ["-p"];
   if (model) args.push("--model", model);
   args.push(prompt);
@@ -69,11 +93,19 @@ export function detectPrRefs(text: string): string[] {
   for (const match of text.matchAll(/https:\/\/github\.com\/[^\s)]+\/[^\s)]+\/pull\/(\d+)/g)) refs.add(match[0]);
   // Only bare numbers preceded by an "opened/created" phrase count — a mere
   // mention like "fixed in PR #42" should not suggest a watcher.
-  for (const match of text.matchAll(/\b(?:opened|created|submitted|raised)\s+(?:a\s+|new\s+)?(?:pull request|PR)\s*#?(\d+)\b/gi)) refs.add(match[1]!);
+  for (const match of text.matchAll(
+    /\b(?:opened|created|submitted|raised)\s+(?:a\s+|new\s+)?(?:pull request|PR)\s*#?(\d+)\b/gi,
+  ))
+    refs.add(match[1]!);
   return [...refs];
 }
 
-export async function offerPrWatcher(pi: Pick<ExtensionAPI, "sendUserMessage">, ctx: any, output: string, source: string) {
+export async function offerPrWatcher(
+  pi: Pick<ExtensionAPI, "sendUserMessage">,
+  ctx: any,
+  output: string,
+  source: string,
+) {
   // Watchers are long-lived processes that spend API tokens, so they must
   // never start without explicit confirmation — and headless runs have no one
   // to ask.
@@ -84,7 +116,10 @@ export async function offerPrWatcher(pi: Pick<ExtensionAPI, "sendUserMessage">, 
   const prompt = `Subagent ${source} appears to have opened or mentioned PR ${pr}. Watch it for review comments/checks?`;
   const ok = await ctx.ui.confirm("Watch PR?", prompt);
   if (!ok) return;
-  pi.sendUserMessage(`Start watch_agent for PR ${pr}. Watch for review comments, failed checks, requested changes, and actionable CI updates while this parent session remains active.`, { deliverAs: "followUp" });
+  pi.sendUserMessage(
+    `Start watch_agent for PR ${pr}. Watch for review comments, failed checks, requested changes, and actionable CI updates while this parent session remains active.`,
+    { deliverAs: "followUp" },
+  );
 }
 
 async function applyPreset(pi: ExtensionAPI, ctx: any, name: string): Promise<boolean> {
@@ -129,13 +164,15 @@ export default function agentPresets(pi: ExtensionAPI) {
     },
   });
 
-
   pi.registerTool({
     name: "run_subagent",
     label: "Run Subagent",
-    description: "Run a non-interactive pi subagent with an isolated prompt and return stdout/stderr. Output is truncated to the last ~50KB/2000 lines.",
+    description:
+      "Run a non-interactive pi subagent with an isolated prompt and return stdout/stderr. Output is truncated to the last ~50KB/2000 lines.",
     promptSnippet: "Run an isolated pi -p subagent for research, planning, or verification",
-    promptGuidelines: ["Use run_subagent only for isolated research, planning, or verification tasks with a self-contained prompt."],
+    promptGuidelines: [
+      "Use run_subagent only for isolated research, planning, or verification tasks with a self-contained prompt.",
+    ],
     parameters: SUBAGENT_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       const modelSelection = selectAgentModelRef(ctx, params.model, params.prompt);
@@ -150,7 +187,9 @@ export default function agentPresets(pi: ExtensionAPI) {
       const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
       if (failed) {
         // Throwing is the only way to flag failure; a returned isError is ignored.
-        throw new Error(`Subagent failed (${agentExitDetail(result.code, timeoutMs)}).${text ? `\n\n${clipTail(text)}` : ""}`);
+        throw new Error(
+          `Subagent failed (${agentExitDetail(result.code, timeoutMs)}).${text ? `\n\n${clipTail(text)}` : ""}`,
+        );
       }
       await offerPrWatcher(pi, ctx, text, "run_subagent");
       return {
@@ -163,33 +202,51 @@ export default function agentPresets(pi: ExtensionAPI) {
   pi.registerTool({
     name: "run_subagents",
     label: "Run Subagents",
-    description: "Run several non-interactive pi subagents in parallel, optionally on different models. Each job's output is truncated to the last ~50KB/2000 lines.",
+    description:
+      "Run several non-interactive pi subagents in parallel, optionally on different models. Each job's output is truncated to the last ~50KB/2000 lines.",
     promptSnippet: "Run multiple isolated pi -p subagents in parallel, optionally across models",
-    promptGuidelines: ["Use run_subagents when the user asks to compare, delegate, or orchestrate multiple subagents across models."],
+    promptGuidelines: [
+      "Use run_subagents when the user asks to compare, delegate, or orchestrate multiple subagents across models.",
+    ],
     parameters: SUBAGENTS_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       if (params.jobs.length === 0) throw new Error("No subagent jobs provided.");
       if (params.jobs.length > 4) throw new Error("Refusing to run more than 4 subagents at once.");
 
-      const results = await Promise.all(params.jobs.map(async (job, index) => {
-        const name = job.name ?? `job-${index + 1}`;
-        const modelSelection = selectAgentModelRef(ctx, job.model, job.prompt);
-        const taskId = `subagent:${_toolCallId}:${index}`;
-        upsertAgentTask({ id: taskId, label: `sub ${name}`, status: "running", session: modelLabel(modelSelection.model) });
-        updateTaskWidget(ctx);
-        const timeoutMs = job.timeoutMs ?? params.timeoutMs ?? DEFAULT_SUBAGENT_TIMEOUT_MS;
-        const result = await runPiPrompt(pi, job.prompt, modelSelection.model, signal, timeoutMs);
-        finishAgentTask(taskId, result.code === 0 ? "done" : "failed", result.code === 0 ? undefined : agentExitDetail(result.code, timeoutMs));
-        updateTaskWidget(ctx);
-        return { name, model: modelSelection.model, modelSelection, result, timeoutMs };
-      }));
-      const text = results.map(({ name, model, result }) => {
-        const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
-        return `## ${name}${model ? ` (${model})` : ""}\n${clipTail(output) || `(pi exited ${result.code})`}`;
-      }).join("\n\n---\n\n");
+      const results = await Promise.all(
+        params.jobs.map(async (job, index) => {
+          const name = job.name ?? `job-${index + 1}`;
+          const modelSelection = selectAgentModelRef(ctx, job.model, job.prompt);
+          const taskId = `subagent:${_toolCallId}:${index}`;
+          upsertAgentTask({
+            id: taskId,
+            label: `sub ${name}`,
+            status: "running",
+            session: modelLabel(modelSelection.model),
+          });
+          updateTaskWidget(ctx);
+          const timeoutMs = job.timeoutMs ?? params.timeoutMs ?? DEFAULT_SUBAGENT_TIMEOUT_MS;
+          const result = await runPiPrompt(pi, job.prompt, modelSelection.model, signal, timeoutMs);
+          finishAgentTask(
+            taskId,
+            result.code === 0 ? "done" : "failed",
+            result.code === 0 ? undefined : agentExitDetail(result.code, timeoutMs),
+          );
+          updateTaskWidget(ctx);
+          return { name, model: modelSelection.model, modelSelection, result, timeoutMs };
+        }),
+      );
+      const text = results
+        .map(({ name, model, result }) => {
+          const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
+          return `## ${name}${model ? ` (${model})` : ""}\n${clipTail(output) || `(pi exited ${result.code})`}`;
+        })
+        .join("\n\n---\n\n");
       const failures = results.filter(({ result }) => result.code !== 0);
       if (failures.length) {
-        const detail = failures.map(({ name, result, timeoutMs }) => `${name}: ${agentExitDetail(result.code, timeoutMs)}`).join(", ");
+        const detail = failures
+          .map(({ name, result, timeoutMs }) => `${name}: ${agentExitDetail(result.code, timeoutMs)}`)
+          .join(", ");
         throw new Error(`${failures.length} of ${results.length} subagent job(s) failed (${detail}).\n\n${text}`);
       }
       await offerPrWatcher(pi, ctx, text, "run_subagents");

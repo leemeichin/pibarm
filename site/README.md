@@ -2,7 +2,7 @@
 
 The documentation & marketing site for **pibarm** — a set of [pi](https://github.com/leemeichin/pibarm) extensions and skills for planning before editing, isolating risky work in git worktrees, and watching agents work in WezTerm.
 
-Built with [Astro](https://astro.build). Ships as a static site with near-zero JavaScript — React is used only for the two animated demo islands. It is the production implementation of the `ui_kits/pibarm-site` prototype from the pibarm design system (see `../project`).
+Built with [Astro](https://astro.build). Ships as a static site with near-zero JavaScript — React is used only for the tabbed, animated demo section on the home page. It is the production implementation of the `ui_kits/pibarm-site` prototype from the pibarm design system (see `../project`).
 
 ## Develop
 
@@ -32,12 +32,12 @@ Pushes to `main` deploy through GitHub Actions when `CLOUDFLARE_API_TOKEN` and
 src/
   layouts/Base.astro        top nav (wordmark, screen links, GitHub) + footer
   pages/
-    index.astro             Home — hero, feature grid, Matrix band
+    index.astro             Home — hero, features, tabbed demos, Matrix band
     docs.astro              Docs — sticky sidebar + command reference
-    demo.astro              Demo — the two animated simulations
   components/
-    PiSession.jsx           React island: scripted /plan → /execute-plan session
-    Matrix.jsx              React island: WezTerm multi-pane orchestration
+    Demos.jsx               React island: manual demo tabs
+    PiSession.jsx           Scripted /plan → /execute-plan session
+    Matrix.jsx              WezTerm multi-pane orchestration
   data/site.ts              features, command list, session script (typed)
   styles/
     global.css              entry point (@imports the design system, then site.css)
@@ -84,7 +84,7 @@ flex layouts in the DS CSS.
 | `Kbd` | keyboard key cap |
 | `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
-The two animated demo pieces (`PiSession`, `Matrix`) live in `src/components/` as React islands because they are stateful animations; everything else is static Astro.
+The home page's `Demos` React island switches manually between the stateful `PiSession` and `Matrix` simulations; everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 
@@ -96,4 +96,4 @@ The two animated demo pieces (`PiSession`, `Matrix`) live in `src/components/` a
 
 Grounded in [`leemeichin/pibarm`](https://github.com/leemeichin/pibarm) (README, `lib/task-widget.ts`, `extensions/matrix.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
 
-The two demos are cosmetic recreations of TUI output, not a real pi runtime.
+The demos are cosmetic recreations of TUI output, not a real pi runtime.

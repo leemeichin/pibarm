@@ -123,16 +123,32 @@ body {
 .docs-cardwrap { background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-lg); padding: 4px 22px; box-shadow: var(--shadow-sm); }
 .docs-spacer { height: 12px; }
 
-/* ---------------- Demo ---------------- */
-.demo-head { padding: 40px 0 8px; }
-.demo-h1 { font-size: 40px; margin: 0 0 10px; }
-.demo-lead { font-size: 17px; color: var(--text-muted); margin: 0 0 8px; max-width: 62ch; }
-.demo-block { padding: 30px 0; }
+/* ---------------- Demos ---------------- */
+.demo-section { padding: 42px 0 30px; scroll-margin-top: 62px; }
+.demo-shell { overflow: hidden; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.demo-tabs { display: flex; gap: 4px; padding: 8px; background: var(--surface-sunken); border-bottom: 1px solid var(--border-hair); }
+.demo-tab {
+  appearance: none; border: 0; border-radius: var(--radius-sm); padding: 9px 14px;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+  font: 600 13px var(--font-mono); transition: background .12s ease, color .12s ease;
+}
+.demo-tab span { margin-right: 4px; color: var(--orange-600); }
+.demo-tab:hover { background: var(--cream-200); color: var(--text-body); }
+.demo-tab[aria-selected="true"] { background: var(--surface-card); color: var(--text-strong); box-shadow: var(--shadow-xs); }
+.demo-tab:focus-visible { outline: 2px solid var(--orange-500); outline-offset: 2px; }
+.demo-panel { padding: 24px; }
 .demo-cap { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
 .demo-cap-no { font-family: var(--font-mono); font-size: 13px; color: var(--orange-600); font-weight: 600; }
 .demo-cap-title { font-size: 22px; margin: 0; }
 .demo-cap-note { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
 .demo-note { font-size: 14.5px; color: var(--text-muted); line-height: 1.55; max-width: 52ch; }
+.demo-note--wide { max-width: 72ch; margin: 0 0 20px; }
+.demo-tags { display: flex; gap: 8px; margin-top: 14px; }
+.demo-tag { font: 600 11px var(--font-mono); }
+.demo-tag--info { color: var(--status-info); }
+.demo-tag--success { color: var(--status-success); }
+.demo-callout { margin: 16px 0 0; padding: 12px 14px; border-left: 3px solid var(--status-info); background: var(--wash-sky); color: var(--text-muted); font-size: 13.5px; }
+.demo-callout b { color: var(--text-strong); }
 .pib-demo-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: center; }
 
 /* ---------------- Responsive ---------------- */
@@ -147,6 +163,11 @@ body {
 @media (max-width: 620px) {
   .hero-h1 { font-size: 46px; }
   .pib-feat-grid { grid-template-columns: 1fr; }
+  .demo-tabs { overflow-x: auto; }
+  .demo-tab { white-space: nowrap; }
+  .demo-panel { padding: 18px; }
+  .demo-cap { align-items: flex-start; flex-wrap: wrap; }
+  .demo-cap-note { flex-basis: 100%; }
 }
 
 /* Astro wraps slotted content passed to a framework component in <astro-slot>,

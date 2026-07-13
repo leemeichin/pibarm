@@ -2,13 +2,14 @@ import React from "react";
 
 // Animated WezTerm "Matrix" multi-pane orchestration demo. Client island.
 const matrixStyles = {
+  root: { height: 460, overflow: "hidden" },
   win: { background: "var(--surface-code)", borderRadius: "var(--radius-md)", overflow: "hidden", boxShadow: "var(--shadow-terminal)", border: "1px solid #0e1620", fontFamily: "var(--font-mono)" },
   bar: { display: "flex", alignItems: "center", gap: 8, padding: "9px 13px", background: "#141d27", borderBottom: "1px solid #0e1620" },
   dot: { width: 11, height: 11, borderRadius: "50%" },
   title: { fontSize: 11.5, color: "#8fa1b0", marginLeft: 6, letterSpacing: ".02em" },
-  parent: { padding: "13px 16px", fontSize: 13, lineHeight: 1.6, color: "#e8e2d4", borderBottom: "1px solid #0e1620", minHeight: 92 },
-  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)" },
-  pane: { borderRight: "1px solid #0e1620", minHeight: 172, display: "flex", flexDirection: "column" },
+  parent: { boxSizing: "border-box", height: 148, overflow: "hidden", padding: "13px 16px", fontSize: 13, lineHeight: 1.6, color: "#e8e2d4", borderBottom: "1px solid #0e1620" },
+  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", height: 210 },
+  pane: { borderRight: "1px solid #0e1620", display: "flex", flexDirection: "column", overflow: "hidden" },
   paneHead: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 12px", background: "#101923", borderBottom: "1px solid #0e1620" },
   role: { fontSize: 11.5, fontWeight: 600, letterSpacing: ".04em", textTransform: "uppercase" },
   paneBody: { padding: "10px 12px", fontSize: 12, lineHeight: 1.55, color: "#c7d0d8", flex: 1 },
@@ -105,7 +106,7 @@ export default function MatrixDemo() {
   const visiblePanes = panes.filter((p) => p.mounted);
 
   return (
-    <div>
+    <div style={matrixStyles.root}>
       <div style={matrixStyles.win}>
         <div style={matrixStyles.bar}>
           <div style={{ display: "flex", gap: 6 }}>

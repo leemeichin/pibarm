@@ -5,7 +5,7 @@ import { Button, Icon } from "pibarm-ds";
 interface Props {
   title?: string;
   description?: string;
-  active?: "home" | "docs" | "demo";
+  active?: "home" | "docs";
 }
 
 const {
@@ -17,7 +17,6 @@ const {
 const nav = [
   { id: "home", label: "Home", href: `${import.meta.env.BASE_URL}` },
   { id: "docs", label: "Docs", href: `${import.meta.env.BASE_URL}docs` },
-  { id: "demo", label: "Demo", href: `${import.meta.env.BASE_URL}demo` },
 ];
 const home = import.meta.env.BASE_URL;
 ---

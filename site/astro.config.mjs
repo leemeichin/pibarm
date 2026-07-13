@@ -3,8 +3,8 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import { fileURLToPath } from "node:url";
 
-// pibarm docs & marketing site. Static output; React only for the two
-// animated demo islands (the scripted pi session + the WezTerm Matrix).
+// pibarm docs & marketing site. Static output; React only for the tabbed
+// demo island (the scripted pi session + the WezTerm Matrix).
 //
 // The design system (pibarm-ds) is consumed straight from source — no build
 // step, no symlink. Runtime dependencies are pinned to the site's own copies so

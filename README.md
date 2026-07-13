@@ -94,6 +94,8 @@ Configure Obsidian export in Pi settings. Global settings live at `~/.pi/agent/s
 
 Use `/obsidian-status` to verify the resolved config and `/obsidian-export` to write the current session note. When `autoSync` is true, pibarm debounces session exports after turns and compaction. The vault path is local user config; do not commit vault folders or private `.pi/forge.json`/settings overrides to this repo.
 
+Notes are organised as `<vault>/<basePath>/<forge org or user>/<repo>/<session>.md`, derived from the `origin` git remote (for example `Pi/leemeichin/pibarm/fix-the-bug.md`); repos without a usable remote fall under `local/<directory name>`. The note is named after the first computed session name and keeps that name even if the session is renamed later; sessions exported before they have a name start out under their session id and are renamed once when the first name arrives. A `.pibarm-sessions.json` index at the base path records which note belongs to which session.
+
 ## Main workflow
 
 ```text

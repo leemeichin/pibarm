@@ -21,7 +21,9 @@ export function parseResetValue(value: string): Date | undefined {
   // Golang-style durations like "6m0s", "1h2m", "30s", "250ms".
   const duration = trimmed.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?(?:(\d+)ms)?$/);
   if (duration && (duration[1] || duration[2] || duration[3] || duration[4])) {
-    const ms = (Number(duration[1] ?? 0) * 3600 + Number(duration[2] ?? 0) * 60 + Number(duration[3] ?? 0)) * 1000 + Number(duration[4] ?? 0);
+    const ms =
+      (Number(duration[1] ?? 0) * 3600 + Number(duration[2] ?? 0) * 60 + Number(duration[3] ?? 0)) * 1000 +
+      Number(duration[4] ?? 0);
     return new Date(Date.now() + ms);
   }
   const date = new Date(trimmed);

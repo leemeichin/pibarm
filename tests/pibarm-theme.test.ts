@@ -17,7 +17,18 @@ function loadTheme(file: string): ThemeJson {
 
 function loadBuiltin(name: string): ThemeJson {
   // The package's exports map hides dist internals from require.resolve.
-  const path = join(import.meta.dir, "..", "node_modules", "@earendil-works", "pi-coding-agent", "dist", "modes", "interactive", "theme", `${name}.json`);
+  const path = join(
+    import.meta.dir,
+    "..",
+    "node_modules",
+    "@earendil-works",
+    "pi-coding-agent",
+    "dist",
+    "modes",
+    "interactive",
+    "theme",
+    `${name}.json`,
+  );
   return JSON.parse(readFileSync(path, "utf8"));
 }
 

@@ -1,16 +1,8 @@
 {
-  "extensions": [
-    "../extensions"
-  ],
-  "skills": [
-    "../skills"
-  ],
-  "prompts": [
-    "../prompts"
-  ],
+  "extensions": ["../extensions"],
+  "skills": ["../skills"],
+  "prompts": ["../prompts"],
   "enableSkillCommands": true,
   "theme": "pibarm-light/pibarm-dark",
-  "packages": [
-    "git:github.com/DietrichGebert/ponytail"
-  ]
+  "packages": ["git:github.com/DietrichGebert/ponytail"]
 }

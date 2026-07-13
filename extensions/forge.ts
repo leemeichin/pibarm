@@ -4,10 +4,12 @@ import { CONFIG_DIR_NAME, type ExtensionAPI, type ExtensionContext } from "@eare
 import { Type } from "typebox";
 
 const FORGES = ["github", "sourcehut"] as const;
-type Forge = typeof FORGES[number];
+type Forge = (typeof FORGES)[number];
 
 const PRS_PARAMS = Type.Object({
-  state: Type.Optional(Type.String({ description: "PR state when supported: open, closed, merged, or all. Defaults to open." })),
+  state: Type.Optional(
+    Type.String({ description: "PR state when supported: open, closed, merged, or all. Defaults to open." }),
+  ),
   limit: Type.Optional(Type.Number({ description: "Maximum rows to return. Defaults to 10." })),
 });
 
@@ -16,7 +18,9 @@ const PR_STATUS_PARAMS = Type.Object({
 });
 
 const CI_PARAMS = Type.Object({
-  branch: Type.Optional(Type.String({ description: "Branch/ref to inspect when supported. Defaults to current branch." })),
+  branch: Type.Optional(
+    Type.String({ description: "Branch/ref to inspect when supported. Defaults to current branch." }),
+  ),
   limit: Type.Optional(Type.Number({ description: "Maximum rows to return. Defaults to 5." })),
 });
 
@@ -64,7 +68,12 @@ async function clearForgeConfig(cwd: string) {
   await rm(configPath(cwd), { force: true });
 }
 
-async function run(pi: ExtensionAPI, command: "gh" | "hut" | "git", args: string[], signal?: AbortSignal): Promise<CommandResult> {
+async function run(
+  pi: ExtensionAPI,
+  command: "gh" | "hut" | "git",
+  args: string[],
+  signal?: AbortSignal,
+): Promise<CommandResult> {
   const result = await pi.exec(command, args, { signal, timeout: 30000 });
   return {
     command,
@@ -87,14 +96,20 @@ async function detectForge(pi: ExtensionAPI, cwd: string): Promise<{ forge?: For
   return { remote: url || undefined };
 }
 
-async function resolveForge(pi: ExtensionAPI, ctx: ExtensionContext): Promise<{ forge: Forge; source: "configured" | "detected" | "selected"; remote?: string }> {
+async function resolveForge(
+  pi: ExtensionAPI,
+  ctx: ExtensionContext,
+): Promise<{ forge: Forge; source: "configured" | "detected" | "selected"; remote?: string }> {
   const configured = await loadForgeConfig(ctx.cwd);
   if (configured.forge) return { forge: configured.forge, source: "configured" };
 
   const detected = await detectForge(pi, ctx.cwd);
   if (detected.forge) return { forge: detected.forge, source: "detected", remote: detected.remote };
 
-  if (!ctx.hasUI) throw new Error("Could not detect forge from git remote. Run /forge github or /forge sourcehut in interactive mode to remember a choice.");
+  if (!ctx.hasUI)
+    throw new Error(
+      "Could not detect forge from git remote. Run /forge github or /forge sourcehut in interactive mode to remember a choice.",
+    );
   const choice = await ctx.ui.select("Which forge should pibarm use for this repository?", ["GitHub", "SourceHut"]);
   if (!choice) throw new Error("Forge selection cancelled.");
   const forge = choice === "GitHub" ? "github" : "sourcehut";
@@ -102,7 +117,13 @@ async function resolveForge(pi: ExtensionAPI, ctx: ExtensionContext): Promise<{ 
   return { forge, source: "selected", remote: detected.remote };
 }
 
-async function forgeRun(pi: ExtensionAPI, ctx: ExtensionContext, signal: AbortSignal | undefined, githubArgs: string[] | undefined, hutArgs: string[] | undefined) {
+async function forgeRun(
+  pi: ExtensionAPI,
+  ctx: ExtensionContext,
+  signal: AbortSignal | undefined,
+  githubArgs: string[] | undefined,
+  hutArgs: string[] | undefined,
+) {
   const resolved = await resolveForge(pi, ctx);
   if (resolved.forge === "github") {
     if (!githubArgs) return unsupported(resolved.forge, "This operation is not supported for GitHub yet.");
@@ -131,14 +152,25 @@ export default function forgeExtension(pi: ExtensionAPI) {
     label: "Forge PRs",
     description: "List pull requests/patches for the current repository using the detected/configured forge.",
     promptSnippet: "List PRs or patches through the current repo forge",
-    promptGuidelines: ["Use forge_prs instead of forge-specific tools; pibarm detects GitHub or SourceHut from the remote, or asks once and remembers."],
+    promptGuidelines: [
+      "Use forge_prs instead of forge-specific tools; pibarm detects GitHub or SourceHut from the remote, or asks once and remembers.",
+    ],
     parameters: PRS_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const result = await forgeRun(
         pi,
         ctx,
         signal,
-        ["pr", "list", "--state", params.state ?? "open", "--limit", String(params.limit ?? 10), "--json", "number,title,state,isDraft,author,headRefName,updatedAt,url"],
+        [
+          "pr",
+          "list",
+          "--state",
+          params.state ?? "open",
+          "--limit",
+          String(params.limit ?? 10),
+          "--json",
+          "number,title,state,isDraft,author,headRefName,updatedAt,url",
+        ],
         undefined,
       );
       return toolResult(result);
@@ -158,7 +190,13 @@ export default function forgeExtension(pi: ExtensionAPI) {
         pi,
         ctx,
         signal,
-        ["pr", "view", ...selector, "--json", "number,title,state,isDraft,mergeable,reviewDecision,statusCheckRollup,url,headRefName,baseRefName"],
+        [
+          "pr",
+          "view",
+          ...selector,
+          "--json",
+          "number,title,state,isDraft,mergeable,reviewDecision,statusCheckRollup,url,headRefName,baseRefName",
+        ],
         undefined,
       );
       return toolResult(result);
@@ -170,7 +208,9 @@ export default function forgeExtension(pi: ExtensionAPI) {
     label: "Forge CI Status",
     description: "List CI/build status using the detected/configured forge.",
     promptSnippet: "Inspect CI/build status through the current repo forge",
-    promptGuidelines: ["Use forge_ci_status when the user asks about CI, GitHub Actions, SourceHut builds, or failed checks."],
+    promptGuidelines: [
+      "Use forge_ci_status when the user asks about CI, GitHub Actions, SourceHut builds, or failed checks.",
+    ],
     parameters: CI_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const branch = params.branch ? ["--branch", params.branch] : [];
@@ -178,7 +218,15 @@ export default function forgeExtension(pi: ExtensionAPI) {
         pi,
         ctx,
         signal,
-        ["run", "list", ...branch, "--limit", String(params.limit ?? 5), "--json", "databaseId,displayTitle,status,conclusion,event,headBranch,url,createdAt,updatedAt"],
+        [
+          "run",
+          "list",
+          ...branch,
+          "--limit",
+          String(params.limit ?? 5),
+          "--json",
+          "databaseId,displayTitle,status,conclusion,event,headBranch,url,createdAt,updatedAt",
+        ],
         ["builds", "list", "--count", String(params.limit ?? 10)],
       );
       return toolResult(result);
@@ -213,7 +261,15 @@ export default function forgeExtension(pi: ExtensionAPI) {
     parameters: Type.Object({}),
     async execute(_id, _params, _signal, _update, ctx) {
       const resolved = await resolveForge(pi, ctx);
-      return { content: [{ type: "text", text: `Forge: ${resolved.forge} (${resolved.source})${resolved.remote ? `\nRemote: ${resolved.remote}` : ""}` }], details: resolved };
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Forge: ${resolved.forge} (${resolved.source})${resolved.remote ? `\nRemote: ${resolved.remote}` : ""}`,
+          },
+        ],
+        details: resolved,
+      };
     },
   });
 
@@ -233,7 +289,10 @@ export default function forgeExtension(pi: ExtensionAPI) {
           return;
         }
         const resolved = await resolveForge(pi, ctx);
-        ctx.ui.notify(`Forge: ${resolved.forge} (${resolved.source})${resolved.remote ? `\nRemote: ${resolved.remote}` : ""}`, "info");
+        ctx.ui.notify(
+          `Forge: ${resolved.forge} (${resolved.source})${resolved.remote ? `\nRemote: ${resolved.remote}` : ""}`,
+          "info",
+        );
       } catch (error) {
         ctx.ui.notify((error as Error).message, "error");
       }
@@ -244,7 +303,13 @@ export default function forgeExtension(pi: ExtensionAPI) {
     description: "List PRs/patches using the detected/configured forge",
     handler: async (_args, ctx) => {
       try {
-        const result = await forgeRun(pi, ctx, undefined, ["pr", "list", "--state", "open", "--limit", "10"], undefined);
+        const result = await forgeRun(
+          pi,
+          ctx,
+          undefined,
+          ["pr", "list", "--state", "open", "--limit", "10"],
+          undefined,
+        );
         ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
       } catch (error) {
         ctx.ui.notify((error as Error).message, "error");
@@ -256,7 +321,13 @@ export default function forgeExtension(pi: ExtensionAPI) {
     description: "List CI/builds using the detected/configured forge",
     handler: async (_args, ctx) => {
       try {
-        const result = await forgeRun(pi, ctx, undefined, ["run", "list", "--limit", "5"], ["builds", "list", "--count", "10"]);
+        const result = await forgeRun(
+          pi,
+          ctx,
+          undefined,
+          ["run", "list", "--limit", "5"],
+          ["builds", "list", "--count", "10"],
+        );
         ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
       } catch (error) {
         ctx.ui.notify((error as Error).message, "error");
@@ -268,7 +339,13 @@ export default function forgeExtension(pi: ExtensionAPI) {
     description: "List issues/tickets using the detected/configured forge",
     handler: async (_args, ctx) => {
       try {
-        const result = await forgeRun(pi, ctx, undefined, ["issue", "list", "--limit", "10"], ["todo", "ticket", "list", "--count", "10"]);
+        const result = await forgeRun(
+          pi,
+          ctx,
+          undefined,
+          ["issue", "list", "--limit", "10"],
+          ["todo", "ticket", "list", "--count", "10"],
+        );
         ctx.ui.notify(resultText(result), result.code === 0 ? "info" : "error");
       } catch (error) {
         ctx.ui.notify((error as Error).message, "error");

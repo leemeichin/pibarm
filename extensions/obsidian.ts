@@ -43,13 +43,16 @@ export default function obsidianExtension(pi: ExtensionAPI) {
     description: "Show pibarm Obsidian export settings",
     handler: async (_args, ctx) => {
       const settings = await getObsidianSettings(ctx);
-      ctx.ui.notify([
-        `vault: ${settings.vault || "(not configured)"}`,
-        `basePath: ${settings.basePath}`,
-        `autoSync: ${settings.autoSync}`,
-        `debounceMs: ${settings.debounceMs}`,
-        `includeAttachments: ${settings.includeAttachments}`,
-      ].join("\n"), settings.configured ? "info" : "warning");
+      ctx.ui.notify(
+        [
+          `vault: ${settings.vault || "(not configured)"}`,
+          `basePath: ${settings.basePath}`,
+          `autoSync: ${settings.autoSync}`,
+          `debounceMs: ${settings.debounceMs}`,
+          `includeAttachments: ${settings.includeAttachments}`,
+        ].join("\n"),
+        settings.configured ? "info" : "warning",
+      );
     },
   });
 

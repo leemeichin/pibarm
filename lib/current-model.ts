@@ -16,7 +16,11 @@ export function effectiveModelRef(ctx: ExtensionContext, requestedModel?: string
   return requestedModel ?? currentModelRef(ctx);
 }
 
-export function selectAgentModelRef(ctx: ExtensionContext, requestedModel: string | undefined, task: string): ModelSelection {
+export function selectAgentModelRef(
+  ctx: ExtensionContext,
+  requestedModel: string | undefined,
+  task: string,
+): ModelSelection {
   if (requestedModel) return { model: requestedModel, source: "explicit", simpleTask: isSimpleScopeTask(task) };
 
   const current = ctx.model;
@@ -39,9 +43,16 @@ function isSimpleScopeTask(task: string): boolean {
 
   if (task.length > 700 || words > 120) return false;
   if (/```|diff --git|stack trace|traceback|exception|\b(error|panic|segfault)\b/.test(normalized)) return false;
-  if (/\b(implement|modify|edit|write|create|delete|refactor|migrate|redesign|architect|debug|fix|repair|optimi[sz]e|security|auth|permission|database|schema|production|deploy|release|failing|flaky|race|deadlock|concurrency)\b/.test(normalized)) return false;
+  if (
+    /\b(implement|modify|edit|write|create|delete|refactor|migrate|redesign|architect|debug|fix|repair|optimi[sz]e|security|auth|permission|database|schema|production|deploy|release|failing|flaky|race|deadlock|concurrency)\b/.test(
+      normalized,
+    )
+  )
+    return false;
 
-  return /\b(summarize|summary|find|locate|list|read|inspect|check|verify|smoke|capture|grep|search|map|inventory|describe|explain|identify)\b/.test(normalized);
+  return /\b(summarize|summary|find|locate|list|read|inspect|check|verify|smoke|capture|grep|search|map|inventory|describe|explain|identify)\b/.test(
+    normalized,
+  );
 }
 
 function chooseLighterAvailableModel(ctx: ExtensionContext, current: Model | undefined): Model | undefined {

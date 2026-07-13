@@ -29,9 +29,21 @@ describe("matrix-render", () => {
   test("shows tool activity with args and result previews", () => {
     const output = render([
       { type: "tool_execution_start", toolCallId: "1", toolName: "bash", args: { command: "ls -la" } },
-      { type: "tool_execution_end", toolCallId: "1", toolName: "bash", isError: false, result: { content: [{ type: "text", text: "file-a.ts\nfile-b.ts" }] } },
+      {
+        type: "tool_execution_end",
+        toolCallId: "1",
+        toolName: "bash",
+        isError: false,
+        result: { content: [{ type: "text", text: "file-a.ts\nfile-b.ts" }] },
+      },
       { type: "tool_execution_start", toolCallId: "2", toolName: "read", args: { path: "x.ts" } },
-      { type: "tool_execution_end", toolCallId: "2", toolName: "read", isError: true, result: { content: [{ type: "text", text: "ENOENT" }] } },
+      {
+        type: "tool_execution_end",
+        toolCallId: "2",
+        toolName: "read",
+        isError: true,
+        result: { content: [{ type: "text", text: "ENOENT" }] },
+      },
     ]);
     expect(output).toContain("▶ bash");
     expect(output).toContain("ls -la");

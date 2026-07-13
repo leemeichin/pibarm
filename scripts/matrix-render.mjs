@@ -27,9 +27,18 @@ function compact(value, max = 200) {
 function resultPreview(result) {
   const content = result && typeof result === "object" ? result.content : undefined;
   const text = Array.isArray(content)
-    ? content.filter((part) => part?.type === "text").map((part) => part.text).join("\n")
-    : typeof result === "string" ? result : "";
-  return text.split("\n").filter(Boolean).slice(0, 3).map((line) => compact(line, 160));
+    ? content
+        .filter((part) => part?.type === "text")
+        .map((part) => part.text)
+        .join("\n")
+    : typeof result === "string"
+      ? result
+      : "";
+  return text
+    .split("\n")
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((line) => compact(line, 160));
 }
 
 function handleEvent(event) {

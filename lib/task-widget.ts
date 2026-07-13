@@ -82,7 +82,12 @@ export function taskSummaryLines() {
   }
   if (agents.length) {
     lines.push("Agents:");
-    lines.push(...agents.map((task) => `  ${statusIcon(task.status)} ${task.label}${task.session ? ` @ ${task.session}` : ""}${task.detail ? ` (${task.detail})` : ""}`));
+    lines.push(
+      ...agents.map(
+        (task) =>
+          `  ${statusIcon(task.status)} ${task.label}${task.session ? ` @ ${task.session}` : ""}${task.detail ? ` (${task.detail})` : ""}`,
+      ),
+    );
   }
   return lines;
 }
@@ -110,10 +115,14 @@ export function updateTaskWidget(ctx: ExtensionContext) {
   if (ctx.mode === "tui") {
     // Component form: render receives the real viewport width, so pills wrap
     // correctly on narrow terminals instead of at a hardcoded column count.
-    ctx.ui.setWidget("pibarm-tasks", (_tui, theme) => ({
-      render: (width: number) => renderTaskPills(getTodos(), Array.from(agentTasks.values()), width, theme),
-      invalidate: () => {},
-    }), { placement: "belowEditor" });
+    ctx.ui.setWidget(
+      "pibarm-tasks",
+      (_tui, theme) => ({
+        render: (width: number) => renderTaskPills(getTodos(), Array.from(agentTasks.values()), width, theme),
+        invalidate: () => {},
+      }),
+      { placement: "belowEditor" },
+    );
   } else {
     ctx.ui.setWidget("pibarm-tasks", renderTaskPills(todos, agents, 80), { placement: "belowEditor" });
   }
@@ -122,14 +131,18 @@ export function updateTaskWidget(ctx: ExtensionContext) {
 export function renderTaskPills(items: TodoItem[], agents: AgentTask[], width: number, theme: PillTheme = PLAIN_THEME) {
   const sep = ` ${theme.fg("dim", "·")} `;
   const allPills = [
-    ...items.map((todo, index) => pill(
-      `${theme.fg(todo.done ? "success" : "muted", todo.done ? "✓" : "○")} ${theme.fg("muted", `${index + 1}`)}${sep}${theme.fg("text", shorten(todo.text, 34))}`,
-      theme,
-    )),
-    ...agents.map((task) => pill(
-      `${theme.fg(STATUS_TONE[task.status], statusIcon(task.status))} ${theme.fg("text", shorten(task.label, 24))}${task.session ? `${sep}${theme.fg("muted", shorten(task.session, 18))}` : ""}${task.detail ? `${sep}${theme.fg("muted", shorten(task.detail, 16))}` : ""}`,
-      theme,
-    )),
+    ...items.map((todo, index) =>
+      pill(
+        `${theme.fg(todo.done ? "success" : "muted", todo.done ? "✓" : "○")} ${theme.fg("muted", `${index + 1}`)}${sep}${theme.fg("text", shorten(todo.text, 34))}`,
+        theme,
+      ),
+    ),
+    ...agents.map((task) =>
+      pill(
+        `${theme.fg(STATUS_TONE[task.status], statusIcon(task.status))} ${theme.fg("text", shorten(task.label, 24))}${task.session ? `${sep}${theme.fg("muted", shorten(task.session, 18))}` : ""}${task.detail ? `${sep}${theme.fg("muted", shorten(task.detail, 16))}` : ""}`,
+        theme,
+      ),
+    ),
   ];
   const maxPills = 10;
   const visible = allPills.slice(0, maxPills);

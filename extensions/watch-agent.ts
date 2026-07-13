@@ -7,17 +7,37 @@ import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 
 const WATCH_AGENT_PARAMS = Type.Object({
-  action: Type.Optional(StringEnum(["start", "stop", "list"] as const, { description: "Start, stop, or list watcher agents. Defaults to start." })),
+  action: Type.Optional(
+    StringEnum(["start", "stop", "list"] as const, {
+      description: "Start, stop, or list watcher agents. Defaults to start.",
+    }),
+  ),
   name: Type.Optional(Type.String({ description: "Short watcher name. Defaults to pr-watch or watch." })),
-  task: Type.Optional(Type.String({ description: "What the watcher should do when observed state changes. Alias/legacy form of goal." })),
-  goal: Type.Optional(Type.String({ description: "Claude Code-style goal: the outcome the watcher should work toward when changes are observed." })),
-  loop: Type.Optional(Type.String({ description: "Claude Code-style loop: recurring instructions for each poll/change cycle." })),
-  pr: Type.Optional(Type.String({ description: "GitHub PR number or URL to watch. Builds a gh pr view command when watchCommand is omitted." })),
+  task: Type.Optional(
+    Type.String({ description: "What the watcher should do when observed state changes. Alias/legacy form of goal." }),
+  ),
+  goal: Type.Optional(
+    Type.String({
+      description: "Claude Code-style goal: the outcome the watcher should work toward when changes are observed.",
+    }),
+  ),
+  loop: Type.Optional(
+    Type.String({ description: "Claude Code-style loop: recurring instructions for each poll/change cycle." }),
+  ),
+  pr: Type.Optional(
+    Type.String({
+      description: "GitHub PR number or URL to watch. Builds a gh pr view command when watchCommand is omitted.",
+    }),
+  ),
   watchCommand: Type.Optional(Type.String({ description: "Shell command whose output is polled for changes" })),
   intervalSeconds: Type.Optional(Type.Number({ description: "Poll interval. Defaults to 300 seconds." })),
   maxIterations: Type.Optional(Type.Number({ description: "Optional maximum polling iterations before stopping" })),
-  model: Type.Optional(Type.String({ description: "Optional pi model pattern. Defaults to current/heuristic model selection." })),
-  tools: Type.Optional(Type.Array(Type.String(), { description: "Optional tool allowlist for watcher pi invocations" })),
+  model: Type.Optional(
+    Type.String({ description: "Optional pi model pattern. Defaults to current/heuristic model selection." }),
+  ),
+  tools: Type.Optional(
+    Type.Array(Type.String(), { description: "Optional tool allowlist for watcher pi invocations" }),
+  ),
 });
 
 type WatchParams = {
@@ -49,7 +69,13 @@ type Watcher = {
 const watchers = new Map<string, Watcher>();
 
 function slug(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "watch";
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9_.-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "watch"
+  );
 }
 
 function shellQuote(value: string): string {
@@ -57,7 +83,12 @@ function shellQuote(value: string): string {
 }
 
 function modelLabel(model: string | undefined) {
-  return model?.split("/").pop()?.replace(/^claude-/, "") ?? "default";
+  return (
+    model
+      ?.split("/")
+      .pop()
+      ?.replace(/^claude-/, "") ?? "default"
+  );
 }
 
 function isPidAlive(pid: number): boolean {
@@ -150,15 +181,30 @@ printf '\\n[watcher ${name} stopped: %s]\\n' "$reason" >> ${shellQuote(logPath)}
 
 function trackWatcher(ctx: ExtensionContext, watcher: Watcher, detail?: string) {
   watchers.set(watcher.name, watcher);
-  upsertAgentTask({ id: watcher.taskId, label: `watch ${watcher.name}`, status: "running", session: modelLabel(watcher.model), detail });
+  upsertAgentTask({
+    id: watcher.taskId,
+    label: `watch ${watcher.name}`,
+    status: "running",
+    session: modelLabel(watcher.model),
+    detail,
+  });
   updateTaskWidget(ctx);
 }
 
 async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: WatchParams) {
   const watchCommand = params.watchCommand ?? defaultWatchCommand(params.pr);
   if (!watchCommand) throw new Error("watch_agent start requires either pr or watchCommand");
-  const goal = params.goal ?? params.task ?? (params.pr ? `Watch PR ${params.pr} for review comments, failed checks, and requested changes. If safe and clearly requested, respond or update the PR; otherwise log a concise summary.` : "Watch for changes and respond if action is needed.");
-  const loop = params.loop ?? (params.pr ? "Poll the PR state. On each change, inspect reviews, comments, reviewDecision, and statusCheckRollup. Identify only new/actionable changes since the previous observation." : "Poll the watched state. On each change, inspect the latest output and decide whether action is needed.");
+  const goal =
+    params.goal ??
+    params.task ??
+    (params.pr
+      ? `Watch PR ${params.pr} for review comments, failed checks, and requested changes. If safe and clearly requested, respond or update the PR; otherwise log a concise summary.`
+      : "Watch for changes and respond if action is needed.");
+  const loop =
+    params.loop ??
+    (params.pr
+      ? "Poll the PR state. On each change, inspect reviews, comments, reviewDecision, and statusCheckRollup. Identify only new/actionable changes since the previous observation."
+      : "Poll the watched state. On each change, inspect the latest output and decide whether action is needed.");
   const name = slug(params.name ?? (params.pr ? `pr-${params.pr}` : "watch"));
   const root = await gitRoot(pi, ctx.cwd);
   const dir = join(root, CONFIG_DIR_NAME, "watchers", `${name}-${Date.now()}`);
@@ -187,11 +233,25 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
     maxIterations: Math.max(0, Math.floor(params.maxIterations ?? 0)),
   });
   await writeFile(scriptPath, script, { encoding: "utf8", mode: 0o700 });
-  const result = await pi.exec("bash", ["-lc", `cd ${shellQuote(ctx.cwd)} && nohup bash ${shellQuote(scriptPath)} >/dev/null 2>&1 & echo $!`], { timeout: 10000 });
+  const result = await pi.exec(
+    "bash",
+    ["-lc", `cd ${shellQuote(ctx.cwd)} && nohup bash ${shellQuote(scriptPath)} >/dev/null 2>&1 & echo $!`],
+    { timeout: 10000 },
+  );
   const pid = Number(result.stdout.trim().split(/\s+/).pop());
   if (!Number.isFinite(pid) || pid <= 0) throw new Error(result.stderr || result.stdout || "failed to start watcher");
 
-  const watcher: Watcher = { name, pid, dir, logPath, stopPath, statusPath, taskId: `watch:${name}`, model: modelSelection.model, startedAt: Date.now() };
+  const watcher: Watcher = {
+    name,
+    pid,
+    dir,
+    logPath,
+    stopPath,
+    statusPath,
+    taskId: `watch:${name}`,
+    model: modelSelection.model,
+    startedAt: Date.now(),
+  };
   // Persist metadata so a restarted/reloaded session can re-adopt the
   // still-running loop instead of orphaning it.
   await writeFile(join(dir, "meta.json"), `${JSON.stringify(watcher, null, 2)}\n`, "utf8");
@@ -201,13 +261,19 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
 
 async function stopWatcher(pi: ExtensionAPI, ctx: ExtensionContext, name: string | undefined) {
   const targetName = name ? slug(name) : undefined;
-  const targets = targetName ? [watchers.get(targetName)].filter(Boolean) as Watcher[] : Array.from(watchers.values());
+  const targets = targetName
+    ? ([watchers.get(targetName)].filter(Boolean) as Watcher[])
+    : Array.from(watchers.values());
   if (!targets.length) return "No matching watchers.";
   for (const watcher of targets) {
     await writeFile(watcher.stopPath, "stop\n", "utf8").catch(() => undefined);
     // Kill children (an in-flight pi run) before the loop shell, otherwise
     // they reparent to init and keep running after the "stop".
-    await pi.exec("bash", ["-lc", `pkill -P ${watcher.pid} >/dev/null 2>&1; kill ${watcher.pid} >/dev/null 2>&1 || true`], { timeout: 5000 }).catch(() => undefined);
+    await pi
+      .exec("bash", ["-lc", `pkill -P ${watcher.pid} >/dev/null 2>&1; kill ${watcher.pid} >/dev/null 2>&1 || true`], {
+        timeout: 5000,
+      })
+      .catch(() => undefined);
     finishAgentTask(watcher.taskId, "done", "stopped");
     watchers.delete(watcher.name);
   }
@@ -264,10 +330,12 @@ async function adoptWatchers(pi: ExtensionAPI, ctx: ExtensionContext) {
 }
 
 async function listWatchers() {
-  const rows = await Promise.all(Array.from(watchers.values()).map(async (watcher) => {
-    const status = (await readStatus(watcher)) ?? (isPidAlive(watcher.pid) ? "running" : "not running");
-    return `${watcher.name}: ${status} pid ${watcher.pid} log ${watcher.logPath}`;
-  }));
+  const rows = await Promise.all(
+    Array.from(watchers.values()).map(async (watcher) => {
+      const status = (await readStatus(watcher)) ?? (isPidAlive(watcher.pid) ? "running" : "not running");
+      return `${watcher.name}: ${status} pid ${watcher.pid} log ${watcher.logPath}`;
+    }),
+  );
   return rows.length ? rows.join("\n") : "No watchers.";
 }
 
@@ -296,14 +364,29 @@ export default function watchAgentExtension(pi: ExtensionAPI) {
     label: "Watch Agent",
     description: "Start, stop, or list a sibling watcher agent that polls external state and runs pi when it changes.",
     promptSnippet: "Start a sibling watcher agent for PR reviews, checks, or external task changes",
-    promptGuidelines: ["Use watch_agent when the user asks to watch a PR, review comments, checks, or another external process while the parent Pi session stays active."],
+    promptGuidelines: [
+      "Use watch_agent when the user asks to watch a PR, review comments, checks, or another external process while the parent Pi session stays active.",
+    ],
     parameters: WATCH_AGENT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const action = params.action ?? "start";
-      if (action === "list") return { content: [{ type: "text", text: await listWatchers() }], details: { watchers: Array.from(watchers.values()) } };
-      if (action === "stop") return { content: [{ type: "text", text: await stopWatcher(pi, ctx, params.name) }], details: { watchers: Array.from(watchers.values()) } };
+      if (action === "list")
+        return {
+          content: [{ type: "text", text: await listWatchers() }],
+          details: { watchers: Array.from(watchers.values()) },
+        };
+      if (action === "stop")
+        return {
+          content: [{ type: "text", text: await stopWatcher(pi, ctx, params.name) }],
+          details: { watchers: Array.from(watchers.values()) },
+        };
       const watcher = await startWatcher(pi, ctx, params);
-      return { content: [{ type: "text", text: `Watcher started: ${watcher.name}\nPID: ${watcher.pid}\nLog: ${watcher.logPath}` }], details: watcher };
+      return {
+        content: [
+          { type: "text", text: `Watcher started: ${watcher.name}\nPID: ${watcher.pid}\nLog: ${watcher.logPath}` },
+        ],
+        details: watcher,
+      };
     },
   });
 }

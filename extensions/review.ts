@@ -16,7 +16,9 @@ function parseReviewTarget(args: string) {
 }
 
 async function githubContext(pi: ExtensionAPI, cwd: string, target: string | undefined) {
-  const remote = await pi.exec("git", ["-C", cwd, "remote", "get-url", "origin"], { timeout: 10000 }).catch(() => undefined);
+  const remote = await pi
+    .exec("git", ["-C", cwd, "remote", "get-url", "origin"], { timeout: 10000 })
+    .catch(() => undefined);
   if (!remote?.stdout || !/github\.com[:/]/i.test(remote.stdout)) return undefined;
 
   const selector = target ? shellQuote(target) : "";
@@ -24,7 +26,17 @@ async function githubContext(pi: ExtensionAPI, cwd: string, target: string | und
   const pr = await pi.exec("bash", ["-lc", command], { timeout: 15000 }).catch(() => undefined);
   if (pr?.code !== 0 || !pr?.stdout?.trim()) return { remote: remote.stdout.trim() };
   try {
-    return { remote: remote.stdout.trim(), pr: JSON.parse(pr.stdout) as { number?: number; url?: string; headRefName?: string; headRefOid?: string; baseRefName?: string; title?: string } };
+    return {
+      remote: remote.stdout.trim(),
+      pr: JSON.parse(pr.stdout) as {
+        number?: number;
+        url?: string;
+        headRefName?: string;
+        headRefOid?: string;
+        baseRefName?: string;
+        title?: string;
+      },
+    };
   } catch {
     return { remote: remote.stdout.trim() };
   }
@@ -32,8 +44,13 @@ async function githubContext(pi: ExtensionAPI, cwd: string, target: string | und
 
 function reviewPrompt(target: string | undefined, gh: Awaited<ReturnType<typeof githubContext>>) {
   const pr = gh?.pr;
-  const targetText = pr?.number ? `PR #${pr.number} (${pr.url})` : target ? `review target ${target}` : "the PR/patch linked to the current branch";
-  const githubInline = pr?.number ? `
+  const targetText = pr?.number
+    ? `PR #${pr.number} (${pr.url})`
+    : target
+      ? `review target ${target}`
+      : "the PR/patch linked to the current branch";
+  const githubInline = pr?.number
+    ? `
 
 GitHub inline review instructions:
 - This repo is on GitHub and the PR is #${pr.number}.
@@ -44,7 +61,8 @@ GitHub inline review instructions:
   \`gh api --method POST repos/{owner}/{repo}/pulls/${pr.number}/comments -f body='...' -f commit_id='${pr.headRefOid ?? "HEAD_SHA"}' -f path='path/to/file' -F line=123 -f side=RIGHT\`
 - Keep comments concise and actionable. Do not post style nits unless they affect correctness, tests, security, or maintainability.
 - If a finding cannot be tied to a changed line, include it in the final chat summary instead.
-- If there are no findings, do not post PR comments; summarize that no actionable findings were found.` : "";
+- If there are no findings, do not post PR comments; summarize that no actionable findings were found.`
+    : "";
 
   return `Review ${targetText}.
 

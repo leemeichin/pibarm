@@ -26,7 +26,9 @@ function parseForge(remote: string): Forge {
 
 function checkSummary(checks: any[]): StatusPart {
   if (!Array.isArray(checks) || checks.length === 0) return { text: " CI", tone: "muted" };
-  const bad = checks.find((c) => ["FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED"].includes(c.conclusion));
+  const bad = checks.find((c) =>
+    ["FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED"].includes(c.conclusion),
+  );
   if (bad) return { text: " CI", tone: "error" };
   const pending = checks.find((c) => c.status && c.status !== "COMPLETED");
   if (pending) return { text: " CI", tone: "warning" };
@@ -52,7 +54,24 @@ function plain(parts: StatusPart[]): string {
 
 // Common technical acronyms that match the JIRA key shape (UTF-8, SHA-256, …)
 // but are never project keys.
-const NOT_JIRA_KEYS = new Set(["UTF", "SHA", "ISO", "RFC", "CVE", "AES", "RSA", "MD", "GPG", "TLS", "HTTP", "ES", "EC", "X", "OAUTH", "IPV"]);
+const NOT_JIRA_KEYS = new Set([
+  "UTF",
+  "SHA",
+  "ISO",
+  "RFC",
+  "CVE",
+  "AES",
+  "RSA",
+  "MD",
+  "GPG",
+  "TLS",
+  "HTTP",
+  "ES",
+  "EC",
+  "X",
+  "OAUTH",
+  "IPV",
+]);
 
 export function firstJiraTicket(text: string): string | undefined {
   for (const match of text.matchAll(/\b([A-Z][A-Z0-9]+)-\d+\b/g)) {
@@ -66,7 +85,16 @@ async function jiraTicketForBranch(pi: ExtensionAPI, branch: string) {
   const fromBranch = firstJiraTicket(branch);
   if (fromBranch) return fromBranch;
 
-  const baseCandidates = ["origin/main", "origin/master", "origin/trunk", "origin/develop", "main", "master", "trunk", "develop"];
+  const baseCandidates = [
+    "origin/main",
+    "origin/master",
+    "origin/trunk",
+    "origin/develop",
+    "main",
+    "master",
+    "trunk",
+    "develop",
+  ];
   for (const base of baseCandidates) {
     const mergeBase = await exec(pi, "git", ["merge-base", "HEAD", base], 5000);
     if (mergeBase.code !== 0 || !mergeBase.stdout) continue;
@@ -127,20 +155,24 @@ function thinkingLabel(pi: ExtensionAPI): string | undefined {
 }
 
 function extensionStatusesText(statuses: unknown): string {
-  const values = statuses instanceof Map
-    ? Array.from(statuses.entries())
-      .filter(([key, value]) => !/ponytail/i.test(`${key} ${value}`))
-      .map(([, value]) => value)
-    : Array.isArray(statuses)
-      ? statuses
-      : statuses == null
-        ? []
-        : typeof statuses === "string"
-          ? [statuses]
-          : typeof (statuses as { [Symbol.iterator]?: unknown })[Symbol.iterator] === "function"
-            ? Array.from(statuses as Iterable<unknown>)
-            : [statuses];
-  return values.map(String).filter((text) => text && !/ponytail/i.test(text)).join("  ");
+  const values =
+    statuses instanceof Map
+      ? Array.from(statuses.entries())
+          .filter(([key, value]) => !/ponytail/i.test(`${key} ${value}`))
+          .map(([, value]) => value)
+      : Array.isArray(statuses)
+        ? statuses
+        : statuses == null
+          ? []
+          : typeof statuses === "string"
+            ? [statuses]
+            : typeof (statuses as { [Symbol.iterator]?: unknown })[Symbol.iterator] === "function"
+              ? Array.from(statuses as Iterable<unknown>)
+              : [statuses];
+  return values
+    .map(String)
+    .filter((text) => text && !/ponytail/i.test(text))
+    .join("  ");
 }
 
 // gh calls hit the network with 15s timeouts, and the jira sweep runs many
@@ -149,7 +181,10 @@ const GH_TTL_MS = 60000;
 const ghCache = new Map<string, { at: number; parts: StatusPart[]; details: Record<string, unknown> }>();
 const jiraCache = new Map<string, string | undefined>();
 
-async function githubParts(pi: ExtensionAPI, branch: string): Promise<{ parts: StatusPart[]; details: Record<string, unknown> }> {
+async function githubParts(
+  pi: ExtensionAPI,
+  branch: string,
+): Promise<{ parts: StatusPart[]; details: Record<string, unknown> }> {
   const cached = ghCache.get(branch);
   if (cached && Date.now() - cached.at < GH_TTL_MS) return cached;
   const parts: StatusPart[] = [];
@@ -161,7 +196,12 @@ async function githubParts(pi: ExtensionAPI, branch: string): Promise<{ parts: S
     parts.push(checkSummary(parsed.statusCheckRollup));
     details.github = parsed;
   } else {
-    const run = await exec(pi, "gh", ["run", "list", "--branch", branch, "--limit", "1", "--json", "status,conclusion,url"], 15000);
+    const run = await exec(
+      pi,
+      "gh",
+      ["run", "list", "--branch", branch, "--limit", "1", "--json", "status,conclusion,url"],
+      15000,
+    );
     if (run.code === 0 && run.stdout) {
       const parsed = JSON.parse(run.stdout)[0];
       if (parsed) {
@@ -250,9 +290,8 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
           variants.push([dirPart, { text: shortModelLabel(ctx), tone: "text" }, contextPart]);
           variants.push([dirPart, contextPart]);
 
-          const right = rightStatusParts.length > 0
-            ? renderSegments(rightStatusParts, theme)
-            : theme.fg("dim", rightStatus);
+          const right =
+            rightStatusParts.length > 0 ? renderSegments(rightStatusParts, theme) : theme.fg("dim", rightStatus);
           const rightWidth = visibleWidth(right);
           if (rightWidth >= width) return [truncateToWidth(right, width)];
 
@@ -263,7 +302,10 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
               return [left + " ".repeat(width - leftWidth - rightWidth) + right];
             }
           }
-          const left = truncateToWidth(renderSegments([dirPart, contextPart], theme), Math.max(0, width - rightWidth - 1));
+          const left = truncateToWidth(
+            renderSegments([dirPart, contextPart], theme),
+            Math.max(0, width - rightWidth - 1),
+          );
           return [left + " ".repeat(Math.max(1, width - visibleWidth(left) - rightWidth)) + right];
         },
       };
@@ -281,7 +323,10 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
       const status = await refresh(pi, ctx, requestRender);
       rightStatus = status.right;
       rightStatusParts = status.rightParts;
-      return { content: [{ type: "text", text: status.status || JSON.stringify(status.details) }], details: status.details };
+      return {
+        content: [{ type: "text", text: status.status || JSON.stringify(status.details) }],
+        details: status.details,
+      };
     },
   });
 

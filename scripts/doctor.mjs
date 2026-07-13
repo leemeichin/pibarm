@@ -70,10 +70,21 @@ function commandCheck(command, { required = false, install = "", detail = "" } =
 async function main() {
   console.log("pibarm setup doctor\n");
 
-  commandCheck("pi", { required: true, install: "https://pi.dev / your normal pi installer", detail: "required to load this package and run subagents" });
-  commandCheck("git", { required: true, install: "brew install git", detail: "required for repo status and worktrees" });
+  commandCheck("pi", {
+    required: true,
+    install: "https://pi.dev / your normal pi installer",
+    detail: "required to load this package and run subagents",
+  });
+  commandCheck("git", {
+    required: true,
+    install: "brew install git",
+    detail: "required for repo status and worktrees",
+  });
   commandCheck("bash", { required: true, detail: "required by watchers and subagent wrappers" });
-  commandCheck("bun", { install: "curl -fsSL https://bun.sh/install | bash", detail: "needed for development checks (bun run check)" });
+  commandCheck("bun", {
+    install: "curl -fsSL https://bun.sh/install | bash",
+    detail: "needed for development checks (bun run check)",
+  });
 
   commandCheck("gh", { install: "brew install gh && gh auth login", detail: "GitHub PR/CI tools" });
   if (has("gh")) {
@@ -83,9 +94,15 @@ async function main() {
   }
 
   commandCheck("hut", { install: "brew install hut && hut init", detail: "SourceHut build/ticket tools" });
-  commandCheck("mcporter", { install: "install/configure mcporter, then edit .pi/mcporter.json", detail: "MCP bridge tools" });
+  commandCheck("mcporter", {
+    install: "install/configure mcporter, then edit .pi/mcporter.json",
+    detail: "MCP bridge tools",
+  });
   commandCheck("wezterm", { install: "brew install --cask wezterm", detail: "Matrix visible agent panes" });
-  commandCheck(process.env.PI_NOTIFY_TERMINAL_NOTIFIER || "terminal-notifier", { install: "brew install terminal-notifier", detail: "optional native macOS notifications" });
+  commandCheck(process.env.PI_NOTIFY_TERMINAL_NOTIFIER || "terminal-notifier", {
+    install: "brew install terminal-notifier",
+    detail: "optional native macOS notifications",
+  });
 
   await copyExample(".pi/mcporter.example.json", ".pi/mcporter.json");
   await copyExample(".pi/agent-presets.example.json", ".pi/agent-presets.json");
@@ -94,24 +111,34 @@ async function main() {
     const settings = JSON.parse(await readFile(resolve(root, ".pi/settings.json"), "utf8"));
     const packages = settings.packages ?? [];
     const ponytail = "git:github.com/DietrichGebert/ponytail";
-    if (packages.some((pkg) => String(pkg) === ponytail || String(pkg).startsWith(`${ponytail}@`))) ok(".pi/settings.json", "ponytail package configured");
+    if (packages.some((pkg) => String(pkg) === ponytail || String(pkg).startsWith(`${ponytail}@`)))
+      ok(".pi/settings.json", "ponytail package configured");
     else warn(".pi/settings.json", "ponytail package is not configured");
-    if (packages.some((pkg) => /cmux/i.test(String(pkg)))) warn(".pi/settings.json", "cmux package still configured; remove it if you want pibarm-only Matrix/notifications");
+    if (packages.some((pkg) => /cmux/i.test(String(pkg))))
+      warn(
+        ".pi/settings.json",
+        "cmux package still configured; remove it if you want pibarm-only Matrix/notifications",
+      );
   } catch (error) {
     fail(".pi/settings.json", `could not parse: ${error.message}`);
   }
 
-  console.log(checks.map((check) => {
-    const icon = check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗";
-    return `${icon} ${check.name}${check.detail ? ` — ${check.detail}` : ""}`;
-  }).join("\n"));
+  console.log(
+    checks
+      .map((check) => {
+        const icon = check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗";
+        return `${icon} ${check.name}${check.detail ? ` — ${check.detail}` : ""}`;
+      })
+      .join("\n"),
+  );
 
   if (actions.length) console.log(`\nActions:\n${actions.map((action) => `- ${action}`).join("\n")}`);
 
   const failures = checks.filter((check) => check.status === "fail");
   const warnings = checks.filter((check) => check.status === "warn");
   console.log(`\nSummary: ${failures.length} failure(s), ${warnings.length} warning(s).`);
-  if (warnings.length) console.log("Warnings are feature-specific; core plan/worktree usage only needs the required checks.");
+  if (warnings.length)
+    console.log("Warnings are feature-specific; core plan/worktree usage only needs the required checks.");
   process.exitCode = failures.length ? 1 : 0;
 }
 

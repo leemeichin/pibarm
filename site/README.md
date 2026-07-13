@@ -13,6 +13,19 @@ npm run build    # static output → dist/
 npm run preview  # serve the built dist/
 ```
 
+## Deploy
+
+Wrangler deploys `dist/` as Cloudflare Workers static assets at
+[`pibarm.lmchn.xyz`](https://pibarm.lmchn.xyz):
+
+```bash
+npx wrangler login # once per machine
+npm run deploy
+```
+
+Pushes to `main` deploy through GitHub Actions when `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` are configured as repository secrets.
+
 ## Structure
 
 ```
@@ -50,9 +63,8 @@ import { Button, Icon, StatusLine } from "pibarm-ds";
 </Button>
 ```
 
-The site resolves `pibarm-ds` from source through a Vite alias in `astro.config.mjs` — there is
-no build step and no lockfile entry, but the package's own deps must be installed once:
-`npm install --prefix ../packages/pibarm-ds`.
+The site resolves `pibarm-ds` from source through Vite aliases in `astro.config.mjs` — there is
+no separate design-system build or install step.
 
 **Don't add a `client:*` directive to a design-system component.** Astro only strips its
 `<astro-slot>` wrapper for non-hydrated components; hydrating one puts a real element inside the

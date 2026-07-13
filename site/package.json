@@ -8,6 +8,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
+    "deploy": "npm run build && npx --yes wrangler@4 deploy",
     "preview": "astro preview",
     "astro": "astro"
   },

@@ -149,6 +149,9 @@ body {
 .demo-tag--success { color: var(--status-success); }
 .demo-callout { margin: 16px 0 0; padding: 12px 14px; border-left: 3px solid var(--status-info); background: var(--wash-sky); color: var(--text-muted); font-size: 13.5px; }
 .demo-callout b { color: var(--text-strong); }
+.demo-snapshot { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: center; }
+.demo-snapshot__body { box-sizing: border-box; height: 260px; }
+.demo-prompt { color: var(--orange-400); }
 .pib-demo-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: center; }
 
 /* ---------------- Responsive ---------------- */
@@ -158,7 +161,7 @@ body {
   .pib-band { grid-template-columns: 1fr; }
   .pib-docs { grid-template-columns: 1fr; }
   .pib-docs-side { position: static; }
-  .pib-demo-row { grid-template-columns: 1fr; }
+  .demo-snapshot, .pib-demo-row { grid-template-columns: 1fr; }
 }
 @media (max-width: 620px) {
   .hero-h1 { font-size: 46px; }

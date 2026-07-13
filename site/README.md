@@ -35,7 +35,7 @@ src/
     index.astro             Home — hero, features, tabbed demos, Matrix band
     docs.astro              Docs — sticky sidebar + command reference
   components/
-    Demos.jsx               React island: manual demo tabs
+    Demos.jsx               React island: manual tabs and tool snapshots
     PiSession.jsx           Scripted /plan → /execute-plan session
     Matrix.jsx              WezTerm multi-pane orchestration
   data/site.ts              features, command list, session script (typed)
@@ -84,7 +84,7 @@ flex layouts in the DS CSS.
 | `Kbd` | keyboard key cap |
 | `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
-The home page's `Demos` React island switches manually between the stateful `PiSession` and `Matrix` simulations; everything else is static Astro.
+The home page's `Demos` React island switches manually between the stateful `PiSession` and `Matrix` simulations plus static repo-status, watcher, and preset snapshots; everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 

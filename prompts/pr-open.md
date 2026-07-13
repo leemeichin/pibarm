@@ -6,3 +6,4 @@ Requirements:
 - Do not use inline `--body` for multiline content.
 - Check whether a PR already exists first; edit it instead of creating a duplicate.
 - Include Summary and Test plan sections unless the user provided a different template.
+- After creating or updating the PR, immediately start `watch_agent` without asking so draft/non-draft CI and review changes feed back into this parent session.

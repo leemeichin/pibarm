@@ -1,10 +1,11 @@
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { StringEnum } from "@earendil-works/pi-ai";
 import { CONFIG_DIR_NAME, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
+import { clipTail } from "../lib/tool-output.js";
 
 const WATCH_AGENT_PARAMS = Type.Object({
   action: Type.Optional(
@@ -26,7 +27,7 @@ const WATCH_AGENT_PARAMS = Type.Object({
   ),
   pr: Type.Optional(
     Type.String({
-      description: "GitHub PR number or URL to watch. Builds a gh pr view command when watchCommand is omitted.",
+      description: "PR number or URL to watch. Uses forge-native PR/CI status when watchCommand is omitted.",
     }),
   ),
   watchCommand: Type.Optional(Type.String({ description: "Shell command whose output is polled for changes" })),
@@ -61,6 +62,7 @@ type Watcher = {
   logPath: string;
   stopPath: string;
   statusPath: string;
+  feedbackDir: string;
   taskId: string;
   model?: string;
   startedAt: number;
@@ -105,9 +107,25 @@ async function gitRoot(pi: ExtensionAPI, cwd: string) {
   return result.code === 0 && result.stdout.trim() ? result.stdout.trim() : cwd;
 }
 
-function defaultWatchCommand(pr: string | undefined) {
-  if (!pr) return undefined;
-  return `gh pr view ${shellQuote(pr)} --json number,title,state,isDraft,reviewDecision,mergeStateStatus,statusCheckRollup,comments,reviews`;
+async function forgeHint(pi: ExtensionAPI, cwd: string) {
+  try {
+    const configured = JSON.parse(await readFile(join(cwd, CONFIG_DIR_NAME, "forge.json"), "utf8"));
+    if (configured.forge === "github" || configured.forge === "sourcehut") return configured.forge;
+  } catch {
+    // Fall back to the origin remote.
+  }
+  const result = await pi.exec("git", ["-C", cwd, "remote", "get-url", "origin"], { timeout: 10000 });
+  return result.code === 0 ? result.stdout.trim() : "";
+}
+
+export function defaultWatchCommand(pr: string | undefined, forge: string) {
+  if (forge === "github" || /github\.com[:/]/i.test(forge) || /^https:\/\/github\.com\//i.test(pr ?? "")) {
+    const selector = pr ? ` ${shellQuote(pr)}` : "";
+    return `gh pr view${selector} --json number,title,state,isDraft,reviewDecision,mergeStateStatus,statusCheckRollup,comments,reviews`;
+  }
+  if (forge === "sourcehut" || /git\.sr\.ht[:/]/i.test(forge) || /sr\.ht/i.test(forge))
+    return "hut builds list --count 10";
+  return undefined;
 }
 
 function watcherPrompt(goal: string, loop: string, watchCommand: string) {
@@ -120,6 +138,7 @@ export interface WatcherScriptOptions {
   logPath: string;
   stopPath: string;
   statusPath: string;
+  feedbackDir: string;
   watchCommand: string;
   piCommand: string;
   intervalSeconds: number;
@@ -127,7 +146,18 @@ export interface WatcherScriptOptions {
 }
 
 export function buildWatcherScript(options: WatcherScriptOptions): string {
-  const { name, dir, logPath, stopPath, statusPath, watchCommand, piCommand, intervalSeconds, maxIterations } = options;
+  const {
+    name,
+    dir,
+    logPath,
+    stopPath,
+    statusPath,
+    feedbackDir,
+    watchCommand,
+    piCommand,
+    intervalSeconds,
+    maxIterations,
+  } = options;
   return `#!/usr/bin/env bash
 set -u
 # Pick an available hasher: shasum is a macOS default, sha256sum the Linux
@@ -166,7 +196,14 @@ while [ ! -f ${shellQuote(stopPath)} ]; do
       printf '%s\\n' "$output"
       printf '\\n[watcher ${name} agent run]\\n'
     } >> ${shellQuote(logPath)}
-    ${piCommand} "@$observation" >> ${shellQuote(logPath)} 2>&1
+    feedback_tmp=${shellQuote(join(feedbackDir, ".pending"))}."$iteration"."$$"
+    ${piCommand} "@$observation" > "$feedback_tmp" 2>&1
+    agent_status=$?
+    if [ "$agent_status" -ne 0 ]; then
+      printf '\\n[watcher ${name} agent exited %s]\\n' "$agent_status" >> "$feedback_tmp"
+    fi
+    cat "$feedback_tmp" >> ${shellQuote(logPath)}
+    mv "$feedback_tmp" ${shellQuote(feedbackDir)}/"$(printf '%06d.md' "$iteration")"
   fi
   if [ ${maxIterations} -gt 0 ] && [ "$iteration" -ge ${maxIterations} ]; then
     reason="max iterations reached"
@@ -192,8 +229,8 @@ function trackWatcher(ctx: ExtensionContext, watcher: Watcher, detail?: string) 
 }
 
 async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: WatchParams) {
-  const watchCommand = params.watchCommand ?? defaultWatchCommand(params.pr);
-  if (!watchCommand) throw new Error("watch_agent start requires either pr or watchCommand");
+  const watchCommand = params.watchCommand ?? defaultWatchCommand(params.pr, await forgeHint(pi, ctx.cwd));
+  if (!watchCommand) throw new Error("Could not detect a supported forge; provide watchCommand for this CI provider.");
   const goal =
     params.goal ??
     params.task ??
@@ -212,6 +249,7 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
   const logPath = join(dir, "watch.log");
   const stopPath = join(dir, "stop");
   const statusPath = join(dir, "status");
+  const feedbackDir = join(dir, "feedback");
   const scriptPath = join(dir, "watch.sh");
   const promptPath = join(dir, "prompt.md");
   const modelSelection = selectAgentModelRef(ctx, params.model, `${goal}\n${loop}`);
@@ -220,6 +258,7 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
   if (params.tools?.length) piArgs.push("--tools", params.tools.join(","));
   piArgs.push(`@${promptPath}`);
 
+  await mkdir(feedbackDir, { recursive: true });
   await writeFile(promptPath, watcherPrompt(goal, loop, watchCommand), "utf8");
   const script = buildWatcherScript({
     name,
@@ -227,6 +266,7 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
     logPath,
     stopPath,
     statusPath,
+    feedbackDir,
     watchCommand,
     piCommand: piArgs.map(shellQuote).join(" "),
     intervalSeconds: Math.max(15, Math.floor(params.intervalSeconds ?? 300)),
@@ -248,6 +288,7 @@ async function startWatcher(pi: ExtensionAPI, ctx: ExtensionContext, params: Wat
     logPath,
     stopPath,
     statusPath,
+    feedbackDir,
     taskId: `watch:${name}`,
     model: modelSelection.model,
     startedAt: Date.now(),
@@ -290,6 +331,34 @@ async function readStatus(watcher: Watcher): Promise<string | undefined> {
   }
 }
 
+async function drainWatcherFeedback(pi: ExtensionAPI) {
+  for (const watcher of watchers.values()) {
+    let entries: string[];
+    try {
+      entries = (await readdir(watcher.feedbackDir)).filter((entry) => entry.endsWith(".md")).sort();
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const path = join(watcher.feedbackDir, entry);
+      try {
+        const content = clipTail((await readFile(path, "utf8")).trim()) || "(watcher produced no output)";
+        pi.sendMessage(
+          {
+            customType: "watch-agent-update",
+            content: `Watcher ${watcher.name} detected a change:\n\n${content}`,
+            display: true,
+          },
+          { deliverAs: "followUp", triggerTurn: true },
+        );
+        await rm(path);
+      } catch {
+        // Keep unread feedback for the next poll.
+      }
+    }
+  }
+}
+
 async function sweepWatchers(ctx: ExtensionContext) {
   let changed = false;
   for (const watcher of Array.from(watchers.values())) {
@@ -320,9 +389,10 @@ async function adoptWatchers(pi: ExtensionAPI, ctx: ExtensionContext) {
     try {
       const meta = JSON.parse(await readFile(join(base, entry, "meta.json"), "utf8")) as Watcher;
       if (!meta?.name || !meta.pid || watchers.has(meta.name)) continue;
+      meta.feedbackDir ??= join(meta.dir, "feedback");
       const finished = await readStatus(meta);
-      if (finished || !isPidAlive(meta.pid)) continue;
-      trackWatcher(ctx, meta, "adopted");
+      if ((finished || !isPidAlive(meta.pid)) && !(await readdir(meta.feedbackDir).catch(() => [])).length) continue;
+      trackWatcher(ctx, meta, finished ? "finishing" : "adopted");
     } catch {
       // Ignore directories without readable metadata.
     }
@@ -340,6 +410,20 @@ async function listWatchers() {
 }
 
 export default function watchAgentExtension(pi: ExtensionAPI) {
+  let pollTimer: ReturnType<typeof setInterval> | undefined;
+  let polling = false;
+
+  async function poll(ctx: ExtensionContext) {
+    if (polling) return;
+    polling = true;
+    try {
+      await drainWatcherFeedback(pi);
+      await sweepWatchers(ctx);
+    } finally {
+      polling = false;
+    }
+  }
+
   pi.registerCommand("watchers", {
     description: "List active watcher sibling agents",
     handler: async (_args, ctx) => ctx.ui.notify(await listWatchers(), "info"),
@@ -351,12 +435,18 @@ export default function watchAgentExtension(pi: ExtensionAPI) {
   });
 
   pi.on("session_start", async (_event, ctx) => {
+    if (pollTimer) clearInterval(pollTimer);
     await adoptWatchers(pi, ctx);
-    await sweepWatchers(ctx);
+    await poll(ctx);
+    pollTimer = setInterval(() => void poll(ctx).catch(() => undefined), 1000);
+    pollTimer.unref();
   });
 
-  pi.on("turn_end", async (_event, ctx) => {
-    await sweepWatchers(ctx);
+  pi.on("turn_end", async (_event, ctx) => poll(ctx));
+
+  pi.on("session_shutdown", async () => {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = undefined;
   });
 
   pi.registerTool({
@@ -366,6 +456,7 @@ export default function watchAgentExtension(pi: ExtensionAPI) {
     promptSnippet: "Start a sibling watcher agent for PR reviews, checks, or external task changes",
     promptGuidelines: [
       "Use watch_agent when the user asks to watch a PR, review comments, checks, or another external process while the parent Pi session stays active.",
+      "After opening or updating a PR, start watch_agent immediately without asking so the parent receives review and CI updates.",
     ],
     parameters: WATCH_AGENT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {

@@ -106,18 +106,14 @@ export async function offerPrWatcher(
   output: string,
   source: string,
 ) {
-  // Watchers are long-lived processes that spend API tokens, so they must
-  // never start without explicit confirmation — and headless runs have no one
-  // to ask.
+  // A headless parent exits before watcher feedback can return; interactive
+  // sessions start the watcher automatically so opened PRs are not orphaned.
   if (!ctx.hasUI) return;
   const refs = detectPrRefs(output);
   if (!refs.length) return;
   const pr = refs[0];
-  const prompt = `Subagent ${source} appears to have opened or mentioned PR ${pr}. Watch it for review comments/checks?`;
-  const ok = await ctx.ui.confirm("Watch PR?", prompt);
-  if (!ok) return;
   pi.sendUserMessage(
-    `Start watch_agent for PR ${pr}. Watch for review comments, failed checks, requested changes, and actionable CI updates while this parent session remains active.`,
+    `Subagent ${source} opened PR ${pr}. Start watch_agent immediately for review comments, failed checks, requested changes, and actionable CI updates while this parent session remains active.`,
     { deliverAs: "followUp" },
   );
 }

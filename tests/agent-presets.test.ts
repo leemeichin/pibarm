@@ -31,20 +31,12 @@ describe("offerPrWatcher", () => {
     expect(sent).toEqual([]);
   });
 
-  test("asks for confirmation and honors a decline", async () => {
+  test("queues the watcher without asking for confirmation", async () => {
     const sent: string[] = [];
     const pi = { sendUserMessage: (text: string) => void sent.push(text) };
-    const ctx = { hasUI: true, ui: { confirm: async () => false } };
-    await offerPrWatcher(pi as never, ctx, output, "run_subagent");
-    expect(sent).toEqual([]);
-  });
-
-  test("queues the watcher after confirmation", async () => {
-    const sent: string[] = [];
-    const pi = { sendUserMessage: (text: string) => void sent.push(text) };
-    const ctx = { hasUI: true, ui: { confirm: async () => true } };
+    const ctx = { hasUI: true, ui: { confirm: async () => Promise.reject(new Error("must not prompt")) } };
     await offerPrWatcher(pi as never, ctx, output, "run_subagent");
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toContain("watch_agent for PR 12");
+    expect(sent[0]).toContain("Start watch_agent immediately");
   });
 });

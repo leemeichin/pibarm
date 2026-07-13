@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildWatcherScript, type WatcherScriptOptions } from "../extensions/watch-agent.js";
+import { buildWatcherScript, defaultWatchCommand, type WatcherScriptOptions } from "../extensions/watch-agent.js";
 
 async function makeScript(overrides: Partial<WatcherScriptOptions> = {}) {
   const dir = await mkdtemp(join(tmpdir(), "pibarm-watch-"));
@@ -13,6 +13,7 @@ async function makeScript(overrides: Partial<WatcherScriptOptions> = {}) {
     logPath: join(dir, "watch.log"),
     stopPath: join(dir, "stop"),
     statusPath: join(dir, "status"),
+    feedbackDir: join(dir, "feedback"),
     watchCommand: "echo hello",
     piCommand: "echo [fake-agent-run]",
     intervalSeconds: 15,
@@ -20,6 +21,7 @@ async function makeScript(overrides: Partial<WatcherScriptOptions> = {}) {
     ...overrides,
   };
   const scriptPath = join(dir, "watch.sh");
+  await mkdir(options.feedbackDir);
   await writeFile(scriptPath, buildWatcherScript(options), { encoding: "utf8", mode: 0o700 });
   return { dir, options, scriptPath };
 }
@@ -32,6 +34,7 @@ describe("buildWatcherScript", () => {
       logPath: "/d/l",
       stopPath: "/d/s",
       statusPath: "/d/st",
+      feedbackDir: "/d/feedback",
       watchCommand: "true",
       piCommand: "true",
       intervalSeconds: 15,
@@ -52,6 +55,8 @@ describe("buildWatcherScript", () => {
     const log = await readFile(options.logPath, "utf8");
     expect(log).toContain("change detected iteration 1");
     expect(log).toContain("[fake-agent-run]");
+    const feedback = await readFile(join(options.feedbackDir, "000001.md"), "utf8");
+    expect(feedback).toContain("[fake-agent-run]");
     const status = await readFile(options.statusPath, "utf8");
     expect(status.trim()).toBe("max iterations reached");
   });
@@ -65,5 +70,19 @@ describe("buildWatcherScript", () => {
     expect(status.trim()).toBe("stopped");
     const log = await readFile(options.logPath, "utf8");
     expect(log).not.toContain("change detected");
+  });
+});
+
+describe("defaultWatchCommand", () => {
+  test("uses GitHub PR status for GitHub remotes", () => {
+    expect(defaultWatchCommand("12", "git@github.com:org/repo.git")).toContain("gh pr view '12'");
+  });
+
+  test("falls back to SourceHut builds for SourceHut remotes", () => {
+    expect(defaultWatchCommand(undefined, "git@git.sr.ht:~user/repo")).toBe("hut builds list --count 10");
+  });
+
+  test("requires an explicit command for unsupported forges", () => {
+    expect(defaultWatchCommand(undefined, "https://example.com/repo.git")).toBeUndefined();
   });
 });

@@ -225,7 +225,7 @@ The TUI is tabbed, has Nerd Font status icons, supports option descriptions/prev
 watch_agent(action=start, pr="123", goal="Keep this PR moving toward approval", loop="Watch for review comments, requested changes, and failed checks; respond only when useful")
 ```
 
-It accepts either legacy `task` or Claude Code-style `goal` + `loop`. It writes logs under `.pi/watchers/`, appears in the shared task widget, and can be stopped with `/watcher-stop [name]` or `watch_agent(action=stop, name="...")`.
+It accepts either legacy `task` or Claude Code-style `goal` + `loop`. Each detected change is durably queued, fed into the parent session, and wakes the parent model automatically. Opening or updating a draft/non-draft PR starts a watcher without another confirmation. GitHub watches PR/check status, SourceHut falls back to forge-native builds, and unsupported forges require an explicit `watchCommand`. Watchers write logs under `.pi/watchers/`, appear in the shared task widget, and can be stopped with `/watcher-stop [name]` or `watch_agent(action=stop, name="...")`.
 
 ## Plan mode behavior
 

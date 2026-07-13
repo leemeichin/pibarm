@@ -14,7 +14,7 @@ Use this skill for complex work that benefits from explicit roles.
 - Executor: implements approved changes, ideally in an isolated git worktree, runs checks, summarizes modified files.
 - Subagent: isolated research, verification, comparison, or implementation via `run_subagent`, `run_subagents`, or `run_worktree_agent`.
 - Todo tracker: use `todo_list` for prompts with multiple requested tasks; keep it short and mark items done as work completes. Todos and delegated agents appear together as horizontal pills in the shared task widget.
-- Watcher: use `watch_agent` when the user wants a sibling task to monitor a PR, review comments, checks, or external state while the parent Pi session continues. Prefer Claude Code-style `goal` + `loop` fields; `task` remains accepted for simple cases.
+- Watcher: use `watch_agent` when the user wants a sibling task to monitor a PR, review comments, checks, or external state while the parent Pi session continues. Watcher changes wake the parent model automatically. Start one without asking after opening or updating any draft/non-draft PR. Prefer Claude Code-style `goal` + `loop` fields; `task` remains accepted for simple cases.
 - Matrix: use `matrix_*` tools when the user wants visible WezTerm panes/tabs/splits controlled by the parent Pi.
 
 ## Commands

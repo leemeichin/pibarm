@@ -23,14 +23,14 @@ Reasoning: the [[web client]] already implements the whole surface against the p
 
 ## What each platform adds over the bare web client
 
-| Integration | Windows | Linux |
-| --- | --- | --- |
-| Notifications + actions | WinRT toast notifications with buttons/inline reply | XDG desktop notifications (actions where the notifier supports them) |
-| Glanceable state | system tray icon + flyout (menu bar extra equivalent) | tray via StatusNotifierItem where available |
-| Badge counts | taskbar overlay badge | Unity/dock APIs where present; tray fallback |
-| Keychain | Windows Credential Manager (via keyring layer) | libsecret/Secret Service |
-| URI scheme | `pibarm://` registration | `.desktop` handler |
-| Host lifecycle | host as a user service (Task Scheduler / service wrapper); note: pi/pibarmd on Windows likely means **WSL2 first**, native later | systemd user unit (already an M1 seed) |
+| Integration             | Windows                                                                                                                          | Linux                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Notifications + actions | WinRT toast notifications with buttons/inline reply                                                                              | XDG desktop notifications (actions where the notifier supports them) |
+| Glanceable state        | system tray icon + flyout (menu bar extra equivalent)                                                                            | tray via StatusNotifierItem where available                          |
+| Badge counts            | taskbar overlay badge                                                                                                            | Unity/dock APIs where present; tray fallback                         |
+| Keychain                | Windows Credential Manager (via keyring layer)                                                                                   | libsecret/Secret Service                                             |
+| URI scheme              | `pibarm://` registration                                                                                                         | `.desktop` handler                                                   |
+| Host lifecycle          | host as a user service (Task Scheduler / service wrapper); note: pi/pibarmd on Windows likely means **WSL2 first**, native later | systemd user unit (already an M1 seed)                               |
 
 The WSL2 caveat is the honest one: the runtime host shells out to git, pi, `gh`/`hut`, and worktrees all day; certifying that on native Windows is its own project. First Windows target: app runs native, host runs in WSL2, connected over localhost — which the protocol already supports by design.
 

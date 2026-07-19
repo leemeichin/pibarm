@@ -59,16 +59,16 @@ Every one of these is currently welded to a terminal. The Matrix depends on a sp
 - **A general-purpose terminal emulator.** Desktop and web render agent sessions natively; they do not aim to replace WezTerm/iTerm for general shell use. An embedded terminal view exists only where a task needs one (inline shell, interactive REPLs).
 - **Mobile clients.** The protocol should not preclude them; nothing in this cycle builds them.
 - **Replacing pi.** pibarm remains a layer over pi. The runtime host embeds and orchestrates pi sessions; it does not fork the agent core.
-- **Forge hosting features** (repo browsing, wikis, releases). Deep integration targets the *work loop*: changes, reviews, CI, tickets.
+- **Forge hosting features** (repo browsing, wikis, releases). Deep integration targets the _work loop_: changes, reviews, CI, tickets.
 
 ## Users and jobs
 
-| User | Job to be done |
-| --- | --- |
-| The existing pibarm terminal user | Step away from the terminal without abandoning sessions; answer plan questions and approve work from wherever they are. |
-| The multi-agent operator | Run 3–10 concurrent agents across repos and actually see them — status, output, blockers — without a pane-management tax. |
-| The reviewer | Treat incoming PRs/patches across GitHub and SourceHut as one inbox; review with agent assistance; post inline findings without a browser round-trip. |
-| The non-GitHub developer | Get the same depth of integration on SourceHut or a Forgejo instance as GitHub users get everywhere else. |
+| User                              | Job to be done                                                                                                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The existing pibarm terminal user | Step away from the terminal without abandoning sessions; answer plan questions and approve work from wherever they are.                               |
+| The multi-agent operator          | Run 3–10 concurrent agents across repos and actually see them — status, output, blockers — without a pane-management tax.                             |
+| The reviewer                      | Treat incoming PRs/patches across GitHub and SourceHut as one inbox; review with agent assistance; post inline findings without a browser round-trip. |
+| The non-GitHub developer          | Get the same depth of integration on SourceHut or a Forgejo instance as GitHub users get everywhere else.                                             |
 
 ## Product principles
 
@@ -165,18 +165,18 @@ No native app this cycle, but the architecture must not be macOS-shaped. Decisio
 
 ## Platform requirements
 
-| Surface | Baseline |
-| --- | --- |
-| Runtime host | macOS and Linux, bun runtime, no root, no always-on network exposure by default |
-| Web client | Evergreen Chromium/Firefox/Safari; usable at tablet width; no build-time coupling to host version (host serves matching client) |
-| macOS app | macOS 14+, Apple silicon first, notarised, Sparkle or MAS-out-of-scope decision recorded in [[macos app]] |
-| CLI | Unchanged pi + pibarm package; host-attach optional, never required |
+| Surface      | Baseline                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime host | macOS and Linux, bun runtime, no root, no always-on network exposure by default                                                 |
+| Web client   | Evergreen Chromium/Firefox/Safari; usable at tablet width; no build-time coupling to host version (host serves matching client) |
+| macOS app    | macOS 14+, Apple silicon first, notarised, Sparkle or MAS-out-of-scope decision recorded in [[macos app]]                       |
+| CLI          | Unchanged pi + pibarm package; host-attach optional, never required                                                             |
 
 ## Success metrics
 
 - A session started in the CLI can be answered, approved, and completed entirely from web and from macOS — demonstrated across all P0 features (parity checklist in [[parity matrix]] is the acceptance artifact).
 - Zero WezTerm dependency for multiplexing on web/desktop; CLI Matrix behaviour unchanged.
-- A full review (open → inline comments → submit) completed against GitHub *and* SourceHut without opening the forge's website.
+- A full review (open → inline comments → submit) completed against GitHub _and_ SourceHut without opening the forge's website.
 - Median time-to-answer for a waiting elicitation question drops from "whenever I next look at the terminal" to under a minute via notification actions (instrument locally; no telemetry leaves the machine — measurement is a local stat, opt-in).
 - Existing extension test suite passes against the host-embedded session path.
 
@@ -194,7 +194,7 @@ Stage 3 (GitHub issues) will be cut from [[roadmap and issue seeds]] once the de
 
 - **pi embedding surface.** The design assumes pi can be driven headlessly with full fidelity (streaming events, tool-call interception, mode control). `pi -p` exists; the RPC surface needs validation early — this is the M1 spike. Mitigation: fall back to pty-wrapping pi with a structured sidecar journal, at the cost of uglier event extraction.
 - **Two rendering stacks (native macOS + web)** risk drift. Mitigation: parity is enforced at the protocol layer (capabilities are runtime features, clients only render), plus the [[parity matrix]] as a living acceptance sheet.
-- **SourceHut's email-driven review** does not map 1:1 onto a PR-shaped UI. Mitigation: the adapter models *review threads* generically; the design doc treats patchsets as first-class rather than fake PRs.
+- **SourceHut's email-driven review** does not map 1:1 onto a PR-shaped UI. Mitigation: the adapter models _review threads_ generically; the design doc treats patchsets as first-class rather than fake PRs.
 - **Security surface grows** the moment a host accepts non-local clients. Mitigation: [[security, permissions and notifications]] — token-gated host, localhost-only default, user-owned transport (SSH/tailnet) rather than pibarm-managed TLS.
 - **Scope gravity.** Web + native + three forges is a lot. The P0/P1/P2 split above is the contract; anything not marked P0 is cuttable from a milestone without renegotiating the PRD.
 

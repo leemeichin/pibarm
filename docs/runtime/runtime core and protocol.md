@@ -48,7 +48,13 @@ Append-only JSONL per session under `~/.pi/pibarm/sessions/<id>/journal.jsonl`, 
 Event envelope:
 
 ```json
-{ "seq": 412, "ts": "2026-07-19T17:03:11Z", "kind": "tool_result", "agent": "root", "data": { "tool": "summarize_worktree_diff", "bounded": true, "rows": ["…"] } }
+{
+  "seq": 412,
+  "ts": "2026-07-19T17:03:11Z",
+  "kind": "tool_result",
+  "agent": "root",
+  "data": { "tool": "summarize_worktree_diff", "bounded": true, "rows": ["…"] }
+}
 ```
 
 Kinds (initial set): `session_meta`, `user_input`, `assistant_delta`, `assistant_message`, `tool_call`, `tool_result`, `question_open`, `question_answered`, `plan_captured`, `plan_state`, `mode_changed`, `agent_spawned`, `agent_state`, `watcher_event`, `forge_event`, `task_state`, `notice`. Payloads over a size threshold are stored as sidecar blobs and referenced, keeping the journal tailable (bounded-payload invariant).
@@ -61,17 +67,17 @@ JSON-RPC 2.0. Transport: unix domain socket locally, WebSocket for anything else
 
 Method families (v0):
 
-| Family | Examples |
-| --- | --- |
-| `host.*` | `hello` (auth + capability handshake), `status`, `settings.get/set` |
-| `session.*` | `list`, `create`, `attach`, `input`, `interrupt`, `close`, `journal.read` |
-| `plan.*` | `show`, `approve`, `refine`, `execute` (`target: active\|worktree`) |
-| `question.*` | `list`, `answer` — typed answers matching `elicit_plan_questions` schemas |
-| `agent.*` | `spawn`, `list`, `capture`, `join`, `kill` ([[sessions and multiplexing]]) |
-| `worktree.*` | `list`, `create`, `diff`, `remove` |
-| `watcher.*` | `start`, `list`, `stop`, `events.read` |
-| `forge.*` | `status`, `inbox`, `prs`, `ci`, `tickets`, `review.*` ([[forge integration]]) |
-| `task.*` | `list` — the task-widget model |
+| Family       | Examples                                                                      |
+| ------------ | ----------------------------------------------------------------------------- |
+| `host.*`     | `hello` (auth + capability handshake), `status`, `settings.get/set`           |
+| `session.*`  | `list`, `create`, `attach`, `input`, `interrupt`, `close`, `journal.read`     |
+| `plan.*`     | `show`, `approve`, `refine`, `execute` (`target: active\|worktree`)           |
+| `question.*` | `list`, `answer` — typed answers matching `elicit_plan_questions` schemas     |
+| `agent.*`    | `spawn`, `list`, `capture`, `join`, `kill` ([[sessions and multiplexing]])    |
+| `worktree.*` | `list`, `create`, `diff`, `remove`                                            |
+| `watcher.*`  | `start`, `list`, `stop`, `events.read`                                        |
+| `forge.*`    | `status`, `inbox`, `prs`, `ci`, `tickets`, `review.*` ([[forge integration]]) |
+| `task.*`     | `list` — the task-widget model                                                |
 
 Capability handshake at `host.hello` returns semver'd feature flags (`matrix`, `watchers`, `forge.github`, `forge.sourcehut.reviews`, `agit`, …) — the mechanism behind the cross-cutting capability-negotiation invariant in [[pibarm runtime design]].
 

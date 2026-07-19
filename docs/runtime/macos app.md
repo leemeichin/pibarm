@@ -24,15 +24,15 @@ The native desktop surface from [[pibarm runtime PRD]] F3, decision D9 in [[piba
 
 ## Native affordances (the reason this app exists)
 
-| Affordance | Behaviour |
-| --- | --- |
-| Notifications | `UNUserNotificationCenter` with **actions**: confirm-type questions get Approve/Decline buttons; free-text gets inline reply; watcher events get Open Session. Answering from the notification round-trips `question.answer` without ever opening the app window. This is the PRD's time-to-answer metric, made real. |
-| Dock badge | count of waiting questions across sessions |
-| Menu bar extra | glanceable runtime state: sessions running, questions waiting, review inbox count, worst CI state — the StatusLine, hoisted into the macOS status bar. Popover with quick actions. |
-| Focus modes | respects system Focus; quiet-hours mapping to notify cooldowns ([[security, permissions and notifications]]) |
-| Finder/Files | reveal worktrees, drag a diff out as a patch file |
-| URI scheme | `pibarm://session/<id>…` for Obsidian deep links (PRD F9) and notification click-through |
-| Appearance | automatic light/dark using the pibarm palette mapped to native semantics — cream/navy, orange-dot accent, the pea/sky/mustard/tomato/plum status set. Terminal-native views use the mono glyph set `○ ● ✓ ! ±` on `--surface-code`, same as the ds's `variant="term"` components. |
+| Affordance     | Behaviour                                                                                                                                                                                                                                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notifications  | `UNUserNotificationCenter` with **actions**: confirm-type questions get Approve/Decline buttons; free-text gets inline reply; watcher events get Open Session. Answering from the notification round-trips `question.answer` without ever opening the app window. This is the PRD's time-to-answer metric, made real. |
+| Dock badge     | count of waiting questions across sessions                                                                                                                                                                                                                                                                            |
+| Menu bar extra | glanceable runtime state: sessions running, questions waiting, review inbox count, worst CI state — the StatusLine, hoisted into the macOS status bar. Popover with quick actions.                                                                                                                                    |
+| Focus modes    | respects system Focus; quiet-hours mapping to notify cooldowns ([[security, permissions and notifications]])                                                                                                                                                                                                          |
+| Finder/Files   | reveal worktrees, drag a diff out as a patch file                                                                                                                                                                                                                                                                     |
+| URI scheme     | `pibarm://session/<id>…` for Obsidian deep links (PRD F9) and notification click-through                                                                                                                                                                                                                              |
+| Appearance     | automatic light/dark using the pibarm palette mapped to native semantics — cream/navy, orange-dot accent, the pea/sky/mustard/tomato/plum status set. Terminal-native views use the mono glyph set `○ ● ✓ ! ±` on `--surface-code`, same as the ds's `variant="term"` components.                                     |
 
 ## Main views
 

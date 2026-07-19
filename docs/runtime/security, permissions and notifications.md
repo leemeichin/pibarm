@@ -34,7 +34,7 @@ The safety invariant from the hub note, concretely:
 - **Permission gate**: `permission-gate.ts`'s intent (confirm risky/out-of-project actions) is redesigned as a host policy hook on `tool_call` events — the gate can raise a `question_open` that any attached client (or an actionable notification) answers. Its current off-by-default status carries over until the heuristic is better; the plumbing ships anyway because watchers and multi-client answering need it.
 - **Worktree isolation** paths (`.pi/wt/`) are validated host-side; `worktree.remove` outside that root is refused regardless of client.
 - **Agent toolsets by role** (scout/planner read-focused) are applied at spawn by the host ([[sessions and multiplexing]]).
-- **Multi-client writes**: input focus is advisory, but *destructive verbs* (plan approve, worktree remove, agent kill, review submit) are logged to the journal with the client identity that issued them, so "who approved this" always has an answer.
+- **Multi-client writes**: input focus is advisory, but _destructive verbs_ (plan approve, worktree remove, agent kill, review submit) are logged to the journal with the client identity that issued them, so "who approved this" always has an answer.
 
 ## Credentials
 
@@ -47,12 +47,12 @@ The safety invariant from the hub note, concretely:
 
 One host-side notify service ([[runtime core and protocol]]) fans out to:
 
-| Channel | Mechanism | Actions |
-| --- | --- | --- |
-| CLI | today's `waiting-notify.ts` escapes (Kitty/iTerm2/terminal-notifier) | none (as today) |
-| Web | Web Notifications, badge fallback ([[web client]]) | click-through deep link |
-| macOS | UNUserNotificationCenter ([[macos app]]) | approve/decline, inline reply, open |
-| Windows/Linux (later) | toast/XDG ([[windows and linux]]) | per-platform |
+| Channel               | Mechanism                                                            | Actions                             |
+| --------------------- | -------------------------------------------------------------------- | ----------------------------------- |
+| CLI                   | today's `waiting-notify.ts` escapes (Kitty/iTerm2/terminal-notifier) | none (as today)                     |
+| Web                   | Web Notifications, badge fallback ([[web client]])                   | click-through deep link             |
+| macOS                 | UNUserNotificationCenter ([[macos app]])                             | approve/decline, inline reply, open |
+| Windows/Linux (later) | toast/XDG ([[windows and linux]])                                    | per-platform                        |
 
 Policy lives host-side so every channel agrees: event classes (waiting question, watcher event, review-inbox delta, usage limit), per-class enable, cooldown (successor of `PI_NOTIFY_COOLDOWN_SECONDS`), quiet hours, and **payload privacy** — a "generic mode" that omits question/repo content from notification text (successor of `PI_NOTIFY_INCLUDE_QUESTION`, default off for lock-screen-visible channels).
 

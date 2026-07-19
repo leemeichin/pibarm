@@ -37,7 +37,8 @@ This collapses four spawning mechanisms (`matrix_spawn`, `run_subagent`, `run_su
   "worktree": null,
   "visibility": "visible",
   "state": "running",
-  "started": "…", "ended": null
+  "started": "…",
+  "ended": null
 }
 ```
 
@@ -56,13 +57,13 @@ Today's WezTerm ergonomics become host policy so every surface enforces the same
 
 ## Lifecycle verbs
 
-| Verb | Semantics (unchanged from today where they exist) |
-| --- | --- |
-| `agent.spawn` | create child; role/toolset/worktree/visibility; returns id immediately |
-| `agent.list` | live registry — no pane scraping, so `-orphans` cleanup becomes host GC of dead drivers |
-| `agent.capture` | read tail of the child journal (bounded) |
-| `agent.join` | await completion of one/all; returns final outputs; marks panes collapsible |
-| `agent.kill` | terminate child; parent unaffected |
+| Verb            | Semantics (unchanged from today where they exist)                                       |
+| --------------- | --------------------------------------------------------------------------------------- |
+| `agent.spawn`   | create child; role/toolset/worktree/visibility; returns id immediately                  |
+| `agent.list`    | live registry — no pane scraping, so `-orphans` cleanup becomes host GC of dead drivers |
+| `agent.capture` | read tail of the child journal (bounded)                                                |
+| `agent.join`    | await completion of one/all; returns final outputs; marks panes collapsible             |
+| `agent.kill`    | terminate child; parent unaffected                                                      |
 
 Join folds results into the parent as `tool_result`-style journal events, so the parent model wakes with the same context it gets today from `matrix_join`.
 

@@ -45,15 +45,15 @@ interface ForgeAdapter {
 
 Capability flags (advertised through the host handshake, so clients hide what a forge can't do):
 
-| Capability | GitHub | SourceHut | Forgejo/Gitea (AGit) |
-| --- | --- | --- | --- |
-| changes list/detail | yes (PRs) | yes (patchsets via lists.sr.ht) | yes (PRs) |
-| inline diff comments | yes | approximated (quoted-line email reply) | yes |
-| review verdicts | approve/request-changes | reply conventions (`Reviewed-by:` etc.) | approve/request-changes |
-| CI + logs | checks API | builds.sr.ht | Actions-compatible API |
-| tickets | issues | todo.sr.ht | issues |
-| publish | PR from branch | `git send-email` patchset | **AGit push** or classic PR |
-| watch events | webhooks n/a locally → poll; watcher cadence | poll | poll |
+| Capability           | GitHub                                       | SourceHut                               | Forgejo/Gitea (AGit)        |
+| -------------------- | -------------------------------------------- | --------------------------------------- | --------------------------- |
+| changes list/detail  | yes (PRs)                                    | yes (patchsets via lists.sr.ht)         | yes (PRs)                   |
+| inline diff comments | yes                                          | approximated (quoted-line email reply)  | yes                         |
+| review verdicts      | approve/request-changes                      | reply conventions (`Reviewed-by:` etc.) | approve/request-changes     |
+| CI + logs            | checks API                                   | builds.sr.ht                            | Actions-compatible API      |
+| tickets              | issues                                       | todo.sr.ht                              | issues                      |
+| publish              | PR from branch                               | `git send-email` patchset               | **AGit push** or classic PR |
+| watch events         | webhooks n/a locally → poll; watcher cadence | poll                                    | poll                        |
 
 ## The review-threads model (D7)
 
@@ -89,7 +89,7 @@ AGit is publish-side: `git push origin HEAD:refs/for/<target> -o topic=<name> -o
 
 ## Auth (D6, G5)
 
-Priority order per adapter: existing CLI auth (`gh`, `hut`) when the binary is present and authenticated → per-forge token from the OS keychain (macOS Keychain; libsecret on Linux) entered once through a client → unauthenticated read-only where the forge allows. Tokens never touch repo config or the journal; the journal records *that* a forge call happened, not its credentials. Details in [[security, permissions and notifications]].
+Priority order per adapter: existing CLI auth (`gh`, `hut`) when the binary is present and authenticated → per-forge token from the OS keychain (macOS Keychain; libsecret on Linux) entered once through a client → unauthenticated read-only where the forge allows. Tokens never touch repo config or the journal; the journal records _that_ a forge call happened, not its credentials. Details in [[security, permissions and notifications]].
 
 ## Issue seeds (M4–M5)
 

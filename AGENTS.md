@@ -34,7 +34,7 @@ This repo manages local pi skills, extensions, prompts, and project config. Trea
 - Keep user-facing commands concise and documented in `README.md`.
 - When adding tools or commands, update relevant skills and preset examples.
 - Prefer `gh`/`hut` wrapper extensions for forge operations; never add API tokens to repo config.
-- For Ruby and TypeScript work, load the matching skill and run the smallest relevant check.
+- For Python, Ruby/Rails, and TypeScript/React/Vue/Vite work, load the matching skill and run the smallest relevant check.
 
 ## Validation
 

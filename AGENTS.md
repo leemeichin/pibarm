@@ -1,6 +1,6 @@
 # Agent Instructions for pibarm
 
-This repo manages local pi skills, extensions, prompts, and project config. Treat it as infrastructure for the user's coding-agent environment.
+This repo manages local pi skills, extensions, prompts, and project config. Treat it as infrastructure for the user's coding-agent environment; prioritize safety, reversibility, and explicit approval.
 
 ## Default workflow
 
@@ -36,6 +36,12 @@ This repo manages local pi skills, extensions, prompts, and project config. Trea
 - Prefer `gh`/`hut` wrapper extensions for forge operations; never add API tokens to repo config.
 - For Python, Ruby/Rails, and TypeScript/React/Vue/Vite work, load the matching skill and run the smallest relevant check.
 
+## Command execution
+
+- Prefer direct shell commands and standard Unix tools over embedded Python for filesystem, text, Git, and validation work.
+- Make multi-step or mutating shell commands fail fast with `set -euo pipefail`; do not hide unexpected errors.
+- Use Python only when shell would be brittle or unsafe, and keep snippets small and focused.
+
 ## Validation
 
 Before committing when practical:
@@ -54,6 +60,7 @@ bun run test
 
 ## Security
 
+- Do not introduce PII into committed files, generated artifacts, examples, logs, or summaries. Use obvious placeholders for data authored by the agent and inspect staged file diffs before committing. Preserve tool-managed repository metadata, including the configured Git author and committer; never replace or rewrite attribution for privacy sanitization.
 - Do not commit `.pi/mcporter.json`, `.pi/agent-presets.json`, `.env*`, logs, session dumps, or generated MCP traffic containing secrets.
 - Treat `mcporter list`, MCP server configs, and imported editor configs as potentially sensitive because transports may include env vars or command-line tokens.
 - Prefer environment variable placeholders in examples, never literal credentials.

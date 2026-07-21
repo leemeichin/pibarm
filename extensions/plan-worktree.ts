@@ -4,6 +4,7 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import { Editor, type EditorTheme, Key, matchesKey, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { join } from "node:path";
+import { registerChildAgentRunner } from "../lib/agent-runner.js";
 import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 import { clipHead, clipTail } from "../lib/tool-output.js";
@@ -659,10 +660,6 @@ function slugify(input: string): string {
   return slug || `task-${Date.now()}`;
 }
 
-function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, `'"'"'`)}'`;
-}
-
 function modelLabel(model: string | undefined) {
   return (
     model
@@ -803,6 +800,7 @@ async function summarizeWorktree(pi: ExtensionAPI, path: string, statOnly = fals
 type PlanStatus = "captured" | "refining" | "approved";
 
 export default function planWorktree(pi: ExtensionAPI) {
+  const runner = registerChildAgentRunner(pi);
   let planMode = false;
   let toolsBeforePlan: string[] | undefined;
   let lastPlan = "";
@@ -1164,7 +1162,8 @@ export default function planWorktree(pi: ExtensionAPI) {
   pi.registerTool({
     name: "run_worktree_agent",
     label: "Run Worktree Agent",
-    description: "Create an isolated git worktree and run a non-interactive pi subagent inside it.",
+    description:
+      "Create an isolated git worktree and run a pi subagent inside it using the configured automatic tmux/headless renderer.",
     parameters: WORKTREE_AGENT_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");
@@ -1177,15 +1176,24 @@ export default function planWorktree(pi: ExtensionAPI) {
         session: modelLabel(modelSelection.model),
       });
       updateTaskWidget(ctx);
-      const piArgs = ["-p"];
-      if (modelSelection.model) piArgs.push("--model", modelSelection.model);
-      piArgs.push(params.task);
-      const command = `cd ${shellQuote(wt.path)} && pi ${piArgs.map(shellQuote).join(" ")}`;
-      const result = await pi.exec("bash", ["-lc", command], { signal, timeout: params.timeoutMs ?? 600000 });
+      const result = await runner.run(
+        {
+          id: taskId,
+          prompt: params.task,
+          kind: "worktree",
+          cwd: wt.path,
+          stateCwd: ctx.cwd,
+          model: modelSelection.model,
+          timeoutMs: params.timeoutMs ?? 600000,
+          signal,
+        },
+        ctx,
+      );
       const failed = result.code !== 0;
       finishAgentTask(taskId, failed ? "failed" : "done", failed ? `exit ${result.code}` : undefined);
       updateTaskWidget(ctx);
-      const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
+      const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
+      const text = [output, result.attachCommand && `tmux: ${result.attachCommand}`].filter(Boolean).join("\n\n");
       if (failed) {
         throw new Error(`Worktree subagent failed (exit ${result.code}).${text ? `\n\n${clipTail(text)}` : ""}`);
       }

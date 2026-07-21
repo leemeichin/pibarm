@@ -1,5 +1,5 @@
 import React from "react";
-import ButtyDemo from "./Butty.jsx";
+import AgentPanesDemo from "./AgentPanes.jsx";
 import PiSession from "./PiSession.jsx";
 
 const DEMOS = [
@@ -11,11 +11,11 @@ const DEMOS = [
     note: "/plan → questions → /execute-plan worktree",
   },
   {
-    id: "butty",
+    id: "agents",
     number: "02",
-    label: "Butty",
-    title: "Butty issue triage",
-    note: "triage → plan → worktree → watch",
+    label: "Agent panes",
+    title: "Automatic tmux agents",
+    note: "delegate → tile → capture → watch",
   },
   {
     id: "obsidian",
@@ -114,13 +114,13 @@ export default function Demos() {
             </div>
           </div>
         )}
-        {active === "butty" && (
-          <div className="demo-butty">
-            <div className="demo-butty__intro">
-              <p className="demo-note">Spawn scout, planner and worker agents beside the parent pi in real WezTerm panes. Scout maps the scope, planner orders dependencies, and workers can use isolated worktrees.</p>
-              <p className="demo-butty__callout"><b>Visible and parent-controlled.</b> Watch each agent live, capture its output, and join it when you need the result—without giving up the parent session.</p>
+        {active === "agents" && (
+          <div className="demo-agent-panes">
+            <div className="demo-agent-panes__intro">
+              <p className="demo-note">Use the standard subagent and worktree tools. When tmux is available, pibarm automatically tiles their live output in a managed window; otherwise the same calls stay headless.</p>
+              <p className="demo-agent-panes__callout"><b>Visible without a terminal lock-in.</b> Any tmux client can attach, while the parent still receives the captured result and keeps control.</p>
             </div>
-            <ButtyDemo />
+            <AgentPanesDemo />
           </div>
         )}
         {demo.lines && <Snapshot demo={demo} />}

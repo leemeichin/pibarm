@@ -12,7 +12,7 @@ This repo manages local pi skills, extensions, prompts, and project config. Trea
   - `create_git_worktree`
 - Do not modify the active checkout when the user asks for worktree isolation.
 - After worktree execution, summarize with `summarize_worktree_diff` before suggesting merge/cleanup.
-- Specialized custom tools start deferred; use `search_tools` to enable the relevant forge, MCP, delegation, worktree, watcher, repository, or Butty group.
+- Specialized custom tools start deferred; use `search_tools` to enable the relevant forge, MCP, delegation, worktree, watcher, or repository group.
 
 ## Repo conventions
 

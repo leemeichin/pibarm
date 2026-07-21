@@ -2,7 +2,7 @@ node_modules/
 .pi/npm/
 .pi/git/
 .pi/wt/
-.pi/butty/
+.pi/agents/
 .pi/evals/
 .pi/watchers
 *.log

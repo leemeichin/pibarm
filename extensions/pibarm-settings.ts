@@ -34,7 +34,10 @@ export const PIBARM_SETTING_IDS = [
   "obsidian.autoSync",
   "obsidian.debounceMs",
   "obsidian.includeAttachments",
-  "butty.autoSpawn",
+  "agentPanes.enabled",
+  "agentPanes.include",
+  "agentPanes.outsideTmux",
+  "agentPanes.layout",
 ] as const;
 
 type PibarmSettingId = (typeof PIBARM_SETTING_IDS)[number];
@@ -49,7 +52,10 @@ const SETTING_PATHS: Record<PibarmSettingId, readonly string[]> = {
   "obsidian.autoSync": ["obsidian", "autoSync"],
   "obsidian.debounceMs": ["obsidian", "debounceMs"],
   "obsidian.includeAttachments": ["obsidian", "includeAttachments"],
-  "butty.autoSpawn": ["butty", "autoSpawn"],
+  "agentPanes.enabled": ["agentPanes", "enabled"],
+  "agentPanes.include": ["agentPanes", "include"],
+  "agentPanes.outsideTmux": ["agentPanes", "outsideTmux"],
+  "agentPanes.layout": ["agentPanes", "layout"],
 };
 
 export function commitTrailerInstruction(version = PIBARM_VERSION): string {
@@ -158,11 +164,36 @@ function buildSettingItems(
       values: ["on", "off"],
     },
     {
-      id: "butty.autoSpawn",
-      label: "Butty auto-spawn",
-      description: "Route standard isolated subagents into visible Butty panes",
-      currentValue: booleanValue(settings.butty?.autoSpawn === true),
-      values: ["on", "off"],
+      id: "agentPanes.enabled",
+      label: "Agent panes",
+      description: "Use tmux panes automatically, always, or never",
+      currentValue:
+        settings.agentPanes?.enabled === true ? "on" : settings.agentPanes?.enabled === false ? "off" : "auto",
+      values: ["auto", "on", "off"],
+    },
+    {
+      id: "agentPanes.include",
+      label: "Pane agent types",
+      description: "Choose which standard delegation tools render in tmux",
+      currentValue: (() => {
+        const include = settings.agentPanes?.include ?? ["subagent", "worktree"];
+        return include.length === 2 ? "both" : (include[0] ?? "none");
+      })(),
+      values: ["both", "subagent", "worktree", "none"],
+    },
+    {
+      id: "agentPanes.outsideTmux",
+      label: "Outside tmux",
+      description: "Create a detached session or keep agents headless",
+      currentValue: settings.agentPanes?.outsideTmux === "headless" ? "headless" : "detached",
+      values: ["detached", "headless"],
+    },
+    {
+      id: "agentPanes.layout",
+      label: "Agent pane layout",
+      description: "Layout used for concurrent managed agents",
+      currentValue: "tiled",
+      values: ["tiled"],
     },
     {
       id: "save",
@@ -181,7 +212,6 @@ function settingUpdate(id: PibarmSettingId, value: string): PibarmSettingUpdate 
     "codeIntel.autoInstall",
     "obsidian.autoSync",
     "obsidian.includeAttachments",
-    "butty.autoSpawn",
   ]);
   const numberIds = new Set<PibarmSettingId>(["codeIntel.timeoutMs", "obsidian.debounceMs"]);
   return {
@@ -192,7 +222,19 @@ function settingUpdate(id: PibarmSettingId, value: string): PibarmSettingUpdate 
         ? Number(value)
         : id === "obsidian.vault" && value === "(not set)"
           ? ""
-          : value,
+          : id === "agentPanes.enabled"
+            ? value === "on"
+              ? true
+              : value === "off"
+                ? false
+                : "auto"
+            : id === "agentPanes.include"
+              ? value === "both"
+                ? ["subagent", "worktree"]
+                : value === "none"
+                  ? []
+                  : [value]
+              : value,
   };
 }
 

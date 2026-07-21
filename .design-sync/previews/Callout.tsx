@@ -9,8 +9,7 @@ export const Tones = () => (
       render as boxes.
     </Callout>
     <Callout tone="tip" title="Isolated branches">
-      Pass <code>worktree: true</code> on <code>butty_spawn</code> and the agent gets its own branch
-      and worktree for separate work.
+      <code>run_worktree_agent</code> creates a separate branch and uses the same automatic renderer.
     </Callout>
     <Callout tone="warning" title="Plan mode is read-only">
       <code>edit</code> and <code>write</code> are disabled and bash is restricted until you approve

@@ -44,9 +44,9 @@ describe("mergePibarmSettings", () => {
     expect(settings.obsidian?.autoSync).toBe(true);
   });
 
-  test("reads the Butty auto-spawn setting", () => {
-    const settings = mergePibarmSettings({ pibarm: { butty: { autoSpawn: true } } }, {}, false);
-    expect(settings.butty?.autoSpawn).toBe(true);
+  test("reads automatic agent-pane settings", () => {
+    const settings = mergePibarmSettings({ pibarm: { agentPanes: { enabled: "auto" } } }, {}, false);
+    expect(settings.agentPanes?.enabled).toBe("auto");
   });
 });
 
@@ -86,7 +86,10 @@ describe("pibarm settings editor", () => {
       "obsidian.autoSync",
       "obsidian.debounceMs",
       "obsidian.includeAttachments",
-      "butty.autoSpawn",
+      "agentPanes.enabled",
+      "agentPanes.include",
+      "agentPanes.outsideTmux",
+      "agentPanes.layout",
     ]);
   });
 

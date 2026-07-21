@@ -15,7 +15,7 @@ describe("lazy tool policy", () => {
         "search_tools",
         "repo_status",
         "forge_prs",
-        "butty_spawn",
+        "run_subagent",
         "code_intel",
         "third_party_tool",
       ]),
@@ -26,9 +26,7 @@ describe("lazy tool policy", () => {
     expect(names("review pull request checks")).toEqual(
       expect.arrayContaining(["forge_pr_status", "forge_ci_status", "watch_agent"]),
     );
-    expect(names("visible wezterm panes")).toEqual(
-      expect.arrayContaining(["butty_spawn", "butty_capture", "butty_join", "butty_kill"]),
-    );
+    expect(names("visible tmux panes")).toEqual(expect.arrayContaining(["run_subagent", "run_subagents"]));
     expect(names("call an MCP server tool")).toEqual(
       expect.arrayContaining(["mcporter_list", "mcporter_call", "mcporter_resource"]),
     );

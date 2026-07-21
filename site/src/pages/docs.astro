@@ -7,7 +7,7 @@ const sections = [
   { id: "start", label: "Quick start" },
   { id: "workflow", label: "Main workflow" },
   { id: "commands", label: "Commands" },
-  { id: "butty", label: "Butty" },
+  { id: "agents", label: "Agent panes" },
   { id: "notes", label: "Notifications" },
 ];
 
@@ -17,11 +17,11 @@ const workflowSnippet = `/plan <task>
   ↓  changes happen in .pi/wt/<name>, not your checkout
 /worktree-diff .pi/wt/<name>`;
 
-const buttySnippet = `/butty triage every open issue and plan the smallest safe fix
-/butty-join all
-# parent loops over unblocked plans
-butty_spawn → worker + worktree
-watch_agent → pull request review + CI`;
+const agentSnippet = `run_subagents → automatic tiled tmux window
+run_worktree_agent → isolated branch in the same window
+/agents            # list or capture logs
+/agents-attach     # focus or print tmux attach command
+/agents-kill all   # stop children, never the parent session`;
 
 const notifySnippet = `export PI_NOTIFY_COOLDOWN_SECONDS=60
 export PI_NOTIFY_INCLUDE_QUESTION=1`;
@@ -59,18 +59,18 @@ export PI_NOTIFY_INCLUDE_QUESTION=1`;
       <div class="docs-cardwrap">
         {COMMANDS.map((c) => (
           <CommandRow name={c.name} args={c.args || null}>
-            {c.tag === "wezterm" && <Badge slot="trailing" tone="accent">wezterm</Badge>}
+            {c.tag === "tmux" && <Badge slot="trailing" tone="accent">tmux</Badge>}
             {c.tag === "safe" && <Badge slot="trailing" tone="success">safe</Badge>}
             {c.desc}
           </CommandRow>
         ))}
       </div>
 
-      <h2 id="doc-butty" class="docs-h2">Butty</h2>
-      <p><code>butty.ts</code> is WezTerm-native orchestration for visible, parent-controlled agents. Up to three agents form a row below the full-width parent; a fourth requires confirmation and opens in a new window. Scout and planner use read-focused toolsets; worker uses normal tools.</p>
-      <CodeBlock language="bash" code={buttySnippet} />
+      <h2 id="doc-agents" class="docs-h2">Automatic agent panes</h2>
+      <p>The standard subagent and worktree tools use a shared runner. tmux renders live output in a managed tiled window when available; otherwise the same calls fall back headlessly. Outside tmux, pibarm creates a detached session and prints the attach command instead of controlling a terminal application.</p>
+      <CodeBlock language="bash" code={agentSnippet} />
       <div class="docs-spacer"></div>
-      <Callout tone="tip" title="Isolated branches">Pass <code>worktree: true</code> on <code>butty_spawn</code> and the agent gets its own branch and worktree for separate work.</Callout>
+      <Callout tone="tip" title="No second agent API">Models keep using <code>run_subagent</code>, <code>run_subagents</code>, and <code>run_worktree_agent</code>; configuration chooses only the renderer.</Callout>
 
       <h2 id="doc-notes" class="docs-h2">Notifications</h2>
       <p><code>waiting-notify.ts</code> sends a local notification when a question is waiting — Kitty's escape, <code>terminal-notifier</code>, or an iTerm2-style fallback.</p>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Renders a `pi --mode json` event stream as a live human-readable transcript.
-// Used by Butty panes so agent reasoning, responses, and tool activity are
-// visible while the agent runs, instead of only a final answer at exit.
+// Used by managed tmux panes so agent reasoning, responses, and tool activity
+// are visible while the agent runs, instead of only a final answer at exit.
 import { createInterface } from "node:readline";
 
 let mode = "";

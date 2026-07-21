@@ -30,7 +30,7 @@ The SourceHut reading of the PRD's open question is baked into the M4 epic (flag
 ## Foundation checkpoint (before M1)
 
 - reproducible prompt/tool baseline and pinned/latest Pi compatibility checks
-- hard Butty rename and preset lifecycle correction
+- retirement of the separate pane API and terminal-emulator coupling
 - additive deferred tool loading and strict plan-mode policy
 - progressive Python, Ruby/Rails, and TypeScript/React/Vue/Vite skills
 - first post-checkpoint efficacy issue: `code_intel` from [[language intelligence]] with trusted installed servers, lazy lifecycle, and bounded fallback

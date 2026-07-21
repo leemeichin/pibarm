@@ -2,12 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { detectPrRefs, offerPrWatcher } from "../extensions/agent-presets.js";
 
 describe("preset example", () => {
-  test("offers the complete Butty lifecycle", async () => {
+  test("uses the standard delegation tools without a second pane API", async () => {
     const config = await Bun.file(new URL("../.pi/agent-presets.example.json", import.meta.url)).json();
     const tools = config.presets.executor.tools;
 
-    expect(tools).toContain("butty_join");
-    expect(tools).not.toContain("butty_send");
+    expect(tools).toEqual(expect.arrayContaining(["run_subagent", "run_subagents", "run_worktree_agent"]));
   });
 });
 

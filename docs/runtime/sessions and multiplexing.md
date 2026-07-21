@@ -12,17 +12,24 @@ hub: "[[pibarm runtime design]]"
 
 # sessions and multiplexing
 
-How the Butty stops being a WezTerm feature and becomes a runtime one ([[pibarm runtime design]] D5). Serves PRD F4, plus the agent rows of the [[parity matrix]].
+How the shared child-agent runner becomes a runtime service ([[pibarm runtime design]] D5). Serves PRD F4, plus the agent rows of the [[parity matrix]].
 
-## The generalisation
+## Current CLI baseline
 
-Today `butty.ts` spawns pi processes into WezTerm panes and tracks them loosely. In the runtime model:
+`lib/agent-runner.ts` already collapses `run_subagent`, `run_subagents`, and `run_worktree_agent` onto one execution path:
 
-- A **session** owns a tree of **agents**. The root agent is the interactive session; children are Butty agents, subagents (`run_subagent(s)`), worktree agents, and watchers' one-shot task runs.
+- The standard tool schemas stay unchanged; configuration chooses only the renderer.
+- tmux available and included by `pibarm.agentPanes` → a managed tiled window streams the agent's JSON event transcript.
+- tmux unavailable or disabled → the same call runs headlessly.
+- Inside tmux, pibarm adds a window to the current session. Outside tmux, it creates a detached session and prints the attach command. It never controls a terminal application.
+- Tool calls still wait, return bounded captured output, update task pills, and honor cancellation/timeouts.
+- Watchers remain background task pills.
+
+In the runtime model, the same child primitive moves behind the host:
+
+- A **session** owns a tree of **agents**. The root agent is the interactive session; children are subagents, worktree agents, and watchers' one-shot task runs.
 - Every agent is a host-managed pi driver with its own journal (child journals are linked from the parent's `agent_spawned` events).
-- **Rendering is the client's problem.** The CLI maps agents onto WezTerm panes as before; the web renders a pane grid of components; macOS renders native panes. Same tree, three renderers.
-
-This collapses four spawning mechanisms (`butty_spawn`, `run_subagent`, `run_subagents`, `run_worktree_agent`) onto one host primitive with different presets — the tools keep their names and schemas, but they become sugar over `_pibarm/agent/spawn`.
+- **Rendering is the client's problem.** The CLI maps visible agents onto tmux panes; the web renders a component grid; macOS renders native panes. Same tree, three renderers.
 
 ## Agent model
 
@@ -30,10 +37,9 @@ This collapses four spawning mechanisms (`butty_spawn`, `run_subagent`, `run_sub
 {
   "id": "a-7f2",
   "parent": "root",
-  "role": "scout",
+  "label": "scout",
   "task": "triage every open issue…",
   "model": "inherit",
-  "toolset": "read-only",
   "worktree": null,
   "visibility": "visible",
   "state": "running",
@@ -42,46 +48,44 @@ This collapses four spawning mechanisms (`butty_spawn`, `run_subagent`, `run_sub
 }
 ```
 
-- **Roles** keep today's semantics: `scout`/`planner` read-focused toolsets, `worker` normal tools. Toolsets are host policy (safety invariant), not client hints.
-- **`visibility`**: `visible` (a pane the user should see — Butty behaviour) vs `background` (subagent/watcher-run — task pill only). The old distinction between Butty agents and headless subagents becomes this one field; `butty.autoSpawn` maps to a default.
-- **`worktree`**: optional isolation, same `.pi/wt/` + `pibarm/<name>` branch scheme via the worktree service.
-- Agents remain **non-interactive mid-run** (today's rule): to redirect one, join it and spawn a successor. The protocol reserves an `agent.message` verb for the future but v0 does not implement it — parity first, new capability later.
+- **`visibility`** is renderer policy: visible agents get a pane; background agents get only a task pill.
+- **`worktree`** is optional isolation using the same `.pi/wt/` + `pibarm/<name>` scheme as the worktree service.
+- Agents remain **non-interactive mid-run**: redirecting one means cancelling it and starting a successor. The protocol can add an `agent.message` verb later without changing the v0 lifecycle.
 
 ## Pane policy
 
-Today's WezTerm ergonomics become host policy so every surface enforces the same shape (parity invariant):
-
-- Parent stays primary; up to **three concurrent visible agents** by default (`pibarm.butty.maxVisible`).
-- Requesting a fourth visible agent raises a `question_open` (confirm-type) — on approval the surplus agents go to an "overflow" group, which the CLI renders as a new window (as today), web renders as a second grid row/tab, macOS as a separate window.
-- Background agents are unlimited except by host concurrency settings.
+- Parent stays primary; tmux agents live in a dedicated managed window.
+- Concurrent standard delegation keeps the existing four-agent limit and uses tmux's tiled layout without a separate confirmation flow.
+- `pibarm.agentPanes.include` selects subagent and/or worktree rendering.
+- `outsideTmux` chooses a detached session or headless fallback.
+- Background watchers remain governed by host concurrency settings.
 
 ## Lifecycle verbs
 
-| Verb                    | Semantics (unchanged from today where they exist)                                       |
+| Verb                    | Semantics                                                                               |
 | ----------------------- | --------------------------------------------------------------------------------------- |
-| `_pibarm/agent/spawn`   | create child; role/toolset/worktree/visibility; returns id immediately                  |
-| `_pibarm/agent/list`    | live registry — no pane scraping, so `-orphans` cleanup becomes host GC of dead drivers |
-| `_pibarm/agent/capture` | read tail of the child journal (bounded)                                                |
-| `_pibarm/agent/join`    | await completion of one/all; returns final outputs; marks panes collapsible             |
+| `_pibarm/agent/spawn`   | create child; model/worktree/visibility; returns id immediately                         |
+| `_pibarm/agent/list`    | live registry independent of client panes                                               |
+| `_pibarm/agent/capture` | read a bounded tail of the child journal                                                |
+| `_pibarm/agent/join`    | await completion of one/all; standard tool calls use this before returning their result |
 | `_pibarm/agent/kill`    | terminate child; parent unaffected                                                      |
 
-Join folds results into the parent as `tool_result`-style journal events, so the parent model wakes with the same context it gets today from `butty_join`.
+Completion folds results into the parent as `tool_result`-style journal events, matching today's standard delegation tools.
 
 ## Surface rendering
 
-- **CLI (attached mode)**: subscribes to agent events, drives WezTerm panes exactly as `butty.ts` does now; standalone CLI keeps the current code path.
-- **Web** ([[web client]]): grid of agent panes built from pibarm-ds Terminal/TaskPill components; streaming transcript per pane; join/kill controls; overflow as tabs.
-- **macOS** ([[macos app]]): native split grid, per-agent windows on demand, focus follows keyboard shortcuts mirroring `/butty-attach`.
-- The **task widget** is the compact projection of the same registry: `_pibarm/task/list` returns todos + agents + watchers; clients render pills (ds `TaskPill`) identical in content to the TUI's.
+- **CLI (attached mode)**: subscribes to agent events and drives tmux panes through control mode; normal tmux clients render them.
+- **Web** ([[web client]]): grid of agent panes built from pibarm-ds Terminal/TaskPill components; streaming transcript per pane with capture/kill controls.
+- **macOS** ([[macos app]]): native split grid and per-agent windows on demand.
+- The **task widget** is the compact projection of the same registry: `_pibarm/task/list` returns todos + agents + watchers; clients render equivalent pills.
 
 ## Issue seeds (M1–M3)
 
-- unify spawn paths onto `_pibarm/agent/spawn` presets behind existing tool names
-- agent registry + GC (replaces pane-tracking and `-orphans` logic)
-- pane policy in host settings + confirm flow
-- child journal linking + `agent.capture/join` semantics
-- CLI attached-mode WezTerm renderer
-- web agent grid; macOS agent grid (tracked in their surface notes)
+- move the existing shared runner behind `_pibarm/agent/spawn`
+- host agent registry + GC
+- child journal linking + capture/join semantics
+- CLI attached-mode tmux renderer
+- web and macOS native agent grids
 
 ## Related
 

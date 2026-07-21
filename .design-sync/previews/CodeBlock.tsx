@@ -26,8 +26,8 @@ export const NotCopyable = () => (
     <CodeBlock
       language="bash"
       copyable={false}
-      code={`butty_spawn role=scout task="map the auth flow"
-butty_join role=all`}
+      code={`run_subagents jobs=scout,planner
+/agents-attach`}
     />
   </div>
 );

@@ -35,18 +35,18 @@ Legend: **native** = purpose-built UI on that surface; **form** = rendered as st
 | `/worktree-remove [--force]`                              | confirmation gate host-side | confirm dialog with diff recap     | same                              | P0       |
 | `run_worktree_agent`                                      | agent = runtime child       | appears in agent grid + task pills | native pane in agent grid         | P0       |
 
-## Multiplexing (Butty) — see [[sessions and multiplexing]]
+## Multiplexing and agent panes — see [[sessions and multiplexing]]
 
-| Capability (today)                       | Runtime host                        | Web                                              | macOS                           | Priority |
-| ---------------------------------------- | ----------------------------------- | ------------------------------------------------ | ------------------------------- | -------- |
-| `/butty <task>` scout/planner bootstrap  | orchestration in host               | agent grid view                                  | native pane grid                | P0       |
-| `butty_spawn` roles, worktree option     | runtime children with role toolsets | spawn dialog                                     | spawn sheet + palette           | P0       |
-| `/butty-attach` focus                    | client-side focus                   | click/keys                                       | keys, window per agent optional | P0       |
-| `butty_capture` recent output            | journal read                        | scrollback per pane                              | same                            | P0       |
-| `butty_join` wait + collect + cleanup    | host verb                           | join button, results fold into parent transcript | same                            | P0       |
-| `/butty-list`, `/butty-kill`, `-orphans` | host registry (no pane scraping)    | list + kill controls                             | same                            | P0       |
-| 3-agent row, 4th-agent confirmation      | policy in host config               | enforced via same policy                         | enforced via same policy        | P0       |
-| WezTerm panes                            | CLI-only rendering path, kept       | — (runtime panes instead)                        | — (native panes instead)        | P0       |
+| Capability (today)                   | Runtime host                        | Web                                 | macOS                           | Priority |
+| ------------------------------------ | ----------------------------------- | ----------------------------------- | ------------------------------- | -------- |
+| `run_subagent(s)`                    | runtime children with role toolsets | agent grid view                     | native pane grid                | P0       |
+| `run_worktree_agent`                 | isolated runtime child              | spawn dialog                        | spawn sheet + palette           | P0       |
+| `/agents-attach` focus               | client-side focus                   | click/keys                          | keys, window per agent optional | P0       |
+| `/agents [name]` recent output       | journal read                        | scrollback per pane                 | same                            | P0       |
+| standard tool wait + captured result | host verb                           | results fold into parent transcript | same                            | P0       |
+| `/agents`, `/agents-kill`            | host registry (no pane scraping)    | list + kill controls                | same                            | P0       |
+| four-agent limit + tiled layout      | policy in host config               | enforced via same policy            | enforced via same policy        | P0       |
+| tmux panes                           | CLI-only rendering path, kept       | — (runtime panes instead)           | — (native panes instead)        | P0       |
 
 ## Background work and notifications
 
@@ -102,7 +102,7 @@ Legend: **native** = purpose-built UI on that surface; **form** = rendered as st
 ## Deliberate non-parity
 
 - **General terminal emulation**: web/desktop embed a terminal view only for interactive child processes; they are not shells. Rationale in [[pibarm runtime PRD#Non-goals]].
-- **WezTerm pane control on web/desktop**: replaced by runtime-native panes; keeping remote-controlling a terminal emulator from a GUI would be absurd plumbing.
+- **tmux pane control on web/desktop**: replaced by runtime-native panes; remote-controlling a terminal multiplexer from a GUI would be needless plumbing.
 
 ## Related
 

@@ -30,23 +30,11 @@ describe("automatic agent panes", () => {
   test("keeps removed pane brands and tool APIs out of the repository", () => {
     const oldBrand = `${"but"}ty|${"wez"}term`;
     const oldTools = `${"matrix"}_(spawn|attach|capture|join|list|kill)|/${"matrix"}([- ]|$)`;
-    const result = Bun.spawnSync(
-      [
-        "rg",
-        "-n",
-        "-i",
-        "--hidden",
-        "--glob",
-        "!.git/**",
-        "--glob",
-        "!node_modules/**",
-        "--glob",
-        "!site/dist/**",
-        `${oldBrand}|${oldTools}`,
-        ".",
-      ],
-      { cwd: new URL("..", import.meta.url).pathname, stdout: "pipe", stderr: "pipe" },
-    );
+    const result = Bun.spawnSync(["git", "grep", "-n", "-i", "-E", `${oldBrand}|${oldTools}`, "--", "."], {
+      cwd: new URL("..", import.meta.url).pathname,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     expect(result.exitCode, result.stdout.toString()).toBe(1);
   });
 });

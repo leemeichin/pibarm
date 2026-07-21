@@ -33,7 +33,7 @@ Use this workflow for non-trivial or risky code changes. If worktree tools are i
 
 ## Rules
 
-- In plan mode, write tools are disabled and bash should be read-only.
+- In plan mode, only inspection and question tools are enabled. Bash is allowlisted; use dedicated `find`/`grep` tools instead of shell `find`, `awk`, or `sed`.
 - For worktree execution, all file paths and commands must target the worktree path.
 - Report the worktree path, branch, checks run, and changed files.
 - After execution, review with `summarize_worktree_diff` before suggesting merge or cleanup.

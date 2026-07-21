@@ -8,7 +8,7 @@ import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 import { clipHead, clipTail } from "../lib/tool-output.js";
 
-const READ_ONLY_TOOLS = [
+const PLAN_MODE_TOOLS = new Set([
   "read",
   "bash",
   "grep",
@@ -18,9 +18,11 @@ const READ_ONLY_TOOLS = [
   "mcporter_resource",
   "question",
   "elicit_plan_questions",
-  "create_git_worktree",
-];
-const WRITE_TOOLS = new Set(["edit", "write"]);
+]);
+
+export function isPlanModeTool(toolName: string) {
+  return PLAN_MODE_TOOLS.has(toolName);
+}
 
 const PLAN_OPTION = Type.Union([
   Type.String(),
@@ -670,22 +672,31 @@ function modelLabel(model: string | undefined) {
   );
 }
 
-const READ_ONLY_SEGMENT =
-  /^(pwd|ls|find|rg|grep|cat|head|tail|wc|sed\s+-n|awk|git\s+(status|diff|log|show|branch|rev-parse|worktree\s+list)\b)/;
+const SIMPLE_READ_SEGMENT = /^(pwd|ls|rg|grep|cat|head|tail|wc)(?:\s|$)/;
+const READ_ONLY_GIT_SEGMENT =
+  /^(?:git\s+(?:status|diff|log|show|rev-parse)(?:\s|$)|git\s+worktree\s+list(?:\s|$)|git\s+branch(?:\s+(?:-a|-r|-v|-vv|--list|--show-current))?\s*$)/;
+
+function isReadOnlySegment(segment: string) {
+  if (SIMPLE_READ_SEGMENT.test(segment)) {
+    return !/^rg(?:\s|$)/.test(segment) || !/(?:^|\s)--pre(?:=|\s|$)/.test(segment);
+  }
+  if (!READ_ONLY_GIT_SEGMENT.test(segment)) return false;
+  return !/(?:^|\s)--(?:output|ext-diff|textconv)(?:=|\s|$)/.test(segment);
+}
 
 export function isReadOnlyCommand(command: string): boolean {
   const trimmed = command.trim();
   if (!trimmed) return true;
-  // Substitutions and output redirection can mutate state even when every
-  // command name looks read-only, so reject them outright.
-  if (/[`>]|\$\(|<\(/.test(trimmed)) return false;
-  // Require every pipeline/sequence segment (including across newlines) to be
-  // a known read-only command, instead of blacklisting known-bad ones.
+  // Shell substitutions and redirections can execute code or write even when
+  // the leading command looks read-only.
+  if (/[`<>]|\$\(/.test(trimmed)) return false;
+  // Do not admit commands with their own execution/write languages (find,
+  // awk, sed). Pi's dedicated read-only tools cover those inspection cases.
   return trimmed
     .split(/[\n;&|]+/)
     .map((segment) => segment.trim())
     .filter(Boolean)
-    .every((segment) => READ_ONLY_SEGMENT.test(segment));
+    .every(isReadOnlySegment);
 }
 
 function looksLikePlan(text: string): boolean {
@@ -853,11 +864,14 @@ export default function planWorktree(pi: ExtensionAPI) {
 
   function enablePlanMode(ctx: ExtensionContext) {
     if (!toolsBeforePlan) toolsBeforePlan = pi.getActiveTools();
-    pi.setActiveTools([...new Set([...toolsBeforePlan.filter((t) => !WRITE_TOOLS.has(t)), ...READ_ONLY_TOOLS])]);
+    pi.setActiveTools([...PLAN_MODE_TOOLS]);
     planMode = true;
     ctx.ui.setStatus("pibarm-plan", "plan");
     updatePlanWidget(ctx);
-    ctx.ui.notify("Plan mode enabled: write tools disabled, bash is read-only.", "info");
+    ctx.ui.notify(
+      "Plan mode enabled: only inspection and question tools are active; bash uses a strict allowlist.",
+      "info",
+    );
   }
 
   function disablePlanMode(ctx: ExtensionContext) {
@@ -1184,8 +1198,8 @@ export default function planWorktree(pi: ExtensionAPI) {
 
   pi.on("tool_call", async (event) => {
     if (!planMode) return;
-    if (WRITE_TOOLS.has(event.toolName))
-      return { block: true, reason: "Plan mode is read-only. Approve/execute the plan before editing files." };
+    if (!isPlanModeTool(event.toolName))
+      return { block: true, reason: "Plan mode permits only read-only inspection and question tools." };
     if (event.toolName === "bash" && !isReadOnlyCommand(String((event.input as any).command ?? ""))) {
       return {
         block: true,

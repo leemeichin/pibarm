@@ -243,8 +243,8 @@ It accepts either legacy `task` or Claude Code-style `goal` + `loop`. Each detec
 
 When plan mode is active:
 
-- `edit` and `write` are disabled
-- bash is restricted to read-only-ish commands
+- only read/inspection, MCP discovery/resource, and question tools are active; all other tool calls are blocked
+- bash uses a strict command allowlist and rejects redirection, substitution, executable search hooks, and write-capable git options
 - pi is instructed to ask clarifying questions when scope/risks/acceptance criteria are unclear
 - final plans should include validation steps and whether worktree execution is recommended
 

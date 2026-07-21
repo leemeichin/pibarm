@@ -446,9 +446,9 @@ Available skill commands:
 ## Files
 
 ```text
-AGENTS.md                     # project agent instructions
+AGENTS.md                     # single always-on project instruction source
 SECURITY.md                   # local security policy
-.pi/APPEND_SYSTEM.md          # project system-prompt addendum
+extensions/prompt-context.ts  # keep worktree prompt context inside its git root
 extensions/plan-worktree.ts   # plan mode, elicitation, worktrees
 extensions/question.ts        # single-question user prompt tool
 extensions/mcporter.ts        # mcporter MCP bridge

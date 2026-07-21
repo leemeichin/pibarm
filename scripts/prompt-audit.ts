@@ -3,6 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DefaultResourceLoader, SettingsManager } from "@earendil-works/pi-coding-agent";
+import { effectiveProjectContext } from "../lib/prompt-context.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const extensionPaths = (await readdir(join(root, "extensions")))
@@ -37,6 +38,7 @@ try {
 const piDist = dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")));
 const { buildSystemPrompt } = await import(join(piDist, "core", "system-prompt.js"));
 const contextFiles = loader.getAgentsFiles().agentsFiles;
+const effectiveContextFiles = effectiveProjectContext(contextFiles, root);
 const uniqueContextFiles = [...new Map(contextFiles.map((file) => [file.content, file])).values()];
 const skills = loader.getSkills().skills;
 const activeDefinitions = active.map((name) => definitions.get(name)).filter(Boolean);
@@ -49,7 +51,7 @@ const prompt = buildSystemPrompt({
   promptGuidelines: activeDefinitions.flatMap((tool) => tool.promptGuidelines ?? []),
   appendSystemPrompt: loader.getAppendSystemPrompt().join("\n\n"),
   cwd: "<project>",
-  contextFiles: contextFiles.map((file) => ({
+  contextFiles: effectiveContextFiles.map((file) => ({
     path: file.path.split("/").pop() ?? "AGENTS.md",
     content: file.content,
   })),
@@ -73,8 +75,13 @@ console.log(
       },
       context: {
         files: contextFiles.length,
+        effectiveFiles: effectiveContextFiles.length,
         uniqueFiles: uniqueContextFiles.length,
         chars: contextFiles.reduce((sum, file) => sum + file.content.length, 0),
+        effectiveChars: effectiveContextFiles.reduce((sum, file) => sum + file.content.length, 0),
+        excludedChars:
+          contextFiles.reduce((sum, file) => sum + file.content.length, 0) -
+          effectiveContextFiles.reduce((sum, file) => sum + file.content.length, 0),
         duplicateChars:
           contextFiles.reduce((sum, file) => sum + file.content.length, 0) -
           uniqueContextFiles.reduce((sum, file) => sum + file.content.length, 0),

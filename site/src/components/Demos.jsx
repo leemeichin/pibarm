@@ -1,5 +1,5 @@
 import React from "react";
-import MatrixDemo from "./Matrix.jsx";
+import ButtyDemo from "./Butty.jsx";
 import PiSession from "./PiSession.jsx";
 
 const DEMOS = [
@@ -11,10 +11,10 @@ const DEMOS = [
     note: "/plan → questions → /execute-plan worktree",
   },
   {
-    id: "matrix",
+    id: "butty",
     number: "02",
-    label: "Matrix",
-    title: "Matrix issue triage",
+    label: "Butty",
+    title: "Butty issue triage",
     note: "triage → plan → worktree → watch",
   },
   {
@@ -114,13 +114,13 @@ export default function Demos() {
             </div>
           </div>
         )}
-        {active === "matrix" && (
-          <div className="demo-matrix">
-            <div className="demo-matrix__intro">
+        {active === "butty" && (
+          <div className="demo-butty">
+            <div className="demo-butty__intro">
               <p className="demo-note">Spawn scout, planner and worker agents beside the parent pi in real WezTerm panes. Scout maps the scope, planner orders dependencies, and workers can use isolated worktrees.</p>
-              <p className="demo-matrix__callout"><b>Visible and parent-controlled.</b> Watch each agent live, capture its output, and join it when you need the result—without giving up the parent session.</p>
+              <p className="demo-butty__callout"><b>Visible and parent-controlled.</b> Watch each agent live, capture its output, and join it when you need the result—without giving up the parent session.</p>
             </div>
-            <MatrixDemo />
+            <ButtyDemo />
           </div>
         )}
         {demo.lines && <Snapshot demo={demo} />}

@@ -1,6 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { detectPrRefs, offerPrWatcher } from "../extensions/agent-presets.js";
 
+describe("preset example", () => {
+  test("offers the complete Butty lifecycle", async () => {
+    const config = await Bun.file(new URL("../.pi/agent-presets.example.json", import.meta.url)).json();
+    const tools = config.presets.executor.tools;
+
+    expect(tools).toContain("butty_join");
+    expect(tools).not.toContain("butty_send");
+  });
+});
+
 describe("detectPrRefs", () => {
   test("detects GitHub PR URLs", () => {
     expect(detectPrRefs("See https://github.com/foo/bar/pull/123 for details")).toEqual([

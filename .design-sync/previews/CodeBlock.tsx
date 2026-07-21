@@ -26,8 +26,8 @@ export const NotCopyable = () => (
     <CodeBlock
       language="bash"
       copyable={false}
-      code={`matrix_spawn role=scout task="map the auth flow"
-matrix_join role=all`}
+      code={`butty_spawn role=scout task="map the auth flow"
+butty_join role=all`}
     />
   </div>
 );

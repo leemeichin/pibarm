@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import matrixExtension, { routeSubagentsToMatrix } from "../extensions/matrix.js";
+import buttyExtension, { routeSubagentsToButty } from "../extensions/butty.js";
 
 const tools = new Map<string, any>();
 const calls: Array<{ command: string; args: string[] }> = [];
@@ -18,7 +18,7 @@ beforeEach(async () => {
   tools.clear();
   calls.length = 0;
   statusKeys.length = 0;
-  cwd = await mkdtemp(join(tmpdir(), "matrix-test-"));
+  cwd = await mkdtemp(join(tmpdir(), "butty-test-"));
   previousPane = process.env.WEZTERM_PANE;
   process.env.WEZTERM_PANE = "7";
   nextPane = 11;
@@ -82,15 +82,15 @@ function setup() {
       },
     },
   };
-  matrixExtension(pi as never);
+  buttyExtension(pi as never);
   return ctx;
 }
 
 async function spawn(role: string, ctx: ReturnType<typeof setup>) {
-  return tools.get("matrix_spawn").execute("spawn", { role, task: "inspect code" }, undefined, undefined, ctx);
+  return tools.get("butty_spawn").execute("spawn", { role, task: "inspect code" }, undefined, undefined, ctx);
 }
 
-describe("Matrix workspace targeting", () => {
+describe("Butty workspace targeting", () => {
   test("serializes agents into a bottom row and never kills the parent", async () => {
     const ctx = setup();
 
@@ -107,10 +107,10 @@ describe("Matrix workspace targeting", () => {
     expect(calls.some(({ args }) => args.includes("--new-window"))).toBe(false);
     expect(calls.filter(({ args }) => args.includes("activate-pane") && args.includes("7"))).toHaveLength(3);
 
-    await tools.get("matrix_kill").execute("kill", {}, undefined, undefined, ctx);
+    await tools.get("butty_kill").execute("kill", {}, undefined, undefined, ctx);
 
     expect(calls.some(({ args }) => args.includes("kill-pane") && args.includes("7"))).toBe(false);
-    expect(statusKeys).not.toContain("matrix");
+    expect(statusKeys).not.toContain("butty");
     expect(splits[0]?.args.at(-1)).toContain("'node'");
   });
 
@@ -150,19 +150,19 @@ describe("Matrix workspace targeting", () => {
   });
 });
 
-describe("automatic Matrix routing", () => {
+describe("automatic Butty routing", () => {
   test("replaces only headless subagent tools", () => {
     expect(
-      routeSubagentsToMatrix(["read", "run_subagent", "run_subagents", "run_worktree_agent", "watch_agent"]),
+      routeSubagentsToButty(["read", "run_subagent", "run_subagents", "run_worktree_agent", "watch_agent"]),
     ).toEqual([
       "read",
       "run_worktree_agent",
       "watch_agent",
-      "matrix_spawn",
-      "matrix_capture",
-      "matrix_join",
-      "matrix_list",
-      "matrix_kill",
+      "butty_spawn",
+      "butty_capture",
+      "butty_join",
+      "butty_list",
+      "butty_kill",
     ]);
   });
 });

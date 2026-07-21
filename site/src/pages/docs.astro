@@ -7,7 +7,7 @@ const sections = [
   { id: "start", label: "Quick start" },
   { id: "workflow", label: "Main workflow" },
   { id: "commands", label: "Commands" },
-  { id: "matrix", label: "Matrix" },
+  { id: "butty", label: "Butty" },
   { id: "notes", label: "Notifications" },
 ];
 
@@ -17,10 +17,10 @@ const workflowSnippet = `/plan <task>
   ↓  changes happen in .pi/wt/<name>, not your checkout
 /worktree-diff .pi/wt/<name>`;
 
-const matrixSnippet = `/matrix triage every open issue and plan the smallest safe fix
-/matrix-join all
+const buttySnippet = `/butty triage every open issue and plan the smallest safe fix
+/butty-join all
 # parent loops over unblocked plans
-matrix_spawn → worker + worktree
+butty_spawn → worker + worktree
 watch_agent → pull request review + CI`;
 
 const notifySnippet = `export PI_NOTIFY_COOLDOWN_SECONDS=60
@@ -66,11 +66,11 @@ export PI_NOTIFY_INCLUDE_QUESTION=1`;
         ))}
       </div>
 
-      <h2 id="doc-matrix" class="docs-h2">Matrix</h2>
-      <p><code>matrix.ts</code> is WezTerm-native orchestration for visible, parent-controlled agents. Up to three agents form a row below the full-width parent; a fourth requires confirmation and opens in a new window. Scout and planner use read-focused toolsets; worker uses normal tools.</p>
-      <CodeBlock language="bash" code={matrixSnippet} />
+      <h2 id="doc-butty" class="docs-h2">Butty</h2>
+      <p><code>butty.ts</code> is WezTerm-native orchestration for visible, parent-controlled agents. Up to three agents form a row below the full-width parent; a fourth requires confirmation and opens in a new window. Scout and planner use read-focused toolsets; worker uses normal tools.</p>
+      <CodeBlock language="bash" code={buttySnippet} />
       <div class="docs-spacer"></div>
-      <Callout tone="tip" title="Isolated branches">Pass <code>worktree: true</code> on <code>matrix_spawn</code> and the agent gets its own branch and worktree for separate work.</Callout>
+      <Callout tone="tip" title="Isolated branches">Pass <code>worktree: true</code> on <code>butty_spawn</code> and the agent gets its own branch and worktree for separate work.</Callout>
 
       <h2 id="doc-notes" class="docs-h2">Notifications</h2>
       <p><code>waiting-notify.ts</code> sends a local notification when a question is waiting — Kitty's escape, <code>terminal-notifier</code>, or an iTerm2-style fallback.</p>

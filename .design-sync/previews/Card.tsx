@@ -23,7 +23,7 @@ export const WithIcon = () => (
   <div style={grid}>
     <Card
       icon={<Icon name="layers" size={20} />}
-      eyebrow="Matrix"
+      eyebrow="Butty"
       title="Visible parallel agents"
     >
       Spawn scout, planner and worker agents in WezTerm panes you can watch, message, and join —

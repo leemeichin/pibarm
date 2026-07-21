@@ -31,9 +31,9 @@ describe("mergePibarmSettings", () => {
     expect(settings.obsidian?.autoSync).toBe(true);
   });
 
-  test("reads the Matrix auto-spawn setting", () => {
-    const settings = mergePibarmSettings({ pibarm: { matrix: { autoSpawn: true } } }, {}, false);
-    expect(settings.matrix?.autoSpawn).toBe(true);
+  test("reads the Butty auto-spawn setting", () => {
+    const settings = mergePibarmSettings({ pibarm: { butty: { autoSpawn: true } } }, {}, false);
+    expect(settings.butty?.autoSpawn).toBe(true);
   });
 });
 

@@ -9,7 +9,7 @@ export const Tones = () => (
       render as boxes.
     </Callout>
     <Callout tone="tip" title="Isolated branches">
-      Pass <code>worktree: true</code> on <code>matrix_spawn</code> and the agent gets its own branch
+      Pass <code>worktree: true</code> on <code>butty_spawn</code> and the agent gets its own branch
       and worktree for separate work.
     </Callout>
     <Callout tone="warning" title="Plan mode is read-only">

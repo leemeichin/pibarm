@@ -15,7 +15,7 @@ Use this skill for complex work that benefits from explicit roles.
 - Subagent: isolated research, verification, comparison, or implementation via `run_subagent`, `run_subagents`, or `run_worktree_agent`.
 - Todo tracker: use `todo_list` for prompts with multiple requested tasks; keep it short and mark items done as work completes. Todos and delegated agents appear together as horizontal pills in the shared task widget.
 - Watcher: use `watch_agent` when the user wants a sibling task to monitor a PR, review comments, checks, or external state while the parent Pi session continues. Watcher changes wake the parent model automatically. Start one without asking after opening or updating any draft/non-draft PR. Prefer Claude Code-style `goal` + `loop` fields; `task` remains accepted for simple cases.
-- Matrix: use `matrix_*` tools when the user wants visible WezTerm panes/tabs/splits controlled by the parent Pi.
+- Butty: use `butty_*` tools when the user wants visible WezTerm panes/tabs/splits controlled by the parent Pi.
 
 ## Commands
 
@@ -28,11 +28,11 @@ Use this skill for complex work that benefits from explicit roles.
 - `/refine-plan <feedback>` revises the captured plan and requires approval again.
 - `/execute-plan` executes the last captured plan in the active checkout.
 - `/execute-plan worktree <name>` executes the last captured plan in a repo-local git worktree.
-- `/matrix <task>` starts a WezTerm Matrix with parent-controlled scout/planner panes.
+- `/butty <task>` starts a WezTerm Butty with parent-controlled scout/planner panes.
 
 ## Delegation Guidance
 
-Use `run_worktree_agent` when the subtask may modify files or should not affect the active checkout. Use `run_subagent` for one self-contained read-only subtask. Use `run_subagents` when comparing or delegating several read-only subtasks, especially across models. When `pibarm.matrix.autoSpawn` is enabled, isolated delegation uses Matrix spawn/join tools instead; worktree agents and watchers remain unchanged. Examples:
+Use `run_worktree_agent` when the subtask may modify files or should not affect the active checkout. Use `run_subagent` for one self-contained read-only subtask. Use `run_subagents` when comparing or delegating several read-only subtasks, especially across models. When `pibarm.butty.autoSpawn` is enabled, isolated delegation uses Butty spawn/join tools instead; worktree agents and watchers remain unchanged. Examples:
 
 - inspect unfamiliar docs and summarize them
 - compare alternatives across models
@@ -41,9 +41,9 @@ Use `run_worktree_agent` when the subtask may modify files or should not affect 
 
 Subagent and watcher prompts must include all necessary context. Do not assume they can see the active conversation. Subagents default to the current active model unless a `model` is set explicitly; simple-scope tasks may be downgraded to a lighter authenticated model by the parent-side heuristic. For PR follow-up, prefer `watch_agent` with a PR number/URL, a concise `goal`, and a `loop` that states when it may comment or push changes.
 
-For Matrix/WezTerm orchestration:
+For Butty/WezTerm orchestration:
 
 - use worktrees for separate branch work
 - use the current checkout for same-branch distributed work
-- use `matrix_join` to wait for Matrix agents, collect logs, and clean up panes before summarizing results
-- use `matrix_kill all` for forced cleanup of this session's tracked Matrix agent panes
+- use `butty_join` to wait for Butty agents, collect logs, and clean up panes before summarizing results
+- use `butty_kill all` for forced cleanup of this session's tracked Butty agent panes

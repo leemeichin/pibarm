@@ -98,7 +98,7 @@ async function main() {
     install: "install/configure mcporter, then edit .pi/mcporter.json",
     detail: "MCP bridge tools",
   });
-  commandCheck("wezterm", { install: "brew install --cask wezterm", detail: "Matrix visible agent panes" });
+  commandCheck("wezterm", { install: "brew install --cask wezterm", detail: "Butty visible agent panes" });
   commandCheck(process.env.PI_NOTIFY_TERMINAL_NOTIFIER || "terminal-notifier", {
     install: "brew install terminal-notifier",
     detail: "optional native macOS notifications",
@@ -115,10 +115,7 @@ async function main() {
       ok(".pi/settings.json", "ponytail package configured");
     else warn(".pi/settings.json", "ponytail package is not configured");
     if (packages.some((pkg) => /cmux/i.test(String(pkg))))
-      warn(
-        ".pi/settings.json",
-        "cmux package still configured; remove it if you want pibarm-only Matrix/notifications",
-      );
+      warn(".pi/settings.json", "cmux package still configured; remove it if you want pibarm-only Butty/notifications");
   } catch (error) {
     fail(".pi/settings.json", `could not parse: ${error.message}`);
   }

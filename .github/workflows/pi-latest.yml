@@ -1,0 +1,40 @@
+name: Latest Pi compatibility
+
+on:
+  schedule:
+    - cron: "17 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latest:
+    name: Test against npm latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install pinned dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install latest Pi for this run
+        run: bun add --dev --exact @earendil-works/pi-coding-agent@latest
+
+      - name: Validate latest Pi compatibility
+        run: |
+          bun run lint
+          bun run fmt:check
+          bun run check
+          bun run test
+          bun run audit:prompt
+
+      - name: Flag a newer release
+        if: always()
+        run: |
+          git show HEAD:package.json > package.json
+          bun run check:pi-latest -- --fail-on-outdated

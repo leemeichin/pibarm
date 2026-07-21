@@ -34,6 +34,15 @@ pi
 
 `bun run setup` copies missing local config examples and runs the setup doctor. Use `bun run doctor` later to re-check your environment.
 
+For development, Pi is pinned exactly so CI is reproducible. The weekly compatibility job tests npm `latest` separately:
+
+```bash
+bun run audit:prompt       # prompt/tool context without a model request
+bun run check:pi-latest    # compare the development pin with npm latest
+```
+
+Architecture findings and measurement rules live in [`docs/agent-efficacy.md`](docs/agent-efficacy.md).
+
 ## External pi packages
 
 This project asks pi to load one external package from `.pi/settings.json`:

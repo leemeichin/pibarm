@@ -1,6 +1,7 @@
-import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { CONFIG_DIR_NAME, getAgentDir } from "@earendil-works/pi-coding-agent";
 
 export interface ObsidianSettings {
@@ -21,10 +22,15 @@ export interface CodeIntelSettings {
   timeoutMs?: number;
 }
 
+export interface GitSettings {
+  commitTrailer?: boolean;
+}
+
 export interface PibarmSettings {
   obsidian?: ObsidianSettings;
   butty?: ButtySettings;
   codeIntel?: CodeIntelSettings;
+  git?: GitSettings;
 }
 
 export interface SettingsContext {
@@ -51,6 +57,64 @@ async function readJson(path: string): Promise<Record<string, unknown>> {
     return isRecord(parsed) ? parsed : {};
   } catch {
     return {};
+  }
+}
+
+export interface PibarmSettingUpdate {
+  path: readonly string[];
+  value: string | number | boolean;
+}
+
+export async function readSettingsDocument(path: string): Promise<Record<string, unknown>> {
+  try {
+    const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
+    if (!isRecord(parsed)) throw new Error(`Settings file must contain a JSON object: ${path}`);
+    return parsed;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+    if (error instanceof SyntaxError) throw new Error(`Invalid JSON in settings file: ${path}`, { cause: error });
+    throw error;
+  }
+}
+
+export async function updatePibarmSettings(path: string, updates: readonly PibarmSettingUpdate[]): Promise<void> {
+  if (!updates.length) return;
+  const document = await readSettingsDocument(path);
+  const existing = document.pibarm;
+  if (existing !== undefined && !isRecord(existing)) throw new Error(`pibarm settings must be a JSON object: ${path}`);
+  const pibarm: Record<string, unknown> = { ...existing };
+  document.pibarm = pibarm;
+
+  for (const update of updates) {
+    if (!update.path.length) throw new Error("A pibarm setting path cannot be empty");
+    let target = pibarm;
+    for (const key of update.path.slice(0, -1)) {
+      const child = target[key];
+      if (child !== undefined && !isRecord(child)) {
+        throw new Error(`pibarm.${update.path.join(".")} conflicts with a non-object setting`);
+      }
+      const next = { ...child };
+      target[key] = next;
+      target = next;
+    }
+    target[update.path.at(-1)!] = update.value;
+  }
+
+  await mkdir(dirname(path), { recursive: true });
+  let mode = 0o600;
+  try {
+    mode = (await stat(path)).mode & 0o777;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  const temporary = join(dirname(path), `.${basename(path)}.${process.pid}.${randomUUID()}.tmp`);
+  try {
+    await writeFile(temporary, `${JSON.stringify(document, null, 2)}\n`, { encoding: "utf8", flag: "wx", mode });
+    await rename(temporary, path);
+  } finally {
+    await unlink(temporary).catch((error) => {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    });
   }
 }
 

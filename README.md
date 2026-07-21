@@ -85,6 +85,28 @@ Feature-specific tools:
 
 The TUI uses Nerd Font glyphs for the statusline, Butty/task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
 
+## pibarm settings and commit attribution
+
+Use `/pibarm-settings` to edit global or project-scoped pibarm settings with Pi's native settings list. Project writes require a trusted project. The menu covers Git attribution, code intelligence, Obsidian export, and Butty auto-spawn; selecting **Save and close** atomically updates only changed values and preserves unknown settings.
+
+Agent-created commits include this default-on, versioned trailer instruction. pibarm does not install Git hooks or rewrite commit messages:
+
+```text
+Co-authored-by: 🥧 pibarm v0.1.0
+```
+
+Disable it globally or in a trusted project:
+
+```json
+{
+  "pibarm": {
+    "git": {
+      "commitTrailer": false
+    }
+  }
+}
+```
+
 ## Obsidian export
 
 Configure Obsidian export in Pi settings. Global settings live at `~/.pi/agent/settings.json`; project overrides live at `.pi/settings.json`. Pi merges nested settings, so projects can override only `basePath` while using the global vault.
@@ -157,6 +179,7 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `/forge-ci`                               | List CI/builds using the detected/configured forge.                       |
 | `/forge-tickets`                          | List issues/tickets using the detected/configured forge.                  |
 | `/review [#number\|url\|branch]`          | Start a PR/patch review; GitHub findings are posted inline when possible. |
+| `/pibarm-settings`                        | Edit global or trusted-project pibarm settings.                           |
 | `/obsidian-status`                        | Show Obsidian export settings resolved from Pi settings.                  |
 | `/obsidian-export`                        | Export the current session to the configured Obsidian vault.              |
 | `/butty-help`                             | Explain when/how to use Butty and its prior art.                          |
@@ -478,6 +501,7 @@ extensions/question.ts        # single-question user prompt tool
 extensions/mcporter.ts        # mcporter MCP bridge
 extensions/forge.ts            # forge-aware GitHub/SourceHut tools
 extensions/review.ts           # /review command for PR/patch review handoff
+extensions/pibarm-settings.ts  # settings menu and commit trailer instruction
 extensions/obsidian.ts         # Obsidian session export commands/autosync
 extensions/repo-status.ts      # git/forge/CI statusline
 extensions/waiting-notify.ts   # local terminal/native notifications for pending questions

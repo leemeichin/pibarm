@@ -15,9 +15,16 @@ export interface ButtySettings {
   autoSpawn?: boolean;
 }
 
+export interface CodeIntelSettings {
+  enabled?: boolean;
+  autoInstall?: boolean;
+  timeoutMs?: number;
+}
+
 export interface PibarmSettings {
   obsidian?: ObsidianSettings;
   butty?: ButtySettings;
+  codeIntel?: CodeIntelSettings;
 }
 
 export interface SettingsContext {

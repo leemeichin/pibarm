@@ -96,8 +96,11 @@ async function main() {
   commandCheck("hut", { install: "brew install hut && hut init", detail: "SourceHut build/ticket tools" });
   commandCheck("mcporter", {
     install: "install/configure mcporter, then edit .pi/mcporter.json",
-    detail: "MCP bridge tools",
+    detail: "MCP bridge tools and managed code intelligence",
   });
+  if (has("uvx") || has("uv")) ok("code intelligence runtime", "uv found");
+  else if (has("mise")) ok("code intelligence runtime", "mise can install pinned uv into the pibarm cache");
+  else warn("code intelligence runtime", "install uv or mise to use managed Serena language servers");
   commandCheck("wezterm", { install: "brew install --cask wezterm", detail: "Butty visible agent panes" });
   commandCheck(process.env.PI_NOTIFY_TERMINAL_NOTIFIER || "terminal-notifier", {
     install: "brew install terminal-notifier",

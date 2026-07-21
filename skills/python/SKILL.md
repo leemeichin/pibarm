@@ -11,6 +11,7 @@ description: Python development workflow. Use when editing Python, pyproject.tom
 - Infer the environment runner from repository evidence: `uv.lock`/`uv run`, Poetry config/`poetry run`, Pipenv, tox/nox, or the active virtualenv.
 - Do not create environments, install packages, refresh lockfiles, or switch runners unless the task requires it.
 - Trace callers and nearby tests before changing shared functions, decorators, models, or dependency injection.
+- For ambiguous symbols or diagnostics, load deferred `code_intel` with `search_tools`; fall back to `rg`/`read` when unavailable.
 
 ## Implementation
 

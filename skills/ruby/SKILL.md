@@ -11,6 +11,7 @@ description: Ruby and Rails development workflow. Use when editing Ruby, Rails, 
 - Prefer checked-in binstubs and the repository's test framework; otherwise use `bundle exec`.
 - Trace the real flow and sibling conventions before changing shared modules, callbacks, concerns, policies, services, or jobs.
 - Do not update gems or the lockfile unless dependency work is requested.
+- For ambiguous symbols or diagnostics, load deferred `code_intel` with `search_tools`; fall back to `rg`/`read` when unavailable.
 
 ## Ruby
 

@@ -15,6 +15,11 @@ export const PIBARM_TOOL_GROUPS = [
     tools: ["mcporter_list", "mcporter_call", "mcporter_resource"],
   },
   {
+    name: "code-intelligence",
+    description: "semantic definitions, references, hover information, symbols, diagnostics, LSP, and language servers",
+    tools: ["code_intel"],
+  },
+  {
     name: "delegation",
     description: "headless subagents, parallel or multi-model research, review, planning, and verification",
     tools: ["run_subagent", "run_subagents"],

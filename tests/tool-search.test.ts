@@ -16,6 +16,7 @@ describe("lazy tool policy", () => {
         "repo_status",
         "forge_prs",
         "butty_spawn",
+        "code_intel",
         "third_party_tool",
       ]),
     ).toEqual(["read", "question", "elicit_plan_questions", "todo_list", "search_tools", "third_party_tool"]);
@@ -31,6 +32,7 @@ describe("lazy tool policy", () => {
     expect(names("call an MCP server tool")).toEqual(
       expect.arrayContaining(["mcporter_list", "mcporter_call", "mcporter_resource"]),
     );
+    expect(names("semantic LSP diagnostics")).toContain("code_intel");
   });
 
   test("starts small and adds matched tools without removing active tools", async () => {

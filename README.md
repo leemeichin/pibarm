@@ -11,6 +11,7 @@ TL;DR pi extensions + skills for safer agent workflows:
 - use MCP tools through `mcporter`
 - switch model/tool/thinking presets by role
 - spawn isolated subagents, including parallel multi-model runs, when useful
+- query managed semantic code intelligence without modifying project dependencies
 
 ## Quick start
 
@@ -38,6 +39,7 @@ For development, Pi is pinned exactly so CI is reproducible. The weekly compatib
 
 ```bash
 bun run audit:prompt       # prompt/tool context without a model request
+bun run eval:agent --model=<provider/model> --variant=baseline
 bun run check:pi-latest    # compare the development pin with npm latest
 ```
 
@@ -76,7 +78,8 @@ Feature-specific tools:
 | `bun`               | local development checks                               | `curl -fsSL https://bun.sh/install \| bash`                 |
 | `gh`                | GitHub-backed `forge_*` tools and statusline PR checks | `brew install gh && gh auth login`                          |
 | `hut`               | SourceHut-backed `forge_*` tools                       | `brew install hut && hut init`                              |
-| `mcporter`          | MCP bridge tools                                       | install/configure `mcporter`, then edit `.pi/mcporter.json` |
+| `mcporter`          | MCP bridge tools and managed code intelligence         | install/configure `mcporter`, then edit `.pi/mcporter.json` |
+| `uv` or `mise`      | isolated Serena language-server runtime                | `brew install uv` or use an existing `mise` installation    |
 | `wezterm`           | Butty visible agent panes                              | `brew install --cask wezterm`                               |
 | `terminal-notifier` | optional native macOS notifications                    | `brew install terminal-notifier`                            |
 
@@ -168,13 +171,14 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 
 ## Tools exposed to the agent
 
-All custom tools are registered, but only `search_tools`, `question`, `elicit_plan_questions`, and `todo_list` start active. `search_tools` enables matching forge, MCP, delegation, worktree, watcher, repository, or Butty groups additively, so Pi can defer their schemas without replacing its stable prompt prefix. Applying a role preset can still select an explicit tool set.
+All custom tools are registered, but only `search_tools`, `question`, `elicit_plan_questions`, and `todo_list` start active. `search_tools` enables matching code-intelligence, forge, MCP, delegation, worktree, watcher, repository, or Butty groups additively, so Pi can defer their schemas without replacing its stable prompt prefix. Applying a role preset can still select an explicit tool set.
 
 | Tool                      | Purpose                                                                                                                                                                 |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `search_tools`            | Find and enable registered pibarm tools for a task.                                                                                                                     |
 | `elicit_plan_questions`   | Ask several planning questions before finalizing/executing a plan, with rich TUI inputs for free text, select, multi-select, confirm/boolean, and number answers.       |
 | `question`                | Ask one focused question with optional choices.                                                                                                                         |
+| `code_intel`              | Query definitions, references, hover details, symbols, and diagnostics through managed Serena language servers.                                                         |
 | `create_git_worktree`     | Create an isolated repo-local git worktree and branch.                                                                                                                  |
 | `summarize_worktree_diff` | Summarize status/diff for a worktree.                                                                                                                                   |
 | `remove_git_worktree`     | Remove an isolated worktree after confirmation/review.                                                                                                                  |
@@ -198,6 +202,26 @@ All custom tools are registered, but only `search_tools`, `question`, `elicit_pl
 | `butty_join`              | Wait for Butty agents to finish, capture logs, and clean up their panes.                                                                                                |
 | `butty_list`              | List tracked Butty agents in the parent workspace.                                                                                                                      |
 | `butty_kill`              | Kill tracked Butty agent panes without touching the parent workspace.                                                                                                   |
+
+## Managed code intelligence
+
+`code_intel` is deferred until `search_tools` matches semantic navigation, diagnostics, LSP, or language-server work. It delegates language detection, server lifecycle, and support for mixed-language projects to pinned [Serena](https://github.com/oraios/serena) 1.6.1 instead of maintaining a second LSP client and server catalog in pibarm.
+
+The first trusted call prefers an existing `uv`/`uvx`; if neither exists and `mise` is available, pibarm installs pinned `uv` into its own cache. Serena, Python, indexes, and language servers stay under the Pi agent cache rather than the project or global package directories, with concurrent installation serialized per project. Host toolchains required by a language server, such as Ruby itself, remain prerequisites; an already-installed mise Ruby is selected automatically. `PI_OFFLINE=1` disables acquisition and uses only file types that have completed a cached online query. Disable the feature or automatic acquisition globally or in a trusted project with:
+
+```json
+{
+  "pibarm": {
+    "codeIntel": {
+      "enabled": true,
+      "autoInstall": false,
+      "timeoutMs": 300000
+    }
+  }
+}
+```
+
+Projects must be trusted, requested files must resolve inside the project root, subprocesses use argument arrays, and model-facing output is capped at 20,000 characters. If Serena or a language server is unavailable, the tool reports that honestly so the agent can fall back to `rg`, `read`, and project checks.
 
 ## Rich planning questions
 

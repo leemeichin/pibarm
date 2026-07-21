@@ -453,11 +453,6 @@ export default function watchAgentExtension(pi: ExtensionAPI) {
     name: "watch_agent",
     label: "Watch Agent",
     description: "Start, stop, or list a sibling watcher agent that polls external state and runs pi when it changes.",
-    promptSnippet: "Start a sibling watcher agent for PR reviews, checks, or external task changes",
-    promptGuidelines: [
-      "Use watch_agent when the user asks to watch a PR, review comments, checks, or another external process while the parent Pi session stays active.",
-      "After opening or updating a PR, start watch_agent immediately without asking so the parent receives review and CI updates.",
-    ],
     parameters: WATCH_AGENT_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const action = params.action ?? "start";

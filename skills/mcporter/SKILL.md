@@ -5,7 +5,7 @@ description: Use MCP servers through the mcporter CLI wrapper from pi. Use when 
 
 # Mcporter
 
-Use this skill when the user wants MCP functionality through `mcporter`.
+Use this skill when the user wants MCP functionality through `mcporter`. If the `mcporter_*` tools are inactive, enable them with `search_tools` first.
 
 ## Workflow
 

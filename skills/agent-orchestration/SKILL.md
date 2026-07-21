@@ -5,7 +5,7 @@ description: Plan and execute work with dedicated planner, executor, and subagen
 
 # Agent Orchestration
 
-Use this skill for complex work that benefits from explicit roles.
+Use this skill for complex work that benefits from explicit roles. If a named orchestration tool is inactive, call `search_tools` with the needed capability before continuing.
 
 ## Roles
 

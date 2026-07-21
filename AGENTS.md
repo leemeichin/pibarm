@@ -12,6 +12,7 @@ This repo manages local pi skills, extensions, prompts, and project config. Trea
   - `create_git_worktree`
 - Do not modify the active checkout when the user asks for worktree isolation.
 - After worktree execution, summarize with `summarize_worktree_diff` before suggesting merge/cleanup.
+- Specialized custom tools start deferred; use `search_tools` to enable the relevant forge, MCP, delegation, worktree, watcher, repository, or Butty group.
 
 ## Repo conventions
 
@@ -28,7 +29,7 @@ This repo manages local pi skills, extensions, prompts, and project config. Trea
   - skills: pi docs `docs/skills.md`
   - packages: pi docs `docs/packages.md`
   - models/presets: pi docs `docs/models.md`
-- Keep tools' `description`, `promptSnippet`, and `promptGuidelines` specific and operational.
+- Keep active tools' `description`, `promptSnippet`, and `promptGuidelines` specific and operational. Deferred tools should rely on `description` and omit prompt metadata so additive loading preserves the prompt prefix.
 - Avoid long-running background resources in extension factories; start session-scoped resources from events/commands/tools and clean them up on shutdown.
 - Keep user-facing commands concise and documented in `README.md`.
 - When adding tools or commands, update relevant skills and preset examples.

@@ -1086,10 +1086,6 @@ export default function planWorktree(pi: ExtensionAPI) {
     name: "create_git_worktree",
     label: "Create Git Worktree",
     description: "Create an isolated git worktree for safe execution without modifying the active checkout.",
-    promptSnippet: "Create an isolated git worktree for implementation or subagent work",
-    promptGuidelines: [
-      "Use create_git_worktree before executing risky or parallel work that should not touch the active checkout.",
-    ],
     parameters: WORKTREE_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");
@@ -1110,10 +1106,6 @@ export default function planWorktree(pi: ExtensionAPI) {
     label: "Summarize Worktree Diff",
     description:
       "Return git status, diff stat, and optionally diff for a worktree. Large diffs are truncated to the first ~50KB/2000 lines.",
-    promptSnippet: "Summarize changes in an isolated git worktree",
-    promptGuidelines: [
-      "Use summarize_worktree_diff after worktree execution to report changed files and review the diff before merge.",
-    ],
     parameters: WORKTREE_DIFF_PARAMS,
     async execute(_id, params) {
       const summary = await summarizeWorktree(pi, params.path, params.statOnly ?? false);
@@ -1136,9 +1128,7 @@ export default function planWorktree(pi: ExtensionAPI) {
   pi.registerTool({
     name: "remove_git_worktree",
     label: "Remove Git Worktree",
-    description: "Remove a git worktree after review/merge or abandoned work.",
-    promptSnippet: "Remove an isolated git worktree",
-    promptGuidelines: ["Use remove_git_worktree only after the user confirms the worktree is no longer needed."],
+    description: "Remove a git worktree after review/merge or abandonment, and only with user confirmation.",
     parameters: WORKTREE_REMOVE_PARAMS,
     async execute(_id, params) {
       const root = await gitRoot(pi);
@@ -1161,10 +1151,6 @@ export default function planWorktree(pi: ExtensionAPI) {
     name: "run_worktree_agent",
     label: "Run Worktree Agent",
     description: "Create an isolated git worktree and run a non-interactive pi subagent inside it.",
-    promptSnippet: "Run a subagent in a separate git worktree",
-    promptGuidelines: [
-      "Use run_worktree_agent for parallel implementation, verification, or exploratory changes that must not affect the active checkout.",
-    ],
     parameters: WORKTREE_AGENT_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");

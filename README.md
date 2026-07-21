@@ -168,8 +168,11 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 
 ## Tools exposed to the agent
 
+All custom tools are registered, but only `search_tools`, `question`, `elicit_plan_questions`, and `todo_list` start active. `search_tools` enables matching forge, MCP, delegation, worktree, watcher, repository, or Butty groups additively, so Pi can defer their schemas without replacing its stable prompt prefix. Applying a role preset can still select an explicit tool set.
+
 | Tool                      | Purpose                                                                                                                                                                 |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `search_tools`            | Find and enable registered pibarm tools for a task.                                                                                                                     |
 | `elicit_plan_questions`   | Ask several planning questions before finalizing/executing a plan, with rich TUI inputs for free text, select, multi-select, confirm/boolean, and number answers.       |
 | `question`                | Ask one focused question with optional choices.                                                                                                                         |
 | `create_git_worktree`     | Create an isolated repo-local git worktree and branch.                                                                                                                  |

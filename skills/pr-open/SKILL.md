@@ -5,7 +5,7 @@ description: Open GitHub pull requests with newline-safe bodies. Use when asked 
 
 # PR Open
 
-Use `gh pr create` with `--body-file`, not inline `--body`, so Markdown newlines survive.
+Use `gh pr create` with `--body-file`, not inline `--body`, so Markdown newlines survive. Enable repository and watcher tools with `search_tools` if they are inactive.
 
 ## Flow
 

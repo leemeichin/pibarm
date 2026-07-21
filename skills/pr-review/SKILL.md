@@ -5,6 +5,8 @@ description: Review GitHub PRs or SourceHut patchsets with forge CLI tools, loca
 
 # PR / Patch Review
 
+Enable the repository and forge tools with `search_tools` if they are inactive.
+
 ## Flow
 
 1. Identify forge and branch with `repo_status` or `forge_status`.

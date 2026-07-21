@@ -316,8 +316,6 @@ export default function repoStatusExtension(pi: ExtensionAPI) {
     name: "repo_status",
     label: "Repo Status",
     description: "Summarize current git branch, dirty files, forge, PR, and CI status.",
-    promptSnippet: "Inspect current repository, PR, and CI status",
-    promptGuidelines: ["Use repo_status when the user asks for repository, PR, or CI status at a glance."],
     parameters: PARAMS,
     async execute(_id, _params, _signal, _update, ctx) {
       const status = await refresh(pi, ctx, requestRender);

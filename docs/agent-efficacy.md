@@ -25,6 +25,8 @@ Baseline on Pi 0.81.0 before the foundation changes:
 
 The token count is a character-based estimate. Tool schemas are reported separately because providers serialize them outside the system-prompt string. A normal checkout has one 2,705-character project context file; a worktree under `.pi/wt/` also discovers the parent checkout's identical `AGENTS.md`. The audit reports raw and duplicate context so this cost stays visible.
 
+After adding `search_tools`, the same audit registers 26 custom tools but starts with 4 active. Active schemas fall to 3,211 characters (66% lower), active prompt metadata to 932 characters (77% lower), and the built prompt to 14,066 characters (~3,517 tokens, 19% lower). Deferred groups are added rather than swapped so supported providers can preserve the prompt prefix.
+
 The repository has good extension-level tests, but no behavioral suite that measures whether an agent solves representative tasks. Prompt-size improvements are therefore measured; task-success improvements remain hypotheses until a repeatable behavioral suite exists.
 
 ## Observed issues

@@ -437,6 +437,7 @@ Available skill commands:
 - `/skill:mcporter`
 - `/skill:agent-orchestration`
 - `/skill:model-presets`
+- `/skill:python`
 - `/skill:ruby`
 - `/skill:typescript`
 - `/skill:pr-review`

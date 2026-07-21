@@ -5,7 +5,7 @@ description: Use parent-controlled WezTerm Butty panes for visible multi-agent o
 
 # Butty
 
-Butty is a visible cockpit. It is opt-in unless `pibarm.butty.autoSpawn` is enabled in Pi settings.
+Butty is a visible cockpit. It is opt-in unless `pibarm.butty.autoSpawn` is enabled in Pi settings. If its tools are inactive, enable the Butty group with `search_tools` first.
 
 Use it when parallel work benefits from observation:
 

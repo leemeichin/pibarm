@@ -785,8 +785,6 @@ export default function buttyExtension(pi: ExtensionAPI) {
     name: "butty_spawn",
     label: "Butty Spawn",
     description: "Spawn a parent-controlled pi agent in a WezTerm Butty pane. The pane exits when the agent finishes.",
-    promptSnippet: "Spawn a WezTerm-backed Butty subagent pane",
-    promptGuidelines: ["Use butty_spawn when the user wants visible WezTerm agent orchestration."],
     parameters: SPAWN_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const pane = await spawn(ctx, params);
@@ -806,8 +804,6 @@ export default function buttyExtension(pi: ExtensionAPI) {
     name: "butty_attach",
     label: "Butty Attach",
     description: "Focus a Butty agent pane or the parent WezTerm pane.",
-    promptSnippet: "Focus the Butty or parent WezTerm pane",
-    promptGuidelines: ["Use butty_attach when the user wants to view Butty panes in WezTerm."],
     parameters: ATTACH_PARAMS,
     async execute(_id, _params, _signal, _update, ctx) {
       const pane = await attach(ctx);
@@ -823,8 +819,6 @@ export default function buttyExtension(pi: ExtensionAPI) {
     name: "butty_capture",
     label: "Butty Capture",
     description: "Capture recent output from one or all Butty WezTerm panes/logs.",
-    promptSnippet: "Capture recent output from Butty panes",
-    promptGuidelines: ["Use butty_capture before summarizing or acting on Butty agent results."],
     parameters: CAPTURE_PARAMS,
     async execute(_id, params) {
       const text = await capture(params.role, params.lines ?? 80);
@@ -836,8 +830,6 @@ export default function buttyExtension(pi: ExtensionAPI) {
     name: "butty_join",
     label: "Butty Join",
     description: "Wait for one or all Butty agents to finish, capture logs, and clean up their panes.",
-    promptSnippet: "Wait for Butty agents and clean up panes",
-    promptGuidelines: ["Use butty_join after spawning Butty agents when their results are needed."],
     parameters: JOIN_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const text = await joinAgents(ctx, params.role, params.timeoutMs ?? 600000, params.kill ?? true, signal);
@@ -852,8 +844,6 @@ export default function buttyExtension(pi: ExtensionAPI) {
     name: "butty_list",
     label: "Butty List",
     description: "List tracked Butty agents in the parent WezTerm workspace.",
-    promptSnippet: "List known Butty panes",
-    promptGuidelines: ["Use butty_list to inspect active Butty agents."],
     parameters: Type.Object({}),
     async execute(_id, _params, _signal, _update, ctx) {
       const target = await buttyTarget(pi, ctx);
@@ -874,8 +864,6 @@ export default function buttyExtension(pi: ExtensionAPI) {
     name: "butty_kill",
     label: "Butty Kill",
     description: "Kill one or all tracked Butty agent panes without touching the parent workspace.",
-    promptSnippet: "Kill Butty panes",
-    promptGuidelines: ["Use butty_kill after Butty agents finish or when the user asks to clean up."],
     parameters: KILL_PARAMS,
     async execute(_id, params, _signal, _update, ctx) {
       const text = await kill(ctx, params.role);

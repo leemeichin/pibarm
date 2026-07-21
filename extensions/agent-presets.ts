@@ -165,10 +165,6 @@ export default function agentPresets(pi: ExtensionAPI) {
     label: "Run Subagent",
     description:
       "Run a non-interactive pi subagent with an isolated prompt and return stdout/stderr. Output is truncated to the last ~50KB/2000 lines.",
-    promptSnippet: "Run an isolated pi -p subagent for research, planning, or verification",
-    promptGuidelines: [
-      "Use run_subagent only for isolated research, planning, or verification tasks with a self-contained prompt.",
-    ],
     parameters: SUBAGENT_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       const modelSelection = selectAgentModelRef(ctx, params.model, params.prompt);
@@ -200,10 +196,6 @@ export default function agentPresets(pi: ExtensionAPI) {
     label: "Run Subagents",
     description:
       "Run several non-interactive pi subagents in parallel, optionally on different models. Each job's output is truncated to the last ~50KB/2000 lines.",
-    promptSnippet: "Run multiple isolated pi -p subagents in parallel, optionally across models",
-    promptGuidelines: [
-      "Use run_subagents when the user asks to compare, delegate, or orchestrate multiple subagents across models.",
-    ],
     parameters: SUBAGENTS_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       if (params.jobs.length === 0) throw new Error("No subagent jobs provided.");

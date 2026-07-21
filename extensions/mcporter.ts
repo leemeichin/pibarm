@@ -134,10 +134,6 @@ export default function mcporterExtension(pi: ExtensionAPI) {
     name: "mcporter_list",
     label: "Mcporter List",
     description: "List configured MCP servers through mcporter, optionally including tool schemas.",
-    promptSnippet: "Discover configured MCP servers and tool schemas through mcporter",
-    promptGuidelines: [
-      "Use mcporter_list before mcporter_call when you need to discover available MCP servers, tools, or schemas.",
-    ],
     parameters: LIST_PARAMS,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const config = await loadConfig(ctx);
@@ -169,8 +165,6 @@ export default function mcporterExtension(pi: ExtensionAPI) {
     name: "mcporter_call",
     label: "Mcporter Call",
     description: "Call an MCP server tool through the mcporter CLI wrapper.",
-    promptSnippet: "Call MCP tools through mcporter by server and tool name",
-    promptGuidelines: ["Use mcporter_call when the user asks to use an MCP server or a tool exposed through mcporter."],
     parameters: CALL_PARAMS,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const config = await loadConfig(ctx);
@@ -204,8 +198,6 @@ export default function mcporterExtension(pi: ExtensionAPI) {
     name: "mcporter_resource",
     label: "Mcporter Resource",
     description: "List or read MCP resources through mcporter.",
-    promptSnippet: "List or read MCP resources exposed by a configured server through mcporter",
-    promptGuidelines: ["Use mcporter_resource when the user asks to inspect resources exposed by an MCP server."],
     parameters: RESOURCE_PARAMS,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       const config = await loadConfig(ctx);

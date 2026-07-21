@@ -5,7 +5,7 @@ description: Use pi's read-only plan mode with elicitation and isolated git work
 
 # Plan Worktree
 
-Use this workflow for non-trivial or risky code changes.
+Use this workflow for non-trivial or risky code changes. If worktree tools are inactive, enable the worktree group with `search_tools` before execution.
 
 ## Flow
 

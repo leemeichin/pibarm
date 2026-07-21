@@ -5,6 +5,8 @@ description: Triage GitHub Actions or SourceHut CI/build failures. Use when aske
 
 # CI Triage
 
+Enable the repository and forge tools with `search_tools` if they are inactive.
+
 ## Flow
 
 1. Use `repo_status` for branch/PR/CI summary.

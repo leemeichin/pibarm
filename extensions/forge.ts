@@ -151,10 +151,6 @@ export default function forgeExtension(pi: ExtensionAPI) {
     name: "forge_prs",
     label: "Forge PRs",
     description: "List pull requests/patches for the current repository using the detected/configured forge.",
-    promptSnippet: "List PRs or patches through the current repo forge",
-    promptGuidelines: [
-      "Use forge_prs instead of forge-specific tools; pibarm detects GitHub or SourceHut from the remote, or asks once and remembers.",
-    ],
     parameters: PRS_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const result = await forgeRun(
@@ -181,8 +177,6 @@ export default function forgeExtension(pi: ExtensionAPI) {
     name: "forge_pr_status",
     label: "Forge PR Status",
     description: "Show current or selected PR/patch status using the detected/configured forge.",
-    promptSnippet: "Inspect PR/patch review and check status through the current repo forge",
-    promptGuidelines: ["Use forge_pr_status when the user asks about PR/patch review state, mergeability, or checks."],
     parameters: PR_STATUS_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const selector = params.number ? [String(params.number)] : [];
@@ -207,10 +201,6 @@ export default function forgeExtension(pi: ExtensionAPI) {
     name: "forge_ci_status",
     label: "Forge CI Status",
     description: "List CI/build status using the detected/configured forge.",
-    promptSnippet: "Inspect CI/build status through the current repo forge",
-    promptGuidelines: [
-      "Use forge_ci_status when the user asks about CI, GitHub Actions, SourceHut builds, or failed checks.",
-    ],
     parameters: CI_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const branch = params.branch ? ["--branch", params.branch] : [];
@@ -237,8 +227,6 @@ export default function forgeExtension(pi: ExtensionAPI) {
     name: "forge_tickets",
     label: "Forge Tickets",
     description: "List issues/tickets using the detected/configured forge.",
-    promptSnippet: "Inspect issues or tickets through the current repo forge",
-    promptGuidelines: ["Use forge_tickets when the user asks about issues, tickets, or SourceHut todo items."],
     parameters: LIMIT_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const result = await forgeRun(
@@ -256,8 +244,6 @@ export default function forgeExtension(pi: ExtensionAPI) {
     name: "forge_status",
     label: "Forge Status",
     description: "Detect or show the configured forge for the current repository.",
-    promptSnippet: "Detect the current repository forge",
-    promptGuidelines: ["Use forge_status to understand whether forge tools will use GitHub or SourceHut."],
     parameters: Type.Object({}),
     async execute(_id, _params, _signal, _update, ctx) {
       const resolved = await resolveForge(pi, ctx);

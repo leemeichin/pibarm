@@ -3,6 +3,7 @@ node_modules/
 .pi/git/
 .pi/wt/
 .pi/butty/
+.pi/evals/
 *.log
 .DS_Store
 .env

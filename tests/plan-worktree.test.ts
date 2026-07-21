@@ -104,6 +104,7 @@ describe("isReadOnlyCommand", () => {
     expect(isReadOnlyCommand("awk 'BEGIN { system(\"touch changed\") }'")).toBe(false);
     expect(isReadOnlyCommand("sed -n '1w changed' README.md")).toBe(false);
     expect(isReadOnlyCommand("rg --pre 'touch changed' pattern")).toBe(false);
+    expect(isReadOnlyCommand("rg --hostname-bin='touch changed' --hyperlink-format=default pattern")).toBe(false);
     expect(isReadOnlyCommand("git diff --output=changed")).toBe(false);
     expect(isReadOnlyCommand("git branch changed")).toBe(false);
   });

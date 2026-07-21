@@ -678,7 +678,7 @@ const READ_ONLY_GIT_SEGMENT =
 
 function isReadOnlySegment(segment: string) {
   if (SIMPLE_READ_SEGMENT.test(segment)) {
-    return !/^rg(?:\s|$)/.test(segment) || !/(?:^|\s)--pre(?:=|\s|$)/.test(segment);
+    return !/^rg(?:\s|$)/.test(segment) || !/(?:^|\s)--(?:pre|hostname-bin)(?:=|\s|$)/.test(segment);
   }
   if (!READ_ONLY_GIT_SEGMENT.test(segment)) return false;
   return !/(?:^|\s)--(?:output|ext-diff|textconv)(?:=|\s|$)/.test(segment);

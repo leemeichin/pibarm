@@ -2,7 +2,7 @@
 title: pibarm runtime PRD
 stage: prd
 status: draft
-owner: lee@meichin.com
+owner: pibarm maintainers
 created: 2026-07-19
 tags:
   - pibarm
@@ -19,7 +19,7 @@ next: "[[pibarm runtime design]]"
 
 pibarm today is a set of pi extensions and skills that make agent work safer and more legible in a terminal: plan first, execute in worktrees, multiplex visible agents in WezTerm, watch PRs in the background, and keep a durable Obsidian record. All of it assumes a TTY, a local shell, and (for multiplexing) WezTerm.
 
-This PRD proposes the **pibarm runtime**: the same agent runtime environment lifted out of the CLI so it can be driven from a **web client** and a **native desktop app** (macOS first), with native UX affordances instead of terminal emulation. Everything the TUI can do — multiplexing, planning, elicitation, worktrees, watchers, presets, subagents, forge operations — must be doable from web and desktop, and each surface should do it in the way that surface does best.
+This PRD proposes the **pibarm runtime**: the same agent runtime environment lifted out of the CLI behind an ACP-compatible client boundary so it can be driven from a **web client** and a **native desktop app** (macOS first), with native UX affordances instead of terminal emulation. Everything the TUI can do — multiplexing, planning, elicitation, worktrees, watchers, presets, subagents, forge operations — must be doable from web and desktop, and each surface should do it in the way that surface does best.
 
 The second pillar is **deep forge integration**. Not GitHub alone: GitHub and SourceHut as first-class peers, with the AGit push protocol (Forgejo, Gitea, and anything else that speaks it) as a fast follow. Deep means the forge is a workspace, not a status line: review inboxes, inline review authoring, CI log triage, and tickets that feed straight into plan mode.
 
@@ -76,7 +76,7 @@ Every one of these is currently welded to a terminal. The Butty depends on a spe
 2. **Keyboard-grade everywhere.** The TUI sets the bar: every action reachable without a pointer; a command palette on every surface mirroring the slash commands.
 3. **Safety travels with the session.** Plan-mode restrictions, permission gates, and worktree isolation are runtime-enforced, so no client can accidentally offer a weaker sandbox.
 4. **The forge is a first-class workspace.** Forge state is data in the runtime, not text in a status line.
-5. **Boring protocols.** JSON-RPC over WebSocket, event-sourced session journals, capability flags. Nothing a future client author will curse us for.
+5. **Standard core, boring extensions.** ACP JSON-RPC for agent sessions, `_pibarm/*` for runtime-specific capabilities, and event-sourced journals for replay. WebSocket remains a documented custom transport until ACP standardizes remote transport.
 
 ## Feature requirements
 
@@ -88,12 +88,12 @@ A long-lived host process (`pibarmd`) that owns sessions, agents, watchers, and 
 
 - Sessions survive client disconnects; reattach shows full scrollback and pending questions.
 - Multiple simultaneous clients per session (read-write with last-writer-wins on input focus; presence indicators).
-- Hosts are discoverable/addressable: localhost by default; remote attach over the user's own network (SSH tunnel or tailnet) without pibarm-side auth infrastructure beyond a host token.
+- Hosts are loopback-only by default; remote attach uses SSH forwarding or Tailscale Serve as a user-owned HTTPS/WSS proxy, without pibarm-operated tunnels or PKI.
 - The existing CLI becomes the first protocol client (or wraps it) so behaviour cannot fork.
 
 ### F2 — Web client (P0)
 
-Browser app served by the runtime host itself. Details in [[web client]].
+Browser app served by the runtime host itself. GitHub issue #44's start → stream → diff → approve/merge flow is the first vertical slice; it runs against the user's host rather than a Cloudflare Worker. Details in [[web client]].
 
 - Session list, live transcript, input, tool-call rendering with bounded payloads (same discipline as the Obsidian exporter).
 - Plan mode: visible mode state, plan document view, approve / refine / execute-in-worktree actions.
@@ -163,6 +163,10 @@ Details and adapter contract in [[forge integration]].
 
 No native app this cycle, but the architecture must not be macOS-shaped. Decision and approach in [[windows and linux]].
 
+### F12 — Language intelligence (P1)
+
+One bounded code-intelligence tool uses trusted, already-installed language servers for definitions, references, symbols, hover, and diagnostics. Servers start lazily, never auto-install, and fall back to grep/read when unavailable. Details in [[language intelligence]].
+
 ## Platform requirements
 
 | Surface      | Baseline                                                                                                                        |
@@ -179,6 +183,7 @@ No native app this cycle, but the architecture must not be macOS-shaped. Decisio
 - A full review (open → inline comments → submit) completed against GitHub _and_ SourceHut without opening the forge's website.
 - Median time-to-answer for a waiting elicitation question drops from "whenever I next look at the terminal" to under a minute via notification actions (instrument locally; no telemetry leaves the machine — measurement is a local stat, opt-in).
 - Existing extension test suite passes against the host-embedded session path.
+- GitHub issue #44's minimal flow completes from a second browser device over Tailscale Serve: start, reconnect to streamed output, inspect the worktree diff, approve, and hand off merge/PR creation.
 
 ## Milestones
 
@@ -192,7 +197,7 @@ Stage 3 (GitHub issues) will be cut from [[roadmap and issue seeds]] once the de
 
 ## Risks
 
-- **pi embedding surface.** The design assumes pi can be driven headlessly with full fidelity (streaming events, tool-call interception, mode control). `pi -p` exists; the RPC surface needs validation early — this is the M1 spike. Mitigation: fall back to pty-wrapping pi with a structured sidecar journal, at the cost of uglier event extraction.
+- **Pi SDK compatibility.** The design uses the documented, pinned `AgentSessionRuntime` surface, but lifecycle APIs can evolve. Mitigation: a thin adapter, exact development/CI pin, weekly latest-Pi compatibility run, and no pty fallback that would weaken event or gate fidelity.
 - **Two rendering stacks (native macOS + web)** risk drift. Mitigation: parity is enforced at the protocol layer (capabilities are runtime features, clients only render), plus the [[parity matrix]] as a living acceptance sheet.
 - **SourceHut's email-driven review** does not map 1:1 onto a PR-shaped UI. Mitigation: the adapter models _review threads_ generically; the design doc treats patchsets as first-class rather than fake PRs.
 - **Security surface grows** the moment a host accepts non-local clients. Mitigation: [[security, permissions and notifications]] — token-gated host, localhost-only default, user-owned transport (SSH/tailnet) rather than pibarm-managed TLS.
@@ -201,9 +206,8 @@ Stage 3 (GitHub issues) will be cut from [[roadmap and issue seeds]] once the de
 ## Open questions
 
 - [ ] **"SourceForge" vs SourceHut.** The request said SourceForge; pibarm already integrates SourceHut (`hut`, builds.sr.ht) and every existing forge tool assumes it. This PRD assumes **SourceHut** was meant. If SourceForge (the classic forge) is genuinely intended, it becomes a new adapter with a much thinner API surface — flag before M4.
-- [ ] Remote attach transport: do we bless tailnet-style access in docs only, or ship a first-party tunnel helper? (Current stance: docs only; see [[security, permissions and notifications]].)
+- [ ] ACP remote transport: when the Streamable HTTP/WebSocket RFD is ratified, does its lifecycle fully replace the custom WebSocket adapter or only its framing?
 - [ ] macOS distribution: direct download + Sparkle vs App Store. Leaning direct; recorded in [[macos app]].
-- [ ] Does the CLI become a thin protocol client in M1, or keep its in-process path with the host as an alternative mode? (Design doc recommends dual-mode with a shared core; see [[runtime core and protocol]].)
 - [ ] AGit servers to certify against: Forgejo (Codeberg) first? Gitea cloud? Both claim protocol compatibility but diverge in API.
 
 ## Related

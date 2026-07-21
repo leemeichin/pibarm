@@ -27,12 +27,21 @@ Stage 3 feedstock: the [[pibarm runtime PRD|PRD]] milestones crossed with the is
 
 The SourceHut reading of the PRD's open question is baked into the M4 epic (flagged there too); the pi driver spike (#56) still gates the rest of M1. The earlier web UI spike issue #44 is superseded by the M2 epic, and the permission-gate issue #1 is referenced from #65.
 
+## Foundation checkpoint (before M1)
+
+- reproducible prompt/tool baseline and pinned/latest Pi compatibility checks
+- hard Butty rename and preset lifecycle correction
+- additive deferred tool loading and strict plan-mode policy
+- progressive Python, Ruby/Rails, and TypeScript/React/Vue/Vite skills
+- first post-checkpoint efficacy issue: `code_intel` from [[language intelligence]] with trusted installed servers, lazy lifecycle, and bounded fallback
+
 ## M1 — host ([[runtime core and protocol]])
 
 Exit: a session runs plan → elicit → approve → worktree-execute entirely through the host with no TUI attached; CLI attaches and detaches without loss.
 
-- pi driver spike (Plan A fidelity vs exit criteria) — **first, everything gates on it**
-- `pibarmd` skeleton: gateway, token auth, capability handshake
+- Pi `AgentSessionRuntime` adapter spike against the documented SDK exit criteria — **first, everything gates on it**
+- ACP stdio adapter + conformance fixtures for the supported standard subset
+- `pibarmd` skeleton: gateway, token auth, ACP initialization + `_meta.pibarm` capability handshake
 - journal writer/reader + bounded sidecars
 - session manager lifecycle
 - plan/elicitation extraction from `plan-worktree.ts`
@@ -46,8 +55,10 @@ Exit: a session runs plan → elicit → approve → worktree-execute entirely t
 
 Exit: every P0 web row in the [[parity matrix]] works against a localhost host.
 
-- static serving + browser auth handshake
-- journal store (replay/tail/reconnect/blob expansion)
+- #44 thin vertical slice: trusted repo, start run, stream/reconnect, worktree diff, approve + merge/PR handoff
+- static serving + bearer-to-session-cookie browser auth handshake
+- custom ACP WebSocket adapter behind the standard-independent transport interface
+- journal store (ACP load + exact replay/tail/reconnect/blob expansion)
 - session view: transcript, bounded tool rows, input, mode banner
 - elicitation forms (all types)
 - plan view + refinement diffs
@@ -101,7 +112,7 @@ Exit: publish-to-review against Codeberg (Forgejo) via AGit; preset UI; Obsidian
 
 ## Cutting rules
 
-Inherited from the PRD: P0 rows in the [[parity matrix]] define each milestone's bar; P1/P2 items slip without renegotiation. If M1's spike forces Plan B (pty fallback), M2 scope is unchanged but streaming granularity degrades — note it in [[runtime core and protocol]] and move on.
+Inherited from the PRD: P0 rows in the [[parity matrix]] define each milestone's bar; P1/P2 items slip without renegotiation. M1 does not fall back to terminal scraping: an SDK fidelity gap is fixed in the thin adapter or upstream before the runtime safety/replay contract is declared complete.
 
 ## Related
 

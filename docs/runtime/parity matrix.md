@@ -35,18 +35,18 @@ Legend: **native** = purpose-built UI on that surface; **form** = rendered as st
 | `/worktree-remove [--force]`                              | confirmation gate host-side | confirm dialog with diff recap     | same                              | P0       |
 | `run_worktree_agent`                                      | agent = runtime child       | appears in agent grid + task pills | native pane in agent grid         | P0       |
 
-## Multiplexing (Matrix) — see [[sessions and multiplexing]]
+## Multiplexing (Butty) — see [[sessions and multiplexing]]
 
-| Capability (today)                         | Runtime host                        | Web                                              | macOS                           | Priority |
-| ------------------------------------------ | ----------------------------------- | ------------------------------------------------ | ------------------------------- | -------- |
-| `/matrix <task>` scout/planner bootstrap   | orchestration in host               | agent grid view                                  | native pane grid                | P0       |
-| `matrix_spawn` roles, worktree option      | runtime children with role toolsets | spawn dialog                                     | spawn sheet + palette           | P0       |
-| `/matrix-attach` focus                     | client-side focus                   | click/keys                                       | keys, window per agent optional | P0       |
-| `matrix_capture` recent output             | journal read                        | scrollback per pane                              | same                            | P0       |
-| `matrix_join` wait + collect + cleanup     | host verb                           | join button, results fold into parent transcript | same                            | P0       |
-| `/matrix-list`, `/matrix-kill`, `-orphans` | host registry (no pane scraping)    | list + kill controls                             | same                            | P0       |
-| 3-agent row, 4th-agent confirmation        | policy in host config               | enforced via same policy                         | enforced via same policy        | P0       |
-| WezTerm panes                              | CLI-only rendering path, kept       | — (runtime panes instead)                        | — (native panes instead)        | P0       |
+| Capability (today)                       | Runtime host                        | Web                                              | macOS                           | Priority |
+| ---------------------------------------- | ----------------------------------- | ------------------------------------------------ | ------------------------------- | -------- |
+| `/butty <task>` scout/planner bootstrap  | orchestration in host               | agent grid view                                  | native pane grid                | P0       |
+| `butty_spawn` roles, worktree option     | runtime children with role toolsets | spawn dialog                                     | spawn sheet + palette           | P0       |
+| `/butty-attach` focus                    | client-side focus                   | click/keys                                       | keys, window per agent optional | P0       |
+| `butty_capture` recent output            | journal read                        | scrollback per pane                              | same                            | P0       |
+| `butty_join` wait + collect + cleanup    | host verb                           | join button, results fold into parent transcript | same                            | P0       |
+| `/butty-list`, `/butty-kill`, `-orphans` | host registry (no pane scraping)    | list + kill controls                             | same                            | P0       |
+| 3-agent row, 4th-agent confirmation      | policy in host config               | enforced via same policy                         | enforced via same policy        | P0       |
+| WezTerm panes                            | CLI-only rendering path, kept       | — (runtime panes instead)                        | — (native panes instead)        | P0       |
 
 ## Background work and notifications
 

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const RENDERER = fileURLToPath(new URL("../scripts/matrix-render.mjs", import.meta.url));
+const RENDERER = fileURLToPath(new URL("../scripts/butty-render.mjs", import.meta.url));
 
 function render(lines: unknown[]): string {
   const input = lines.map((line) => (typeof line === "string" ? line : JSON.stringify(line))).join("\n");
@@ -11,7 +11,7 @@ function render(lines: unknown[]): string {
   return result.stdout;
 }
 
-describe("matrix-render", () => {
+describe("butty-render", () => {
   test("streams thinking and response deltas with section markers", () => {
     const output = render([
       { type: "agent_start" },

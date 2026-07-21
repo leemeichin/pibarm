@@ -11,13 +11,13 @@ export interface ObsidianSettings {
   includeAttachments?: boolean;
 }
 
-export interface MatrixSettings {
+export interface ButtySettings {
   autoSpawn?: boolean;
 }
 
 export interface PibarmSettings {
   obsidian?: ObsidianSettings;
-  matrix?: MatrixSettings;
+  butty?: ButtySettings;
 }
 
 export interface SettingsContext {

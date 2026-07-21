@@ -29,18 +29,18 @@ The full inventory of what exists today, and what each piece must become on web 
 
 - **Planning**: `/plan`, plan mode restrictions, `elicit_plan_questions` with typed inputs, approve/refine loop.
 - **Isolation**: repo-local git worktrees (`.pi/wt/<name>`), worktree agents, diff summaries.
-- **Multiplexing**: Matrix — parent-controlled agents in WezTerm panes, capture/join/kill lifecycle.
+- **Multiplexing**: Butty — parent-controlled agents in WezTerm panes, capture/join/kill lifecycle.
 - **Background work**: watcher agents polling PR/CI state, waking the parent session on change.
 - **Forge**: `forge_*` tools over `gh` (GitHub) and `hut` (SourceHut), repo statusline, `/review`.
 - **Record**: Obsidian session export with a stable note-path scheme and autosync.
 - **Configuration**: role presets (model/tools/thinking), mcporter MCP bridge, themes.
 
-Every one of these is currently welded to a terminal. The Matrix depends on a specific terminal emulator. Notifications depend on terminal escape sequences. Rich elicitation is a TUI form. The product is good; the delivery surface is singular.
+Every one of these is currently welded to a terminal. The Butty depends on a specific terminal emulator. Notifications depend on terminal escape sequences. Rich elicitation is a TUI form. The product is good; the delivery surface is singular.
 
 ## Problem statement
 
 1. **The runtime is trapped in the TTY.** You cannot check a plan waiting for approval, answer an elicitation question, or review a worktree diff unless you are at the terminal that owns the session. Sessions die with the terminal window.
-2. **Multiplexing is borrowed, not owned.** The Matrix rents panes from WezTerm. Users of other terminals get degraded behaviour, and no terminal gives us a real review surface, diff viewer, or form control.
+2. **Multiplexing is borrowed, not owned.** The Butty rents panes from WezTerm. Users of other terminals get degraded behaviour, and no terminal gives us a real review surface, diff viewer, or form control.
 3. **Forge work bounces between tools.** pibarm can list PRs and CI, but reviewing, replying, and triaging still means a browser tab per forge. Non-GitHub forges get shallower treatment than GitHub, and AGit-style forges get none.
 4. **The record and the runtime are separate.** Obsidian holds the durable narrative, but you cannot act from it; the runtime holds the action, but its presentation is ephemeral.
 
@@ -98,7 +98,7 @@ Browser app served by the runtime host itself. Details in [[web client]].
 - Session list, live transcript, input, tool-call rendering with bounded payloads (same discipline as the Obsidian exporter).
 - Plan mode: visible mode state, plan document view, approve / refine / execute-in-worktree actions.
 - Elicitation forms: every `elicit_plan_questions` type (free text, select one/many, confirm, boolean, number, notes, previews) as real form controls.
-- Task widget parity: pills for todos, subagents, worktree agents, watchers, Matrix agents.
+- Task widget parity: pills for todos, subagents, worktree agents, watchers, Butty agents.
 - Web notifications for waiting questions and watcher events.
 - Built on `packages/pibarm-ds` — the design system already renders StatusLine, TaskPill, Terminal, Callout et al.
 
@@ -107,13 +107,13 @@ Browser app served by the runtime host itself. Details in [[web client]].
 Native macOS application. Details in [[macos app]].
 
 - True native shell: menu bar, dock badge with waiting-question count, system notifications with reply/approve actions, multi-window, full keyboard control.
-- Agent grid: the Matrix as a native pane grid — resizable, focusable, detachable to windows — replacing the WezTerm dependency on this surface.
+- Agent grid: the Butty as a native pane grid — resizable, focusable, detachable to windows — replacing the WezTerm dependency on this surface.
 - Native diff review for worktrees and incoming PRs/patches.
 - Menu bar extra: at-a-glance runtime state (sessions running, questions waiting, CI status) without the main window.
 
 ### F4 — Multiplexing without a terminal emulator (P0)
 
-The Matrix generalises: agents are runtime children, and each surface renders them its own way. Details in [[sessions and multiplexing]].
+The Butty generalises: agents are runtime children, and each surface renders them its own way. Details in [[sessions and multiplexing]].
 
 - Same lifecycle verbs as today: spawn, attach, capture, join, kill; same roles (scout/planner/worker); same worktree option.
 - WezTerm rendering remains for the CLI; web/desktop render runtime-native panes.
@@ -156,7 +156,7 @@ Details and adapter contract in [[forge integration]].
 ### F10 — Presets, subagents, MCP (P1)
 
 - Preset switching (planner/executor et al) from a surface-native picker.
-- `run_subagent(s)` and worktree agents render into the same task/pane model as Matrix agents.
+- `run_subagent(s)` and worktree agents render into the same task/pane model as Butty agents.
 - mcporter bridge unchanged in the host; discovery UI on web/desktop is P2.
 
 ### F11 — Windows and Linux desktop (P2, design now)
@@ -175,7 +175,7 @@ No native app this cycle, but the architecture must not be macOS-shaped. Decisio
 ## Success metrics
 
 - A session started in the CLI can be answered, approved, and completed entirely from web and from macOS — demonstrated across all P0 features (parity checklist in [[parity matrix]] is the acceptance artifact).
-- Zero WezTerm dependency for multiplexing on web/desktop; CLI Matrix behaviour unchanged.
+- Zero WezTerm dependency for multiplexing on web/desktop; CLI Butty behaviour unchanged.
 - A full review (open → inline comments → submit) completed against GitHub _and_ SourceHut without opening the forge's website.
 - Median time-to-answer for a waiting elicitation question drops from "whenever I next look at the terminal" to under a minute via notification actions (instrument locally; no telemetry leaves the machine — measurement is a local stat, opt-in).
 - Existing extension test suite passes against the host-embedded session path.

@@ -37,7 +37,7 @@ src/
   components/
     Demos.jsx               React island: manual tabs and tool snapshots
     PiSession.jsx           Scripted /plan → /execute-plan session
-    Matrix.jsx              WezTerm multi-pane orchestration
+    Butty.jsx              WezTerm multi-pane orchestration
   data/site.ts              features, command list, session script (typed)
   styles/
     global.css              entry point (@imports the design system, then site.css)
@@ -84,7 +84,7 @@ flex layouts in the DS CSS.
 | `Kbd` | keyboard key cap |
 | `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
-The home page's `Demos` React island switches manually between the stateful `PiSession` and `Matrix` simulations plus a static Obsidian vault snapshot; everything else is static Astro.
+The home page's `Demos` React island switches manually between the stateful `PiSession` and `Butty` simulations plus a static Obsidian vault snapshot; everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 
@@ -94,6 +94,6 @@ The home page's `Demos` React island switches manually between the stateful `PiS
 
 ## Source & credit
 
-Grounded in [`leemeichin/pibarm`](https://github.com/leemeichin/pibarm) (README, `lib/task-widget.ts`, `extensions/matrix.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
+Grounded in [the pibarm repository](../) (README, `lib/task-widget.ts`, `extensions/butty.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
 
 The demos are cosmetic recreations of TUI output, not a real pi runtime.

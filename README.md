@@ -77,10 +77,10 @@ Feature-specific tools:
 | `gh`                | GitHub-backed `forge_*` tools and statusline PR checks | `brew install gh && gh auth login`                          |
 | `hut`               | SourceHut-backed `forge_*` tools                       | `brew install hut && hut init`                              |
 | `mcporter`          | MCP bridge tools                                       | install/configure `mcporter`, then edit `.pi/mcporter.json` |
-| `wezterm`           | Matrix visible agent panes                             | `brew install --cask wezterm`                               |
+| `wezterm`           | Butty visible agent panes                              | `brew install --cask wezterm`                               |
 | `terminal-notifier` | optional native macOS notifications                    | `brew install terminal-notifier`                            |
 
-The TUI uses Nerd Font glyphs for the statusline, Matrix/task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
+The TUI uses Nerd Font glyphs for the statusline, Butty/task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
 
 ## Obsidian export
 
@@ -156,15 +156,15 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `/review [#number\|url\|branch]`          | Start a PR/patch review; GitHub findings are posted inline when possible. |
 | `/obsidian-status`                        | Show Obsidian export settings resolved from Pi settings.                  |
 | `/obsidian-export`                        | Export the current session to the configured Obsidian vault.              |
-| `/matrix-help`                            | Explain when/how to use Matrix and its prior art.                         |
-| `/matrix <task>`                          | Start a WezTerm Matrix with scout/planner panes.                          |
-| `/matrix-attach`                          | Focus a Matrix agent or the parent WezTerm pane.                          |
-| `/matrix-spawn <role> <task>`             | Spawn one Matrix agent beside the parent Pi pane.                         |
-| `/matrix-capture [role]`                  | Capture recent output from Matrix panes/logs.                             |
-| `/matrix-join [role\|all]`                | Wait for Matrix agents, capture logs, and clean up their panes.           |
-| `/matrix-list`                            | List tracked Matrix agents in the current workspace.                      |
-| `/matrix-kill [role\|all]`                | Kill tracked Matrix agent panes without touching the parent workspace.    |
-| `/matrix-kill-orphans`                    | Kill Matrix panes left behind by other sessions.                          |
+| `/butty-help`                             | Explain when/how to use Butty and its prior art.                          |
+| `/butty <task>`                           | Start a WezTerm Butty with scout/planner panes.                           |
+| `/butty-attach`                           | Focus a Butty agent or the parent WezTerm pane.                           |
+| `/butty-spawn <role> <task>`              | Spawn one Butty agent beside the parent Pi pane.                          |
+| `/butty-capture [role]`                   | Capture recent output from Butty panes/logs.                              |
+| `/butty-join [role\|all]`                 | Wait for Butty agents, capture logs, and clean up their panes.            |
+| `/butty-list`                             | List tracked Butty agents in the current workspace.                       |
+| `/butty-kill [role\|all]`                 | Kill tracked Butty agent panes without touching the parent workspace.     |
+| `/butty-kill-orphans`                     | Kill Butty panes left behind by other sessions.                           |
 
 ## Tools exposed to the agent
 
@@ -189,12 +189,12 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `forge_ci_status`         | List CI/builds using the detected/configured forge.                                                                                                                     |
 | `forge_tickets`           | List issues/tickets using the detected/configured forge.                                                                                                                |
 | `todo_list`               | Track progress when one prompt contains multiple requested tasks in the shared task widget.                                                                             |
-| `matrix_spawn`            | Spawn a parent-controlled pi agent in a WezTerm Matrix pane.                                                                                                            |
-| `matrix_attach`           | Focus a Matrix agent or the parent WezTerm pane.                                                                                                                        |
-| `matrix_capture`          | Capture recent output from Matrix WezTerm panes/logs.                                                                                                                   |
-| `matrix_join`             | Wait for Matrix agents to finish, capture logs, and clean up their panes.                                                                                               |
-| `matrix_list`             | List tracked Matrix agents in the parent workspace.                                                                                                                     |
-| `matrix_kill`             | Kill tracked Matrix agent panes without touching the parent workspace.                                                                                                  |
+| `butty_spawn`             | Spawn a parent-controlled pi agent in a WezTerm Butty pane.                                                                                                             |
+| `butty_attach`            | Focus a Butty agent or the parent WezTerm pane.                                                                                                                         |
+| `butty_capture`           | Capture recent output from Butty WezTerm panes/logs.                                                                                                                    |
+| `butty_join`              | Wait for Butty agents to finish, capture logs, and clean up their panes.                                                                                                |
+| `butty_list`              | List tracked Butty agents in the parent workspace.                                                                                                                      |
+| `butty_kill`              | Kill tracked Butty agent panes without touching the parent workspace.                                                                                                   |
 
 ## Rich planning questions
 
@@ -224,7 +224,7 @@ The TUI is tabbed, has Nerd Font status icons, supports option descriptions/prev
 
 ## Task widget
 
-`todo-list.ts`, headless subagents, worktree agents, watcher agents, and Matrix agents share one compact widget below the editor/above the status line. It renders clean horizontal pills such as `‹ ○ 1 · inspect auth › ‹ ● matrix scout · matrix-app › ‹ ✓ sub reviewer · gpt-5-mini ›` so delegated work stays visually connected to the parent session/workspace without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
+`todo-list.ts`, headless subagents, worktree agents, watcher agents, and Butty agents share one compact widget below the editor/above the status line. It renders clean horizontal pills such as `‹ ○ 1 · inspect auth › ‹ ● butty scout · butty-app › ‹ ✓ sub reviewer · gpt-5-mini ›` so delegated work stays visually connected to the parent session/workspace without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
 
 ## Watcher agents
 
@@ -280,16 +280,16 @@ Review and cleanup:
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
-## Matrix WezTerm agents
+## Butty WezTerm agents
 
-`matrix.ts` is WezTerm-native orchestration for visible parent-controlled agents. It opens agents in WezTerm tabs/splits and keeps only lightweight pane tracking in Pi. Use `/matrix-help` inside Pi for the quick operating guide.
+`butty.ts` is WezTerm-native orchestration for visible parent-controlled agents. It opens agents in WezTerm tabs/splits and keeps only lightweight pane tracking in Pi. Use `/butty-help` inside Pi for the quick operating guide.
 
-To make visible Matrix panes the default for `run_subagent` and `run_subagents`, add this opt-in setting to global or trusted project Pi settings, then reload Pi:
+To make visible Butty panes the default for `run_subagent` and `run_subagents`, add this opt-in setting to global or trusted project Pi settings, then reload Pi:
 
 ```json
 {
   "pibarm": {
-    "matrix": {
+    "butty": {
       "autoSpawn": true
     }
   }
@@ -299,27 +299,27 @@ To make visible Matrix panes the default for `run_subagent` and `run_subagents`,
 Worktree agents and watchers remain unchanged.
 
 ```text
-/matrix triage every open issue and propose the smallest safe plan for each
-/matrix-attach
-/matrix-join all
+/butty triage every open issue and propose the smallest safe plan for each
+/butty-attach
+/butty-join all
 ```
 
-After joining, the parent can loop over unblocked plans with one `matrix_spawn` worktree worker at a time, then start `watch_agent` for each pull request's reviews and CI before moving to the next issue.
+After joining, the parent can loop over unblocked plans with one `butty_spawn` worktree worker at a time, then start `watch_agent` for each pull request's reviews and CI before moving to the next issue.
 
 Defaults:
 
 - spawned agents use the current active model unless `model` is set explicitly; simple-scope tasks may use a lighter authenticated model
-- agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/matrix/`, and panes exit when tasks finish
-- `matrix_join` waits for completion, returns logs, and cleans up only the finished agent panes
-- Matrix uses the parent Pi pane and its current WezTerm workspace by default; `placement: "window"` explicitly opens another window, and runs outside WezTerm fall back to a dedicated Matrix workspace
-- Matrix keeps the parent pane full-width above a horizontal row of up to three agents and immediately returns input focus to the parent
+- agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/butty/`, and panes exit when tasks finish
+- `butty_join` waits for completion, returns logs, and cleans up only the finished agent panes
+- Butty uses the parent Pi pane and its current WezTerm workspace by default; `placement: "window"` explicitly opens another window, and runs outside WezTerm fall back to a dedicated Butty workspace
+- Butty keeps the parent pane full-width above a horizontal row of up to three agents and immediately returns input focus to the parent
 - requesting a fourth current-tab agent asks for confirmation; approval opens the fourth and later agents in a new window, while declining leaves the three-pane row unchanged
 - agents run non-interactively and cannot receive input mid-run; join them and spawn a follow-up agent to give new instructions
 - `scout` and `planner` use read-focused toolsets
 - `worker` uses normal tools
-- `worktree: true` on `matrix_spawn` creates an isolated branch/worktree when the agent needs separate branch work
+- `worktree: true` on `butty_spawn` creates an isolated branch/worktree when the agent needs separate branch work
 - same-branch/distributed work uses the current checkout
-- `/matrix-kill all` kills only panes tracked by this Pi session; `/matrix-kill-orphans` cleans up legacy/fallback dedicated Matrix workspaces
+- `/butty-kill all` kills only panes tracked by this Pi session; `/butty-kill-orphans` cleans up legacy/fallback dedicated Butty workspaces
 
 ## Notifications and permission gates
 
@@ -429,7 +429,7 @@ Presets can set:
 Available skill commands:
 
 - `/skill:pr-open`
-- `/skill:matrix`
+- `/skill:butty`
 - `/skill:plan-worktree`
 - `/skill:mcporter`
 - `/skill:agent-orchestration`
@@ -458,7 +458,7 @@ extensions/ar-kid.ts           # Manchester/Bolton dialect easter egg
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/watch-agent.ts      # sibling watcher agents for PRs/checks/external state
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
-extensions/matrix.ts           # WezTerm Matrix parent-controlled agent panes
+extensions/butty.ts           # WezTerm Butty parent-controlled agent panes
 extensions/agent-presets.ts   # presets and single/parallel subagents
 lib/pibarm-settings.ts        # merged Pi settings helper for pibarm namespace
 lib/obsidian-export.ts        # Obsidian Markdown session exporter

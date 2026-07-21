@@ -34,9 +34,9 @@ export const StatusMessages = () => (
 );
 
 export const Fixed = () => (
-  <Terminal title="pi — <b>matrix</b>" height={150}>
+  <Terminal title="pi — <b>butty</b>" height={150}>
     <div className="cmd">
-      <span className="slash">/matrix</span> fix the flaky worker
+      <span className="slash">/butty</span> fix the flaky worker
     </div>
     <div className="dim"> spawn scout · planner in WezTerm panes</div>
     <div className="ok">✓ 2 agents running</div>

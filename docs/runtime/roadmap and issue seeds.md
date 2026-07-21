@@ -1,7 +1,7 @@
 ---
 title: roadmap and issue seeds
 stage: design
-status: draft
+status: issues-cut
 created: 2026-07-19
 tags:
   - pibarm
@@ -13,9 +13,19 @@ prev: "[[pibarm runtime design]]"
 
 # roadmap and issue seeds
 
-Stage 3 feedstock: the [[pibarm runtime PRD|PRD]] milestones crossed with the issue seeds each design note carries. When the doc settles and the M1 spike lands, these become GitHub issues (epics per milestone, one issue per seed, labels `runtime`, `web`, `macos`, `forge`, `security`).
+Stage 3 feedstock: the [[pibarm runtime PRD|PRD]] milestones crossed with the issue seeds each design note carries.
 
-**Not created yet — deliberately.** Stage 3 waits on: the PRD's open questions (chiefly the SourceHut assumption and D4's spike outcome), and a pass to size/split seeds into issue-shaped units.
+**Stage 3 is cut.** The seeds below now exist as GitHub issues: one epic per milestone with the seeds attached as sub-issues (labels were skipped — the repo has none; titles carry an `M<n>:` prefix instead). The epics:
+
+| Milestone            | Epic                                                  | Sub-issues |
+| -------------------- | ----------------------------------------------------- | ---------- |
+| M1 — host            | [#51](https://github.com/leemeichin/pibarm/issues/51) | #56–#66    |
+| M2 — web             | [#52](https://github.com/leemeichin/pibarm/issues/52) | #67–#77    |
+| M3 — macOS           | [#53](https://github.com/leemeichin/pibarm/issues/53) | #78–#87    |
+| M4 — forge depth     | [#54](https://github.com/leemeichin/pibarm/issues/54) | #88–#96    |
+| M5 — AGit and polish | [#55](https://github.com/leemeichin/pibarm/issues/55) | #97–#103   |
+
+The SourceHut reading of the PRD's open question is baked into the M4 epic (flagged there too); the pi driver spike (#56) still gates the rest of M1. The earlier web UI spike issue #44 is superseded by the M2 epic, and the permission-gate issue #1 is referenced from #65.
 
 ## M1 — host ([[runtime core and protocol]])
 

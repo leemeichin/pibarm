@@ -12,19 +12,19 @@ tags:
 
 # parity matrix
 
-The capability inventory behind [[pibarm runtime PRD|the PRD]]'s G2. Every row is a thing the TUI does today; the columns say what it becomes on each surface. This doubles as the acceptance sheet: a surface reaches parity when every P0 row has a working, tested affordance.
+The capability inventory behind [[pibarm runtime PRD|the PRD]]'s G2. Most rows are things the TUI does today; explicitly marked new rows are planned runtime capabilities. The columns say what each becomes on every surface. This doubles as the acceptance sheet: a surface reaches parity when every P0 row has a working, tested affordance.
 
 Legend: **native** = purpose-built UI on that surface; **form** = rendered as structured form/controls; **auto** = handled by the runtime, surfaced passively; — = intentionally absent (with reason).
 
 ## Planning
 
-| Capability (today)                                       | Runtime host                              | Web                                                 | macOS                                                             | Priority |
-| -------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | -------- |
-| `/plan`, plan-mode toggle, read-only enforcement         | mode is session state, enforced host-side | mode banner + toggle; disabled inputs greyed        | same, plus menu item and shortcut                                 | P0       |
-| `elicit_plan_questions` typed TUI form                   | questions are protocol objects            | full form controls per type, tabbed, notes field    | native sheets/popovers, notification quick-reply for confirm-type | P0       |
-| `question` single prompt                                 | protocol object                           | inline form in transcript                           | inline + notification action                                      | P0       |
-| `/plan-show`, captured plan + parsed steps               | plan is a structured artifact             | plan document view, step checklist, refinement diff | native document view, printable                                   | P0       |
-| `/approve-plan`, `/refine-plan`, execute active/worktree | verbs in protocol                         | buttons on plan view + command palette              | same + notification actions                                       | P0       |
+| Capability (today)                                       | Runtime host                                                      | Web                                                 | macOS                                                             | Priority |
+| -------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | -------- |
+| `/plan`, plan-mode toggle, read-only enforcement         | ACP mode/plan updates + host tool policy                          | mode banner + toggle; disabled inputs greyed        | same, plus menu item and shortcut                                 | P0       |
+| `elicit_plan_questions` typed TUI form                   | `_pibarm/question/create`, then ACP elicitation when standardized | full form controls per type, tabbed, notes field    | native sheets/popovers, notification quick-reply for confirm-type | P0       |
+| `question` single prompt                                 | protocol object                                                   | inline form in transcript                           | inline + notification action                                      | P0       |
+| `/plan-show`, captured plan + parsed steps               | plan is a structured artifact                                     | plan document view, step checklist, refinement diff | native document view, printable                                   | P0       |
+| `/approve-plan`, `/refine-plan`, execute active/worktree | verbs in protocol                                                 | buttons on plan view + command palette              | same + notification actions                                       | P0       |
 
 ## Isolation and worktrees
 
@@ -80,6 +80,14 @@ Legend: **native** = purpose-built UI on that surface; **form** = rendered as st
 | `todo_list` task widget pills             | tasks are protocol objects | TaskPill components (ds has them) | native pills/sidebar | P0       |
 | `/tasks` expanded view                    | —                          | panel                             | panel/window         | P0       |
 
+## Language intelligence — new; see [[language intelligence]]
+
+| Capability                                       | Runtime host                                                | Web                                    | macOS                                | Priority |
+| ------------------------------------------------ | ----------------------------------------------------------- | -------------------------------------- | ------------------------------------ | -------- |
+| `code_intel` definition/references/hover/symbols | shared lazy server pool, bounded tool results               | agent tool rows; optional jump-to-file | same, open file in configured editor | P1       |
+| post-edit diagnostics                            | versioned, bounded, journaled summaries                     | inline diagnostic panel                | native issue list                    | P1       |
+| no installed/trusted server                      | explicit unavailable result; grep/read fallback, no install | passive unavailable state              | same                                 | P1       |
+
 ## Record and misc
 
 | Capability (today)                           | Runtime host                              | Web                                                    | macOS                                 | Priority      |
@@ -98,4 +106,4 @@ Legend: **native** = purpose-built UI on that surface; **form** = rendered as st
 
 ## Related
 
-- [[pibarm runtime PRD]] · [[pibarm runtime design]] · [[sessions and multiplexing]] · [[forge integration]]
+- [[pibarm runtime PRD]] · [[pibarm runtime design]] · [[sessions and multiplexing]] · [[forge integration]] · [[language intelligence]]

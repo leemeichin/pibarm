@@ -22,7 +22,7 @@ Today `butty.ts` spawns pi processes into WezTerm panes and tracks them loosely.
 - Every agent is a host-managed pi driver with its own journal (child journals are linked from the parent's `agent_spawned` events).
 - **Rendering is the client's problem.** The CLI maps agents onto WezTerm panes as before; the web renders a pane grid of components; macOS renders native panes. Same tree, three renderers.
 
-This collapses four spawning mechanisms (`butty_spawn`, `run_subagent`, `run_subagents`, `run_worktree_agent`) onto one host primitive with different presets — the tools keep their names and schemas for compatibility, but they become sugar over `agent.spawn`.
+This collapses four spawning mechanisms (`butty_spawn`, `run_subagent`, `run_subagents`, `run_worktree_agent`) onto one host primitive with different presets — the tools keep their names and schemas, but they become sugar over `_pibarm/agent/spawn`.
 
 ## Agent model
 
@@ -57,13 +57,13 @@ Today's WezTerm ergonomics become host policy so every surface enforces the same
 
 ## Lifecycle verbs
 
-| Verb            | Semantics (unchanged from today where they exist)                                       |
-| --------------- | --------------------------------------------------------------------------------------- |
-| `agent.spawn`   | create child; role/toolset/worktree/visibility; returns id immediately                  |
-| `agent.list`    | live registry — no pane scraping, so `-orphans` cleanup becomes host GC of dead drivers |
-| `agent.capture` | read tail of the child journal (bounded)                                                |
-| `agent.join`    | await completion of one/all; returns final outputs; marks panes collapsible             |
-| `agent.kill`    | terminate child; parent unaffected                                                      |
+| Verb                    | Semantics (unchanged from today where they exist)                                       |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| `_pibarm/agent/spawn`   | create child; role/toolset/worktree/visibility; returns id immediately                  |
+| `_pibarm/agent/list`    | live registry — no pane scraping, so `-orphans` cleanup becomes host GC of dead drivers |
+| `_pibarm/agent/capture` | read tail of the child journal (bounded)                                                |
+| `_pibarm/agent/join`    | await completion of one/all; returns final outputs; marks panes collapsible             |
+| `_pibarm/agent/kill`    | terminate child; parent unaffected                                                      |
 
 Join folds results into the parent as `tool_result`-style journal events, so the parent model wakes with the same context it gets today from `butty_join`.
 
@@ -72,11 +72,11 @@ Join folds results into the parent as `tool_result`-style journal events, so the
 - **CLI (attached mode)**: subscribes to agent events, drives WezTerm panes exactly as `butty.ts` does now; standalone CLI keeps the current code path.
 - **Web** ([[web client]]): grid of agent panes built from pibarm-ds Terminal/TaskPill components; streaming transcript per pane; join/kill controls; overflow as tabs.
 - **macOS** ([[macos app]]): native split grid, per-agent windows on demand, focus follows keyboard shortcuts mirroring `/butty-attach`.
-- The **task widget** is the compact projection of the same registry: `task.list` returns todos + agents + watchers; clients render pills (ds `TaskPill`) identical in content to the TUI's.
+- The **task widget** is the compact projection of the same registry: `_pibarm/task/list` returns todos + agents + watchers; clients render pills (ds `TaskPill`) identical in content to the TUI's.
 
 ## Issue seeds (M1–M3)
 
-- unify spawn paths onto `agent.spawn` presets behind existing tool names
+- unify spawn paths onto `_pibarm/agent/spawn` presets behind existing tool names
 - agent registry + GC (replaces pane-tracking and `-orphans` logic)
 - pane policy in host settings + confirm flow
 - child journal linking + `agent.capture/join` semantics

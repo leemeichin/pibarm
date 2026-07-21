@@ -11,8 +11,8 @@ export const Reference = () => (
     <CommandRow name="/execute-plan" args="worktree <name>" trailing={<Badge tone="success">safe</Badge>}>
       Execute the captured plan in a new repo-local git worktree.
     </CommandRow>
-    <CommandRow name="/butty" args="<task>" trailing={<Badge tone="accent">wezterm</Badge>}>
-      Start a WezTerm Butty with scout and planner panes.
+    <CommandRow name="/agents" args="[name]" trailing={<Badge tone="accent">tmux</Badge>}>
+      List managed agents or capture one agent log.
     </CommandRow>
     <CommandRow name="/repo-status">
       Show git / forge / CI status and update the statusline.

@@ -23,11 +23,11 @@ export const WithIcon = () => (
   <div style={grid}>
     <Card
       icon={<Icon name="layers" size={20} />}
-      eyebrow="Butty"
+      eyebrow="Agent panes"
       title="Visible parallel agents"
     >
-      Spawn scout, planner and worker agents in WezTerm panes you can watch, message, and join —
-      orchestration you can see.
+      Standard delegation tools stream into automatic tmux panes you can watch and capture —
+      orchestration without terminal lock-in.
     </Card>
   </div>
 );

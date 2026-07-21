@@ -38,7 +38,7 @@ The native desktop surface from [[pibarm runtime PRD]] F3, decision D9 in [[piba
 
 - **Session list** (sidebar): grouped by repo, live state glyphs, review inbox and watchers as top-level items — same IA as the web on purpose.
 - **Transcript**: native rendering of journal events; tool calls as compact disclosure rows (bounded-payload invariant); embedded terminal view (SwiftTerm or similar) only where a child process is genuinely interactive, per the non-goals in [[pibarm runtime PRD]].
-- **Agent grid**: the [[sessions and multiplexing]] renderer done natively — `NSSplitView`-style resizable grid, ≤3 visible agents per policy, overflow to a separate window after the confirm flow, focus cycling on shortcuts mirroring `/butty-attach`. Any pane pops out to its own window.
+- **Agent grid**: the [[sessions and multiplexing]] renderer done natively — `NSSplitView`-style resizable grid, bounded visible agents per policy, overflow to a separate window when needed, and keyboard focus cycling. Any pane pops out to its own window.
 - **Plan view**: structured plan as a native document — steps, validation, refinement history; approve/refine/execute in the toolbar and menu.
 - **Elicitation**: sheets/popovers per question type; multi-question batches as a paged sheet mirroring the TUI tabs; notes field on every question.
 - **Review workspace**: native side-by-side diff (this is where native earns its keep over the web), thread rail with version anchors, draft-findings editing, submit per [[forge integration]] capability flags.

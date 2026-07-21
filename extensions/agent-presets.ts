@@ -2,6 +2,7 @@ import { CONFIG_DIR_NAME, type ExtensionAPI } from "@earendil-works/pi-coding-ag
 import { Type } from "typebox";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { registerChildAgentRunner } from "../lib/agent-runner.js";
 import { selectAgentModelRef } from "../lib/current-model.js";
 import { finishAgentTask, upsertAgentTask, updateTaskWidget } from "../lib/task-widget.js";
 import { clipTail } from "../lib/tool-output.js";
@@ -75,19 +76,6 @@ function modelLabel(model: string | undefined) {
   );
 }
 
-async function runPiPrompt(
-  pi: ExtensionAPI,
-  prompt: string,
-  model: string | undefined,
-  signal: AbortSignal | undefined,
-  timeoutMs: number,
-) {
-  const args = ["-p"];
-  if (model) args.push("--model", model);
-  args.push(prompt);
-  return pi.exec("pi", args, { signal, timeout: timeoutMs });
-}
-
 export function detectPrRefs(text: string): string[] {
   const refs = new Set<string>();
   for (const match of text.matchAll(/https:\/\/github\.com\/[^\s)]+\/[^\s)]+\/pull\/(\d+)/g)) refs.add(match[0]);
@@ -143,6 +131,8 @@ async function applyPreset(pi: ExtensionAPI, ctx: any, name: string): Promise<bo
 }
 
 export default function agentPresets(pi: ExtensionAPI) {
+  const runner = registerChildAgentRunner(pi);
+
   pi.registerCommand("preset", {
     description: `Apply a named preset from ${CONFIG_DIR_NAME}/agent-presets.json, or list presets with no args`,
     handler: async (args, ctx) => {
@@ -164,7 +154,7 @@ export default function agentPresets(pi: ExtensionAPI) {
     name: "run_subagent",
     label: "Run Subagent",
     description:
-      "Run a non-interactive pi subagent with an isolated prompt and return stdout/stderr. Output is truncated to the last ~50KB/2000 lines.",
+      "Run an isolated pi subagent and return bounded output. Uses managed tmux panes automatically when configured and available, with headless fallback.",
     parameters: SUBAGENT_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       const modelSelection = selectAgentModelRef(ctx, params.model, params.prompt);
@@ -172,11 +162,23 @@ export default function agentPresets(pi: ExtensionAPI) {
       upsertAgentTask({ id: taskId, label: "subagent", status: "running", session: modelLabel(modelSelection.model) });
       updateTaskWidget(ctx);
       const timeoutMs = params.timeoutMs ?? DEFAULT_SUBAGENT_TIMEOUT_MS;
-      const result = await runPiPrompt(pi, params.prompt, modelSelection.model, signal, timeoutMs);
+      const result = await runner.run(
+        {
+          id: taskId,
+          prompt: params.prompt,
+          kind: "subagent",
+          cwd: ctx.cwd,
+          model: modelSelection.model,
+          timeoutMs,
+          signal,
+        },
+        ctx,
+      );
       const failed = result.code !== 0;
       finishAgentTask(taskId, failed ? "failed" : "done", failed ? agentExitDetail(result.code, timeoutMs) : undefined);
       updateTaskWidget(ctx);
-      const text = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
+      const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
+      const text = [output, result.attachCommand && `tmux: ${result.attachCommand}`].filter(Boolean).join("\n\n");
       if (failed) {
         // Throwing is the only way to flag failure; a returned isError is ignored.
         throw new Error(
@@ -195,7 +197,7 @@ export default function agentPresets(pi: ExtensionAPI) {
     name: "run_subagents",
     label: "Run Subagents",
     description:
-      "Run several non-interactive pi subagents in parallel, optionally on different models. Each job's output is truncated to the last ~50KB/2000 lines.",
+      "Run several isolated pi subagents in parallel, optionally on different models. Uses the configured tmux/headless renderer and returns bounded output per job.",
     parameters: SUBAGENTS_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       if (params.jobs.length === 0) throw new Error("No subagent jobs provided.");
@@ -214,7 +216,18 @@ export default function agentPresets(pi: ExtensionAPI) {
           });
           updateTaskWidget(ctx);
           const timeoutMs = job.timeoutMs ?? params.timeoutMs ?? DEFAULT_SUBAGENT_TIMEOUT_MS;
-          const result = await runPiPrompt(pi, job.prompt, modelSelection.model, signal, timeoutMs);
+          const result = await runner.run(
+            {
+              id: taskId,
+              prompt: job.prompt,
+              kind: "subagent",
+              cwd: ctx.cwd,
+              model: modelSelection.model,
+              timeoutMs,
+              signal,
+            },
+            ctx,
+          );
           finishAgentTask(
             taskId,
             result.code === 0 ? "done" : "failed",
@@ -227,7 +240,13 @@ export default function agentPresets(pi: ExtensionAPI) {
       const text = results
         .map(({ name, model, result }) => {
           const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
-          return `## ${name}${model ? ` (${model})` : ""}\n${clipTail(output) || `(pi exited ${result.code})`}`;
+          const rendered = [
+            clipTail(output) || `(pi exited ${result.code})`,
+            result.attachCommand && `tmux: ${result.attachCommand}`,
+          ]
+            .filter(Boolean)
+            .join("\n\n");
+          return `## ${name}${model ? ` (${model})` : ""}\n${rendered}`;
         })
         .join("\n\n---\n\n");
       const failures = results.filter(({ result }) => result.code !== 0);

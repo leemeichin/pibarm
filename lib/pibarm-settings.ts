@@ -12,8 +12,11 @@ export interface ObsidianSettings {
   includeAttachments?: boolean;
 }
 
-export interface ButtySettings {
-  autoSpawn?: boolean;
+export interface AgentPanesSettings {
+  enabled?: "auto" | boolean;
+  include?: Array<"subagent" | "worktree">;
+  outsideTmux?: "detached" | "headless";
+  layout?: "tiled";
 }
 
 export interface CodeIntelSettings {
@@ -28,7 +31,7 @@ export interface GitSettings {
 
 export interface PibarmSettings {
   obsidian?: ObsidianSettings;
-  butty?: ButtySettings;
+  agentPanes?: AgentPanesSettings;
   codeIntel?: CodeIntelSettings;
   git?: GitSettings;
 }
@@ -62,7 +65,7 @@ async function readJson(path: string): Promise<Record<string, unknown>> {
 
 export interface PibarmSettingUpdate {
   path: readonly string[];
-  value: string | number | boolean;
+  value: string | number | boolean | string[];
 }
 
 export async function readSettingsDocument(path: string): Promise<Record<string, unknown>> {

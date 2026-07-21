@@ -1,6 +1,6 @@
 # pibarm site
 
-The documentation & marketing site for **pibarm** — a set of [pi](https://github.com/leemeichin/pibarm) extensions and skills for planning before editing, isolating risky work in git worktrees, and watching agents work in WezTerm.
+The documentation & marketing site for **pibarm** — a set of [pi](https://github.com/leemeichin/pibarm) extensions and skills for planning before editing, isolating risky work in git worktrees, and watching agents work in tmux.
 
 Built with [Astro](https://astro.build). Ships as a static site with near-zero JavaScript — React is used only for the tabbed, animated demo section on the home page. It is the production implementation of the `ui_kits/pibarm-site` prototype from the pibarm design system (see `../project`).
 
@@ -37,7 +37,7 @@ src/
   components/
     Demos.jsx               React island: manual tabs and tool snapshots
     PiSession.jsx           Scripted /plan → /execute-plan session
-    Butty.jsx              WezTerm multi-pane orchestration
+    AgentPanes.jsx         automatic tmux multi-pane orchestration
   data/site.ts              features, command list, session script (typed)
   styles/
     global.css              entry point (@imports the design system, then site.css)
@@ -84,7 +84,7 @@ flex layouts in the DS CSS.
 | `Kbd` | keyboard key cap |
 | `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
-The home page's `Demos` React island switches manually between the stateful `PiSession` and `Butty` simulations plus a static Obsidian vault snapshot; everything else is static Astro.
+The home page's `Demos` React island switches manually between the stateful `PiSession` and automatic agent-pane simulations plus a static Obsidian vault snapshot; everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 
@@ -94,6 +94,6 @@ The home page's `Demos` React island switches manually between the stateful `PiS
 
 ## Source & credit
 
-Grounded in [the pibarm repository](../) (README, `lib/task-widget.ts`, `extensions/butty.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
+Grounded in [the pibarm repository](../) (README, `lib/task-widget.ts`, `lib/agent-runner.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
 
 The demos are cosmetic recreations of TUI output, not a real pi runtime.

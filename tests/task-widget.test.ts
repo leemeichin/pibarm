@@ -35,7 +35,7 @@ describe("renderTaskPills", () => {
 
   test("caps the number of pills with a +N more indicator", () => {
     const todos = Array.from({ length: 14 }, (_, i) => todo(`task ${i + 1}`));
-    const lines = renderTaskPills(todos, [agent("butty scout")], 200);
+    const lines = renderTaskPills(todos, [agent("sub scout")], 200);
     expect(lines.join(" ")).toContain("+5 more");
   });
 
@@ -49,7 +49,7 @@ describe("renderTaskPills", () => {
     };
     const todos = [todo("inspect the auth flow"), todo("write the failing test", true)];
     const agents: AgentTask[] = [
-      { id: "a", label: "butty scout", status: "running", session: "wt-scout" },
+      { id: "a", label: "sub scout", status: "running", session: "wt-scout" },
       { id: "b", label: "planner", status: "failed" },
     ];
     const lines = renderTaskPills(todos, agents, 48, theme);
@@ -76,13 +76,13 @@ describe("renderTaskPills", () => {
       },
     };
 
-    renderTaskPills([todo("inspect auth")], [{ ...agent("butty scout"), session: "butty-pibarm" }], 80, theme);
+    renderTaskPills([todo("inspect auth")], [{ ...agent("sub scout"), session: "tmux-agents" }], 80, theme);
 
     expect(styled).toContainEqual(["border", "‹"]);
     expect(styled).toContainEqual(["dim", "1"]);
-    expect(styled).toContainEqual(["accent", "butty"]);
+    expect(styled).toContainEqual(["accent", "sub"]);
     expect(styled).toContainEqual(["text", "scout"]);
-    expect(styled).toContainEqual(["dim", "butty-pibarm"]);
+    expect(styled).toContainEqual(["dim", "tmux-agents"]);
   });
 
   test("renders plain text when no theme is given", () => {

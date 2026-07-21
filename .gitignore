@@ -2,7 +2,7 @@ node_modules/
 .pi/npm/
 .pi/git/
 .pi/wt/
-.pi/butty/
+.pi/agents/
 .pi/evals/
 *.log
 .DS_Store

@@ -101,7 +101,7 @@ async function main() {
   if (has("uvx") || has("uv")) ok("code intelligence runtime", "uv found");
   else if (has("mise")) ok("code intelligence runtime", "mise can install pinned uv into the pibarm cache");
   else warn("code intelligence runtime", "install uv or mise to use managed Serena language servers");
-  commandCheck("wezterm", { install: "brew install --cask wezterm", detail: "Butty visible agent panes" });
+  commandCheck("tmux", { install: "brew install tmux", detail: "terminal-independent visible agent panes" });
   commandCheck(process.env.PI_NOTIFY_TERMINAL_NOTIFIER || "terminal-notifier", {
     install: "brew install terminal-notifier",
     detail: "optional native macOS notifications",
@@ -117,8 +117,6 @@ async function main() {
     if (packages.some((pkg) => String(pkg) === ponytail || String(pkg).startsWith(`${ponytail}@`)))
       ok(".pi/settings.json", "ponytail package configured");
     else warn(".pi/settings.json", "ponytail package is not configured");
-    if (packages.some((pkg) => /cmux/i.test(String(pkg))))
-      warn(".pi/settings.json", "cmux package still configured; remove it if you want pibarm-only Butty/notifications");
   } catch (error) {
     fail(".pi/settings.json", `could not parse: ${error.message}`);
   }

@@ -80,14 +80,14 @@ Feature-specific tools:
 | `hut`               | SourceHut-backed `forge_*` tools                       | `brew install hut && hut init`                              |
 | `mcporter`          | MCP bridge tools and managed code intelligence         | install/configure `mcporter`, then edit `.pi/mcporter.json` |
 | `uv` or `mise`      | isolated Serena language-server runtime                | `brew install uv` or use an existing `mise` installation    |
-| `wezterm`           | Butty visible agent panes                              | `brew install --cask wezterm`                               |
+| `tmux`              | terminal-independent visible agent panes               | `brew install tmux`                                         |
 | `terminal-notifier` | optional native macOS notifications                    | `brew install terminal-notifier`                            |
 
-The TUI uses Nerd Font glyphs for the statusline, Butty/task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
+The TUI uses Nerd Font glyphs for the statusline, task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
 
 ## pibarm settings and commit attribution
 
-Use `/pibarm-settings` to edit global or project-scoped pibarm settings with Pi's native settings list. Project writes require a trusted project. The menu covers Git attribution, code intelligence, Obsidian export, and Butty auto-spawn; selecting **Save and close** atomically updates only changed values and preserves unknown settings.
+Use `/pibarm-settings` to edit global or project-scoped pibarm settings with Pi's native settings list. Project writes require a trusted project. The menu covers Git attribution, code intelligence, Obsidian export, and automatic agent panes; selecting **Save and close** atomically updates only changed values and preserves unknown settings.
 
 Agent-created commits include this default-on, versioned trailer instruction. pibarm does not install Git hooks or rewrite commit messages:
 
@@ -182,49 +182,37 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `/pibarm-settings`                        | Edit global or trusted-project pibarm settings.                           |
 | `/obsidian-status`                        | Show Obsidian export settings resolved from Pi settings.                  |
 | `/obsidian-export`                        | Export the current session to the configured Obsidian vault.              |
-| `/butty-help`                             | Explain when/how to use Butty and its prior art.                          |
-| `/butty <task>`                           | Start a WezTerm Butty with scout/planner panes.                           |
-| `/butty-attach`                           | Focus a Butty agent or the parent WezTerm pane.                           |
-| `/butty-spawn <role> <task>`              | Spawn one Butty agent beside the parent Pi pane.                          |
-| `/butty-capture [role]`                   | Capture recent output from Butty panes/logs.                              |
-| `/butty-join [role\|all]`                 | Wait for Butty agents, capture logs, and clean up their panes.            |
-| `/butty-list`                             | List tracked Butty agents in the current workspace.                       |
-| `/butty-kill [role\|all]`                 | Kill tracked Butty agent panes without touching the parent workspace.     |
-| `/butty-kill-orphans`                     | Kill Butty panes left behind by other sessions.                           |
+| `/agents [name]`                          | List managed agents or capture one agent's log.                           |
+| `/agents-attach`                          | Focus the managed tmux window or show its attach command.                 |
+| `/agents-kill [name\|all]`                | Stop managed agent panes without touching the parent tmux session.        |
 
 ## Tools exposed to the agent
 
-All custom tools are registered, but only `search_tools`, `question`, `elicit_plan_questions`, and `todo_list` start active. `search_tools` enables matching code-intelligence, forge, MCP, delegation, worktree, watcher, repository, or Butty groups additively, so Pi can defer their schemas without replacing its stable prompt prefix. Applying a role preset can still select an explicit tool set.
+All custom tools are registered, but only `search_tools`, `question`, `elicit_plan_questions`, and `todo_list` start active. `search_tools` enables matching code-intelligence, forge, MCP, delegation, worktree, watcher, or repository groups additively, so Pi can defer their schemas without replacing its stable prompt prefix. Applying a role preset can still select an explicit tool set.
 
-| Tool                      | Purpose                                                                                                                                                                 |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `search_tools`            | Find and enable registered pibarm tools for a task.                                                                                                                     |
-| `elicit_plan_questions`   | Ask several planning questions before finalizing/executing a plan, with rich TUI inputs for free text, select, multi-select, confirm/boolean, and number answers.       |
-| `question`                | Ask one focused question with optional choices.                                                                                                                         |
-| `code_intel`              | Query definitions, references, hover details, symbols, and diagnostics through managed Serena language servers.                                                         |
-| `create_git_worktree`     | Create an isolated repo-local git worktree and branch.                                                                                                                  |
-| `summarize_worktree_diff` | Summarize status/diff for a worktree.                                                                                                                                   |
-| `remove_git_worktree`     | Remove an isolated worktree after confirmation/review.                                                                                                                  |
-| `run_worktree_agent`      | Create/use a worktree and run `pi -p` there; simple tasks may use a lighter available model.                                                                            |
-| `run_subagent`            | Run an isolated non-interactive `pi -p` subagent; simple tasks may use a lighter available model. Defaults to a 10 minute timeout unless `timeoutMs` is set.            |
-| `run_subagents`           | Run several isolated `pi -p` subagents in parallel; simple jobs may use lighter available models unless set. Defaults to a 10 minute timeout unless `timeoutMs` is set. |
-| `watch_agent`             | Start/list/stop a sibling watcher agent for PR reviews, checks, or external state changes.                                                                              |
-| `mcporter_list`           | Discover MCP servers/tools through `mcporter`.                                                                                                                          |
-| `mcporter_call`           | Call MCP tools through `mcporter`.                                                                                                                                      |
-| `mcporter_resource`       | List/read MCP resources through `mcporter`.                                                                                                                             |
-| `repo_status`             | Summarize branch, dirty files, forge, PR, and CI status.                                                                                                                |
-| `forge_status`            | Detect/show the configured forge for the current repository.                                                                                                            |
-| `forge_prs`               | List PRs/patches using the detected/configured forge.                                                                                                                   |
-| `forge_pr_status`         | Inspect current/selected PR/patch review and check status.                                                                                                              |
-| `forge_ci_status`         | List CI/builds using the detected/configured forge.                                                                                                                     |
-| `forge_tickets`           | List issues/tickets using the detected/configured forge.                                                                                                                |
-| `todo_list`               | Track progress when one prompt contains multiple requested tasks in the shared task widget.                                                                             |
-| `butty_spawn`             | Spawn a parent-controlled pi agent in a WezTerm Butty pane.                                                                                                             |
-| `butty_attach`            | Focus a Butty agent or the parent WezTerm pane.                                                                                                                         |
-| `butty_capture`           | Capture recent output from Butty WezTerm panes/logs.                                                                                                                    |
-| `butty_join`              | Wait for Butty agents to finish, capture logs, and clean up their panes.                                                                                                |
-| `butty_list`              | List tracked Butty agents in the parent workspace.                                                                                                                      |
-| `butty_kill`              | Kill tracked Butty agent panes without touching the parent workspace.                                                                                                   |
+| Tool                      | Purpose                                                                                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `search_tools`            | Find and enable registered pibarm tools for a task.                                                                                                               |
+| `elicit_plan_questions`   | Ask several planning questions before finalizing/executing a plan, with rich TUI inputs for free text, select, multi-select, confirm/boolean, and number answers. |
+| `question`                | Ask one focused question with optional choices.                                                                                                                   |
+| `code_intel`              | Query definitions, references, hover details, symbols, and diagnostics through managed Serena language servers.                                                   |
+| `create_git_worktree`     | Create an isolated repo-local git worktree and branch.                                                                                                            |
+| `summarize_worktree_diff` | Summarize status/diff for a worktree.                                                                                                                             |
+| `remove_git_worktree`     | Remove an isolated worktree after confirmation/review.                                                                                                            |
+| `run_worktree_agent`      | Create/use a worktree and run an agent there, using automatic tmux rendering or headless fallback.                                                                |
+| `run_subagent`            | Run one isolated agent with automatic tmux rendering or headless fallback; defaults to a 10 minute timeout.                                                       |
+| `run_subagents`           | Run up to four agents in parallel with the same configured renderer; defaults to a 10 minute timeout per job.                                                     |
+| `watch_agent`             | Start/list/stop a sibling watcher agent for PR reviews, checks, or external state changes.                                                                        |
+| `mcporter_list`           | Discover MCP servers/tools through `mcporter`.                                                                                                                    |
+| `mcporter_call`           | Call MCP tools through `mcporter`.                                                                                                                                |
+| `mcporter_resource`       | List/read MCP resources through `mcporter`.                                                                                                                       |
+| `repo_status`             | Summarize branch, dirty files, forge, PR, and CI status.                                                                                                          |
+| `forge_status`            | Detect/show the configured forge for the current repository.                                                                                                      |
+| `forge_prs`               | List PRs/patches using the detected/configured forge.                                                                                                             |
+| `forge_pr_status`         | Inspect current/selected PR/patch review and check status.                                                                                                        |
+| `forge_ci_status`         | List CI/builds using the detected/configured forge.                                                                                                               |
+| `forge_tickets`           | List issues/tickets using the detected/configured forge.                                                                                                          |
+| `todo_list`               | Track progress when one prompt contains multiple requested tasks in the shared task widget.                                                                       |
 
 ## Managed code intelligence
 
@@ -274,7 +262,7 @@ The TUI is tabbed, has Nerd Font status icons, supports option descriptions/prev
 
 ## Task widget
 
-`todo-list.ts`, headless subagents, worktree agents, watcher agents, and Butty agents share one compact widget below the editor/above the status line. It renders clean horizontal pills such as `‹ ○ 1 · inspect auth › ‹ ● butty scout · butty-app › ‹ ✓ sub reviewer · gpt-5-mini ›` so delegated work stays visually connected to the parent session/workspace without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
+`todo-list.ts`, subagents, worktree agents, and watcher agents share one compact widget below the editor/above the status line. It renders clean horizontal pills such as `‹ ○ 1 · inspect auth › ‹ ● sub scout · tmux-agents › ‹ ✓ sub reviewer · gpt-5-mini ›` so delegated work stays visually connected to the parent session without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
 
 ## Watcher agents
 
@@ -330,46 +318,26 @@ Review and cleanup:
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
-## Butty WezTerm agents
+## Automatic tmux agent panes
 
-`butty.ts` is WezTerm-native orchestration for visible parent-controlled agents. It opens agents in WezTerm tabs/splits and keeps only lightweight pane tracking in Pi. Use `/butty-help` inside Pi for the quick operating guide.
-
-To make visible Butty panes the default for `run_subagent` and `run_subagents`, add this opt-in setting to global or trusted project Pi settings, then reload Pi:
+`run_subagent`, `run_subagents`, and `run_worktree_agent` use one shared runner. With tmux available they stream into a managed tiled window; without tmux they keep the same headless behavior and report one fallback notice. Watchers remain background task pills.
 
 ```json
 {
   "pibarm": {
-    "butty": {
-      "autoSpawn": true
+    "agentPanes": {
+      "enabled": "auto",
+      "include": ["subagent", "worktree"],
+      "outsideTmux": "detached",
+      "layout": "tiled"
     }
   }
 }
 ```
 
-Worktree agents and watchers remain unchanged.
+Inside tmux, pibarm creates a dedicated window in the current session and never kills the parent session. Outside tmux, the default creates a detached session and prints `tmux attach -t ...`; pibarm never launches or controls a terminal application. Set `outsideTmux` to `headless`, remove a tool kind from `include`, or set `enabled` to `false` to opt out.
 
-```text
-/butty triage every open issue and propose the smallest safe plan for each
-/butty-attach
-/butty-join all
-```
-
-After joining, the parent can loop over unblocked plans with one `butty_spawn` worktree worker at a time, then start `watch_agent` for each pull request's reviews and CI before moving to the next issue.
-
-Defaults:
-
-- spawned agents use the current active model unless `model` is set explicitly; simple-scope tasks may use a lighter authenticated model
-- agents run non-interactively in WezTerm and stream their reasoning, responses, and tool activity live in the pane (a start/log banner first), write the same transcript under `.pi/butty/`, and panes exit when tasks finish
-- `butty_join` waits for completion, returns logs, and cleans up only the finished agent panes
-- Butty uses the parent Pi pane and its current WezTerm workspace by default; `placement: "window"` explicitly opens another window, and runs outside WezTerm fall back to a dedicated Butty workspace
-- Butty keeps the parent pane full-width above a horizontal row of up to three agents and immediately returns input focus to the parent
-- requesting a fourth current-tab agent asks for confirmation; approval opens the fourth and later agents in a new window, while declining leaves the three-pane row unchanged
-- agents run non-interactively and cannot receive input mid-run; join them and spawn a follow-up agent to give new instructions
-- `scout` and `planner` use read-focused toolsets
-- `worker` uses normal tools
-- `worktree: true` on `butty_spawn` creates an isolated branch/worktree when the agent needs separate branch work
-- same-branch/distributed work uses the current checkout
-- `/butty-kill all` kills only panes tracked by this Pi session; `/butty-kill-orphans` cleans up legacy/fallback dedicated Butty workspaces
+Agent reasoning, responses, and tool activity render live while the standard tool waits and returns the captured result. Logs live under `.pi/agents/`. Use `/agents` to list runs, `/agents <name>` to capture a log, `/agents-attach` to focus/show the attach command, and `/agents-kill all` for cleanup. Concurrent delegation keeps the existing four-agent limit and lets tmux tile the panes without another confirmation flow.
 
 ## Notifications and permission gates
 
@@ -479,7 +447,6 @@ Presets can set:
 Available skill commands:
 
 - `/skill:pr-open`
-- `/skill:butty`
 - `/skill:plan-worktree`
 - `/skill:mcporter`
 - `/skill:agent-orchestration`
@@ -510,10 +477,11 @@ extensions/ar-kid.ts           # Manchester/Bolton dialect easter egg
 extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/watch-agent.ts      # sibling watcher agents for PRs/checks/external state
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
-extensions/butty.ts           # WezTerm Butty parent-controlled agent panes
 extensions/agent-presets.ts   # presets and single/parallel subagents
+lib/agent-runner.ts           # shared headless/tmux child-agent runner
 lib/pibarm-settings.ts        # merged Pi settings helper for pibarm namespace
 lib/obsidian-export.ts        # Obsidian Markdown session exporter
+scripts/agent-render.mjs      # readable live transcript for tmux panes
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt
 prompts/pr-open.md            # newline-safe PR opening prompt

@@ -50,7 +50,7 @@ export const Solid = () => (
       merged
     </Badge>
     <Badge tone="accent" solid>
-      wezterm
+      tmux
     </Badge>
     <Badge tone="muted" solid>
       muted

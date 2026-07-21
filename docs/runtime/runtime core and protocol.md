@@ -31,7 +31,7 @@ pibarmd
 └── gateway                unix socket + WS listener, auth, capability handshake
 ```
 
-Existing extensions are the behavioural spec: `plan-worktree.ts`, `watch-agent.ts`, `butty.ts`, `forge.ts` et al are refactored so their logic lives in host services and their pi-extension form becomes a thin binding. That refactor is the riskiest part of M1 after the pi spike; the mitigation is doing it one extension at a time with the CLI as the regression harness.
+Existing extensions are the behavioural spec: `plan-worktree.ts`, `watch-agent.ts`, `agent-runner.ts`, `forge.ts` et al are refactored so their logic lives in host services and their pi-extension form becomes a thin binding. That refactor is the riskiest part of M1 after the pi spike; the mitigation is doing it one extension at a time with the CLI as the regression harness.
 
 ## Session lifecycle
 
@@ -59,7 +59,7 @@ Event envelope:
 
 Kinds (initial set): `session_meta`, `user_input`, `assistant_delta`, `assistant_message`, `tool_call`, `tool_result`, `question_open`, `question_answered`, `plan_captured`, `plan_state`, `mode_changed`, `agent_spawned`, `agent_state`, `watcher_event`, `forge_event`, `task_state`, `notice`. Payloads over a size threshold are stored as sidecar blobs and referenced, keeping the journal tailable (bounded-payload invariant).
 
-The journal is what capture, reattach, `/butty-capture`, Obsidian export, and the web transcript all read. No second source of truth.
+The journal is what capture, reattach, `/agents`, Obsidian export, and the web transcript all read. No second source of truth.
 
 ## ACP boundary (D2)
 
@@ -112,7 +112,7 @@ A missing SDK hook is recorded as a pinned compatibility gap and upstreamed or h
 The pibarm CLI experience keeps two paths (PRD open question resolved as recommended):
 
 1. **Standalone** (today's behaviour): extensions in-process with pi. Nothing changes for existing users.
-2. **Attached**: `pibarm attach [session]` — a TUI ACP client of the host. Butty rendering in this mode may still target WezTerm panes (D5): the CLI renderer subscribes to `_pibarm/agent/*` events and maps them onto panes exactly as `butty.ts` does today.
+2. **Attached**: `pibarm attach [session]` — a TUI ACP client of the host. Agent rendering in this mode may target tmux panes (D5): the CLI renderer subscribes to `_pibarm/agent/*` events and maps them onto panes as `agent-runner.ts` does today.
 
 Shared behaviour lives in `lib/` so the two paths cannot drift; the standalone path is the regression baseline for the host refactor.
 

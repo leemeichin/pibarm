@@ -17,7 +17,7 @@ next: "[[pibarm runtime design]]"
 
 ## Summary
 
-pibarm today is a set of pi extensions and skills that make agent work safer and more legible in a terminal: plan first, execute in worktrees, multiplex visible agents in WezTerm, watch PRs in the background, and keep a durable Obsidian record. All of it assumes a TTY, a local shell, and (for multiplexing) WezTerm.
+pibarm today is a set of pi extensions and skills that make agent work safer and more legible in a terminal: plan first, execute in worktrees, multiplex visible agents through tmux, watch PRs in the background, and keep a durable Obsidian record. Its visible agent panes are terminal-independent, but the overall product still assumes a TTY and local shell.
 
 This PRD proposes the **pibarm runtime**: the same agent runtime environment lifted out of the CLI behind an ACP-compatible client boundary so it can be driven from a **web client** and a **native desktop app** (macOS first), with native UX affordances instead of terminal emulation. Everything the TUI can do — multiplexing, planning, elicitation, worktrees, watchers, presets, subagents, forge operations — must be doable from web and desktop, and each surface should do it in the way that surface does best.
 
@@ -29,18 +29,18 @@ The full inventory of what exists today, and what each piece must become on web 
 
 - **Planning**: `/plan`, plan mode restrictions, `elicit_plan_questions` with typed inputs, approve/refine loop.
 - **Isolation**: repo-local git worktrees (`.pi/wt/<name>`), worktree agents, diff summaries.
-- **Multiplexing**: Butty — parent-controlled agents in WezTerm panes, capture/join/kill lifecycle.
+- **Multiplexing**: standard child-agent tools with automatic tmux panes, capture/wait/kill lifecycle.
 - **Background work**: watcher agents polling PR/CI state, waking the parent session on change.
 - **Forge**: `forge_*` tools over `gh` (GitHub) and `hut` (SourceHut), repo statusline, `/review`.
 - **Record**: Obsidian session export with a stable note-path scheme and autosync.
 - **Configuration**: role presets (model/tools/thinking), mcporter MCP bridge, themes.
 
-Every one of these is currently welded to a terminal. The Butty depends on a specific terminal emulator. Notifications depend on terminal escape sequences. Rich elicitation is a TUI form. The product is good; the delivery surface is singular.
+Most of these remain welded to a terminal. Agent panes now depend only on tmux rather than one emulator, but notifications still use terminal escape sequences and rich elicitation is a TUI form. The product is good; the delivery surface is singular.
 
 ## Problem statement
 
 1. **The runtime is trapped in the TTY.** You cannot check a plan waiting for approval, answer an elicitation question, or review a worktree diff unless you are at the terminal that owns the session. Sessions die with the terminal window.
-2. **Multiplexing is borrowed, not owned.** The Butty rents panes from WezTerm. Users of other terminals get degraded behaviour, and no terminal gives us a real review surface, diff viewer, or form control.
+2. **Multiplexing is still borrowed, not owned.** tmux makes visible agents portable across terminals, but it still does not provide a real review surface, diff viewer, or form control.
 3. **Forge work bounces between tools.** pibarm can list PRs and CI, but reviewing, replying, and triaging still means a browser tab per forge. Non-GitHub forges get shallower treatment than GitHub, and AGit-style forges get none.
 4. **The record and the runtime are separate.** Obsidian holds the durable narrative, but you cannot act from it; the runtime holds the action, but its presentation is ephemeral.
 
@@ -56,7 +56,7 @@ Every one of these is currently welded to a terminal. The Butty depends on a spe
 ## Non-goals
 
 - **A hosted SaaS.** The web client connects to the user's own runtime host (localhost, LAN, or tailnet). No pibarm-operated multi-tenant service in this cycle.
-- **A general-purpose terminal emulator.** Desktop and web render agent sessions natively; they do not aim to replace WezTerm/iTerm for general shell use. An embedded terminal view exists only where a task needs one (inline shell, interactive REPLs).
+- **A general-purpose terminal emulator or multiplexer.** Desktop and web render agent sessions natively; they do not aim to replace tmux or terminal applications for general shell use. An embedded terminal view exists only where a task needs one (inline shell, interactive REPLs).
 - **Mobile clients.** The protocol should not preclude them; nothing in this cycle builds them.
 - **Replacing pi.** pibarm remains a layer over pi. The runtime host embeds and orchestrates pi sessions; it does not fork the agent core.
 - **Forge hosting features** (repo browsing, wikis, releases). Deep integration targets the _work loop_: changes, reviews, CI, tickets.
@@ -98,7 +98,7 @@ Browser app served by the runtime host itself. GitHub issue #44's start → stre
 - Session list, live transcript, input, tool-call rendering with bounded payloads (same discipline as the Obsidian exporter).
 - Plan mode: visible mode state, plan document view, approve / refine / execute-in-worktree actions.
 - Elicitation forms: every `elicit_plan_questions` type (free text, select one/many, confirm, boolean, number, notes, previews) as real form controls.
-- Task widget parity: pills for todos, subagents, worktree agents, watchers, Butty agents.
+- Task widget parity: pills for todos, subagents, worktree agents, and watchers.
 - Web notifications for waiting questions and watcher events.
 - Built on `packages/pibarm-ds` — the design system already renders StatusLine, TaskPill, Terminal, Callout et al.
 
@@ -107,16 +107,16 @@ Browser app served by the runtime host itself. GitHub issue #44's start → stre
 Native macOS application. Details in [[macos app]].
 
 - True native shell: menu bar, dock badge with waiting-question count, system notifications with reply/approve actions, multi-window, full keyboard control.
-- Agent grid: the Butty as a native pane grid — resizable, focusable, detachable to windows — replacing the WezTerm dependency on this surface.
+- Agent grid: child agents as a native pane grid — resizable, focusable, detachable to windows — replacing tmux on this surface.
 - Native diff review for worktrees and incoming PRs/patches.
 - Menu bar extra: at-a-glance runtime state (sessions running, questions waiting, CI status) without the main window.
 
 ### F4 — Multiplexing without a terminal emulator (P0)
 
-The Butty generalises: agents are runtime children, and each surface renders them its own way. Details in [[sessions and multiplexing]].
+The shared child-agent runner generalises into runtime children, and each surface renders them its own way. Details in [[sessions and multiplexing]].
 
 - Same lifecycle verbs as today: spawn, attach, capture, join, kill; same roles (scout/planner/worker); same worktree option.
-- WezTerm rendering remains for the CLI; web/desktop render runtime-native panes.
+- tmux rendering remains for the CLI; web/desktop render runtime-native panes.
 - The three-agent row and fourth-agent confirmation become policy in the runtime, uniformly enforced.
 
 ### F5 — Planning and review UX (P0)
@@ -156,7 +156,7 @@ Details and adapter contract in [[forge integration]].
 ### F10 — Presets, subagents, MCP (P1)
 
 - Preset switching (planner/executor et al) from a surface-native picker.
-- `run_subagent(s)` and worktree agents render into the same task/pane model as Butty agents.
+- `run_subagent(s)` and worktree agents already share one task/pane model.
 - mcporter bridge unchanged in the host; discovery UI on web/desktop is P2.
 
 ### F11 — Windows and Linux desktop (P2, design now)
@@ -179,7 +179,7 @@ One bounded code-intelligence tool uses trusted, already-installed language serv
 ## Success metrics
 
 - A session started in the CLI can be answered, approved, and completed entirely from web and from macOS — demonstrated across all P0 features (parity checklist in [[parity matrix]] is the acceptance artifact).
-- Zero WezTerm dependency for multiplexing on web/desktop; CLI Butty behaviour unchanged.
+- Zero tmux dependency for multiplexing on web/desktop; CLI automatic-pane behavior unchanged.
 - A full review (open → inline comments → submit) completed against GitHub _and_ SourceHut without opening the forge's website.
 - Median time-to-answer for a waiting elicitation question drops from "whenever I next look at the terminal" to under a minute via notification actions (instrument locally; no telemetry leaves the machine — measurement is a local stat, opt-in).
 - Existing extension test suite passes against the host-embedded session path.

@@ -21,18 +21,14 @@ export const PIBARM_TOOL_GROUPS = [
   },
   {
     name: "delegation",
-    description: "headless subagents, parallel or multi-model research, review, planning, and verification",
+    description:
+      "subagents, automatic tmux panes, parallel or multi-model research, review, planning, and verification",
     tools: ["run_subagent", "run_subagents"],
   },
   {
     name: "worktree",
     description: "isolated git worktree branches, safe implementation, diff review, cleanup, and worktree agents",
     tools: ["create_git_worktree", "summarize_worktree_diff", "remove_git_worktree", "run_worktree_agent"],
-  },
-  {
-    name: "butty",
-    description: "Butty visible WezTerm agent panes, tabs, splits, capture, join, focus, list, and cleanup",
-    tools: ["butty_spawn", "butty_attach", "butty_capture", "butty_join", "butty_list", "butty_kill"],
   },
   {
     name: "watcher",

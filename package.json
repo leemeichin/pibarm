@@ -20,6 +20,7 @@
     "doctor": "node scripts/doctor.mjs",
     "setup": "node scripts/doctor.mjs --write",
     "audit:prompt": "bun scripts/prompt-audit.ts",
+    "eval:agent": "node scripts/eval-agent.mjs",
     "check:pi-latest": "node scripts/check-pi-latest.mjs",
     "list": "find extensions skills prompts -maxdepth 3 -type f | sort"
   },

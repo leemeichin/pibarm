@@ -50,6 +50,7 @@ Sources are pinned here so later reviews can distinguish an upstream change from
 | [Codex CLI](https://github.com/openai/codex)                                          | `40a7192`         | Concise core instructions, bounded model context, hierarchical project instructions, deferred tool search |
 | [OpenCode](https://github.com/anomalyco/opencode)                                     | `cb562b2`         | Model-aware prompts, lazy skills, one LSP tool, lazy server startup, post-edit diagnostics                |
 | [Claude Code](https://github.com/anthropics/claude-code)                              | `4d07874`         | Progressive plugin skills, scoped project instructions, LSP plugins, prompt-trimming doctor guidance      |
+| [Serena](https://github.com/oraios/serena)                                            | `2c10e25`         | Multi-language SolidLSP manager, isolated acquisition, diagnostics, and bounded semantic MCP tools        |
 | [Agent Client Protocol](https://github.com/agentclientprotocol/agent-client-protocol) | `879fc80`         | Standard sessions, plans, tools, permissions, capability negotiation, and namespaced extensions           |
 
 The Claude Code repository exposes plugins and release information, not its proprietary core system prompt. No conclusion here assumes access to that prompt.
@@ -59,8 +60,9 @@ The Claude Code repository exposes plugins and release information, not its prop
 - Keep one always-on project instruction source. Put task-specific detail in skills and tool descriptions.
 - Prefer Pi's additive lazy-tool mechanism over adding another dispatcher protocol. Keep safety and planning tools active; load specialized groups when needed.
 - Keep language/framework knowledge in focused skills. Do not inject Rails, React, Vue, Vite, or Python guidance into every task.
-- Start language servers lazily and only when already installed or explicitly configured. Never download or install executable tooling as a side effect of reading code.
-- Surface bounded LSP navigation and diagnostics through one tool rather than one tool per language or operation.
+- Start language intelligence lazily through one deferred tool. In trusted projects it may acquire pinned Serena/runtime/server artifacts into an isolated Pi cache, never project or global package state.
+- Reuse Serena's multi-language SolidLSP manager rather than maintain another LSP client, downloader, and server registry. Keep its broader editing and memory tools outside pibarm's model surface.
+- Surface bounded semantic navigation and diagnostics through one tool rather than one tool per language or operation.
 - Embed Pi through its SDK in the future host. Treat ACP as an interoperability boundary, with namespaced pibarm extensions for worktrees, child agents, watchers, forge state, and journal replay.
 - Keep the journal as the durable replay source; neither ACP v1 nor a WebSocket connection alone guarantees missed-event recovery.
 - Treat Tailscale, SSH forwarding, and WebSocket as transport/security choices, not agent-protocol semantics.
@@ -73,6 +75,32 @@ The Claude Code repository exposes plugins and release information, not its prop
 4. **Operational:** real-session regressions such as timeouts, failed joins, stale task state, and cache misses.
 
 Do not tune prompts from anecdotes alone. Add a failing case first when a regression can be reproduced.
+
+## Behavioral harness
+
+Run one bounded pass of four disposable TypeScript, Vue, Python, and Ruby tasks with an explicit model:
+
+```bash
+bun run eval:agent --model=<provider/model> --variant=baseline
+bun run eval:agent --model=<provider/model> --variant=code-intel
+```
+
+`--runs=1` is the default and `--runs=2` is the hard cap, limiting each invocation to eight model requests. Both variants receive identical prompts and built-in tools; the comparison additionally registers deferred `code_intel`. Raw JSON events and logs remain ignored under `.pi/evals/`. The committed harness writes only a sanitized aggregate containing scenario name, runnable success, wall time, tool calls, token classes, and reported cost.
+
+Record cold Serena/runtime/server acquisition separately from warm task behavior. Four samples support regression detection, not statistical claims. A comparison is acceptable only when runnable success does not regress and the prompt audit shows that the deferred tool did not grow the initial active schema surface.
+
+### First recorded pass
+
+Model: `openai-codex/gpt-5.4-mini`, one run per scenario.
+
+| Variant                 | Runnable success | Duration | Tool calls | `code_intel` calls | Input / output / cache-read tokens | Reported cost |
+| ----------------------- | ---------------: | -------: | ---------: | -----------------: | ---------------------------------: | ------------: |
+| Foundation baseline     |              4/4 |   280.7s |         64 |                  0 |          29,505 / 12,766 / 176,640 |       $0.0928 |
+| Cold managed code-intel |              4/4 |   453.0s |         67 |                 12 |          30,895 / 13,207 / 171,008 |       $0.0954 |
+
+The baseline agents fixed all four fixtures; the first report marked Python and Ruby verification failed because the harness invoked unavailable unversioned runtime commands. Re-running those unchanged fixtures with the detected Nix/mise runtimes passed, and runtime detection is now part of the harness.
+
+The cold comparison preserved task success but was 61% slower and does **not** establish an efficacy or performance improvement. It exposed concurrent first-install races and missing uv/Ruby environment propagation; those are now covered by serialization/offline tests and direct TypeScript, Vue, Python, and Ruby smoke checks. `code_intel` therefore remains deferred, and a future warm-server/process-pool change needs a new identical comparison before any speed claim.
 
 ## Staying current with Pi
 

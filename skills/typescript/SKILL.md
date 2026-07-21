@@ -11,6 +11,7 @@ description: TypeScript and JavaScript development workflow. Use when editing TS
 - Use the repository's package manager and scripts. Do not mix lockfiles, install missing tools implicitly, or update dependencies unless requested.
 - Respect package/workspace boundaries and existing ESM/CommonJS, runtime, path-alias, generated-code, and formatting conventions.
 - Trace callers and nearby tests before changing exported types, hooks, stores, plugins, or shared components.
+- For ambiguous symbols or diagnostics, load deferred `code_intel` with `search_tools`; fall back to `rg`/`read` when unavailable.
 
 ## TypeScript and runtime
 

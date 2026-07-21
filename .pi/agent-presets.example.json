@@ -29,6 +29,7 @@
         "bash",
         "edit",
         "write",
+        "code_intel",
         "mcporter_list",
         "mcporter_call",
         "mcporter_resource",

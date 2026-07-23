@@ -38,7 +38,7 @@ src/
     docs.astro              Docs — sticky sidebar + command reference
   components/
     Demos.jsx               React island: realistic agent-flow use cases
-    AgentPanes.jsx          native tmux-pane transcript replay
+    AgentPanes.jsx          flagship Matrix split-pane replay
   data/site.ts              feature and command reference data
   styles/
     global.css              entry point (@imports the design system, then site.css)
@@ -85,7 +85,7 @@ flex layouts in the DS CSS.
 | `Kbd` | keyboard key cap |
 | `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
-The home page's `Demos` React island switches between three realistic agent workflows. `AgentPanes` replays the dedicated `pibarm-agents` tmux window using the same two-over-one tiled layout and transcript syntax emitted by `scripts/agent-render.mjs`; everything else is static Astro.
+The home page's `Demos` React island switches between five realistic capability flows. `AgentPanes` renders the flagship Matrix layout with the parent Pi full-height beside three stacked delegated agents; focused replays cover PR/CI watching, managed code intelligence, MCP, and role presets. Everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 
@@ -97,4 +97,4 @@ The home page's `Demos` React island switches between three realistic agent work
 
 Grounded in [the pibarm repository](../) (README, `lib/task-widget.ts`, `lib/agent-runner.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
 
-The demos mirror a captured `pi` + tmux session; they replay its terminal shape and output in the browser rather than running visitor-funded agents.
+The demos use Pi's real transcript vocabulary, task pills, themes, and multiplexer shapes; they replay those flows in the browser rather than running visitor-funded agents.

@@ -26,7 +26,7 @@ export const WithIcon = () => (
       eyebrow="Agent panes"
       title="Visible parallel agents"
     >
-      Standard delegation tools stream into automatic tmux panes you can watch and capture —
+      Standard delegation tools stream into automatic tmux or Zellij panes you can watch and capture —
       orchestration without terminal lock-in.
     </Card>
   </div>

@@ -36,7 +36,7 @@ export const StatusMessages = () => (
 export const Fixed = () => (
   <Terminal title="pi — <b>agents</b>" height={150}>
     <div className="cmd">run_subagents jobs=scout,planner</div>
-    <div className="dim"> automatic tmux window · tiled panes</div>
+    <div className="dim"> automatic multiplexer session · tiled panes</div>
     <div className="ok">✓ 2 agents running</div>
   </Terminal>
 );

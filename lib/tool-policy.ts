@@ -22,7 +22,7 @@ export const PIBARM_TOOL_GROUPS = [
   {
     name: "delegation",
     description:
-      "subagents, automatic tmux panes, parallel or multi-model research, review, planning, and verification",
+      "subagents, automatic tmux or Zellij panes, parallel or multi-model research, review, planning, and verification",
     tools: ["run_subagent", "run_subagents"],
   },
   {

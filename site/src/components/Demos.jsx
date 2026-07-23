@@ -14,7 +14,7 @@ const DEMOS = [
     id: "agents",
     number: "02",
     label: "Agent panes",
-    title: "Automatic tmux agents",
+    title: "Automatic agent panes",
     note: "delegate → tile → capture → watch",
   },
   {
@@ -117,8 +117,8 @@ export default function Demos() {
         {active === "agents" && (
           <div className="demo-agent-panes">
             <div className="demo-agent-panes__intro">
-              <p className="demo-note">Use the standard subagent and worktree tools. When tmux is available, pibarm automatically tiles their live output in a managed window; otherwise the same calls stay headless.</p>
-              <p className="demo-agent-panes__callout"><b>Visible without a terminal lock-in.</b> Any tmux client can attach, while the parent still receives the captured result and keeps control.</p>
+              <p className="demo-note">Use the standard subagent and worktree tools. When tmux or Zellij is available, pibarm automatically arranges their live output in managed panes; otherwise the same calls stay headless.</p>
+              <p className="demo-agent-panes__callout"><b>Visible without a terminal lock-in.</b> Native tmux and Zellij clients can attach, while the parent still receives the captured result and keeps control.</p>
             </div>
             <AgentPanesDemo />
           </div>

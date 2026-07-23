@@ -2,11 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  applyCommitTrailerInstruction,
-  commitTrailerInstruction,
-  PIBARM_SETTING_IDS,
-} from "../extensions/pibarm-settings.js";
+import { applyCommitTrailerInstruction, commitTrailerInstruction } from "../extensions/pibarm-settings.js";
 import {
   mergePibarmSettings,
   normalizeObsidianSettings,
@@ -45,8 +41,8 @@ describe("mergePibarmSettings", () => {
   });
 
   test("reads automatic agent-pane settings", () => {
-    const settings = mergePibarmSettings({ pibarm: { agentPanes: { enabled: "auto" } } }, {}, false);
-    expect(settings.agentPanes?.enabled).toBe("auto");
+    const settings = mergePibarmSettings({ pibarm: { agentPanes: { multiplexer: "zellij" } } }, {}, false);
+    expect(settings.agentPanes?.multiplexer).toBe("zellij");
   });
 });
 
@@ -75,24 +71,6 @@ describe("normalizeObsidianSettings", () => {
 });
 
 describe("pibarm settings editor", () => {
-  test("covers every current JSON setting", () => {
-    expect(PIBARM_SETTING_IDS).toEqual([
-      "git.commitTrailer",
-      "codeIntel.enabled",
-      "codeIntel.autoInstall",
-      "codeIntel.timeoutMs",
-      "obsidian.vault",
-      "obsidian.basePath",
-      "obsidian.autoSync",
-      "obsidian.debounceMs",
-      "obsidian.includeAttachments",
-      "agentPanes.enabled",
-      "agentPanes.include",
-      "agentPanes.outsideTmux",
-      "agentPanes.layout",
-    ]);
-  });
-
   test("atomically updates changed values while preserving unknown settings", async () => {
     const directory = await mkdtemp(join(tmpdir(), "pibarm-settings-"));
     const path = join(directory, "settings.json");

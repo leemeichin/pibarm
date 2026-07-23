@@ -154,7 +154,7 @@ export default function agentPresets(pi: ExtensionAPI) {
     name: "run_subagent",
     label: "Run Subagent",
     description:
-      "Run an isolated pi subagent and return bounded output. Uses managed tmux panes automatically when configured and available, with headless fallback.",
+      "Run an isolated pi subagent and return bounded output. Uses managed tmux or Zellij panes when configured and available, with headless fallback.",
     parameters: SUBAGENT_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       const modelSelection = selectAgentModelRef(ctx, params.model, params.prompt);
@@ -178,7 +178,7 @@ export default function agentPresets(pi: ExtensionAPI) {
       finishAgentTask(taskId, failed ? "failed" : "done", failed ? agentExitDetail(result.code, timeoutMs) : undefined);
       updateTaskWidget(ctx);
       const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
-      const text = [output, result.attachCommand && `tmux: ${result.attachCommand}`].filter(Boolean).join("\n\n");
+      const text = [output, result.attachCommand && `Attach: ${result.attachCommand}`].filter(Boolean).join("\n\n");
       if (failed) {
         // Throwing is the only way to flag failure; a returned isError is ignored.
         throw new Error(
@@ -197,7 +197,7 @@ export default function agentPresets(pi: ExtensionAPI) {
     name: "run_subagents",
     label: "Run Subagents",
     description:
-      "Run several isolated pi subagents in parallel, optionally on different models. Uses the configured tmux/headless renderer and returns bounded output per job.",
+      "Run several isolated pi subagents in parallel, optionally on different models. Uses the configured multiplexer/headless renderer and returns bounded output per job.",
     parameters: SUBAGENTS_PARAMS,
     async execute(_toolCallId, params, signal, _update, ctx) {
       if (params.jobs.length === 0) throw new Error("No subagent jobs provided.");
@@ -242,7 +242,7 @@ export default function agentPresets(pi: ExtensionAPI) {
           const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
           const rendered = [
             clipTail(output) || `(pi exited ${result.code})`,
-            result.attachCommand && `tmux: ${result.attachCommand}`,
+            result.attachCommand && `Attach: ${result.attachCommand}`,
           ]
             .filter(Boolean)
             .join("\n\n");

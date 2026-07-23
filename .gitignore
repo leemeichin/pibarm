@@ -4,6 +4,7 @@ node_modules/
 .pi/wt/
 .pi/butty/
 .pi/evals/
+.pi/watchers
 *.log
 .DS_Store
 .env

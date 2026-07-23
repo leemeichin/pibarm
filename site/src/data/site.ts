@@ -35,26 +35,3 @@ export const COMMANDS: Command[] = [
   { name: "/review", args: "[#number|url]", desc: "Start a PR / patch review; findings posted inline.", tag: null },
   { name: "/obsidian-export", args: "", desc: "Export the current session to your Obsidian vault.", tag: null },
 ];
-
-export interface SessionStep {
-  k: "cmd" | "dim" | "info" | "you" | "ok" | "err" | "warn";
-  t: string;
-  d: number;
-}
-
-// scripted pi session (plan -> execute in a worktree)
-export const SESSION: SessionStep[] = [
-  { k: "cmd", t: "/plan add a retry to the flaky worker", d: 34 },
-  { k: "dim", t: "plan mode · read-only — inspecting repo", d: 380 },
-  { k: "dim", t: "  read  lib/task-widget.ts", d: 200 },
-  { k: "dim", t: "  read  extensions/watch-agent.ts", d: 200 },
-  { k: "info", t: "? Which retry strategy — fixed, or exponential backoff?", d: 520 },
-  { k: "you", t: "exponential, max 3", d: 700 },
-  { k: "ok", t: "✓ plan captured · 4 steps · worktree recommended", d: 460 },
-  { k: "cmd", t: "/execute-plan worktree retry-worker", d: 40 },
-  { k: "dim", t: "  worktree  .pi/wt/retry-worker  ⟶  pibarm/retry-worker", d: 420 },
-  { k: "dim", t: "  edit  extensions/watch-agent.ts", d: 300 },
-  { k: "dim", t: "  edit  lib/task-widget.ts", d: 300 },
-  { k: "ok", t: "✓ done · 2 files changed, +38 −6", d: 420 },
-  { k: "dim", t: "  review with /worktree-diff .pi/wt/retry-worker", d: 300 },
-];

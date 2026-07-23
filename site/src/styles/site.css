@@ -132,20 +132,34 @@ body {
 .demo-cap-no { font-family: var(--font-mono); font-size: 13px; color: var(--orange-600); font-weight: 600; }
 .demo-cap-title { font-size: 22px; margin: 0; }
 .demo-cap-note { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
-.demo-note { font-size: 14.5px; color: var(--text-muted); line-height: 1.55; max-width: 52ch; }
-.demo-tags { display: flex; gap: 8px; margin-top: 14px; }
-.demo-tag { font: 600 11px var(--font-mono); }
-.demo-tag--info { color: var(--status-info); }
-.demo-tag--success { color: var(--status-success); }
-.demo-agent-panes { display: grid; gap: 24px; }
-.demo-agent-panes__intro { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
-.demo-agent-panes__intro .demo-note { margin: 0; max-width: none; }
-.demo-agent-panes__callout { margin: 0; padding: 16px 18px; border-left: 3px solid var(--status-info); background: var(--wash-sky); color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
-.demo-agent-panes__callout b { color: var(--text-strong); }
-.demo-snapshot { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: center; }
-.demo-snapshot__body { box-sizing: border-box; height: 260px; }
-.demo-prompt { color: var(--orange-400); }
-.pib-demo-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: center; }
+.demo-note { margin: 0; font-size: 14.5px; color: var(--text-muted); line-height: 1.55; max-width: 58ch; }
+.demo-parent-prompt { display: flex; gap: 12px; margin: 0 0 16px; padding: 12px 14px; border-left: 3px solid var(--orange-500); background: var(--orange-050); }
+.demo-parent-prompt span { flex: none; color: var(--orange-600); font: 600 12px var(--font-mono); }
+.demo-parent-prompt p { margin: 0; color: var(--text-body); font-size: 13.5px; line-height: 1.45; }
+.demo-scenario-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 18px; align-items: start; }
+.demo-result { margin: 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
+.demo-result b { color: var(--text-strong); margin-right: 5px; }
+.demo-tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.demo-tag { color: var(--status-info); font: 600 11px var(--font-mono); }
+
+/* Native tmux shape: two half-width panes over one full-width pane. */
+.agent-terminal { overflow: hidden; background: #0b1016; border: 1px solid #0e1620; border-radius: var(--radius-md); box-shadow: var(--shadow-terminal); color: #c7d0d8; font-family: var(--font-mono); }
+.agent-terminal__chrome { display: flex; align-items: center; gap: 10px; height: 34px; box-sizing: border-box; padding: 0 12px; background: #141d27; border-bottom: 1px solid #303446; color: #8fa1b0; font-size: 11.5px; }
+.agent-terminal__panes { display: grid; grid-template: repeat(2, 205px) / repeat(2, minmax(0, 1fr)); }
+.agent-terminal__pane { min-width: 0; overflow: hidden; padding: 11px 13px; border-color: #626880; font-size: 11.5px; line-height: 1.5; }
+.agent-terminal__pane:nth-child(1) { border-right: 1px solid #626880; border-bottom: 1px solid #626880; }
+.agent-terminal__pane:nth-child(2) { border-bottom: 1px solid #626880; }
+.agent-terminal__pane:nth-child(3) { grid-column: 1 / -1; }
+.agent-terminal__line { min-height: 1.5em; overflow-wrap: anywhere; white-space: pre-wrap; }
+.agent-terminal__line--start, .agent-terminal__line--done, .agent-terminal__line--thinking { color: #8fa1b0; }
+.agent-terminal__line--tool { color: #e8e2d4; }
+.agent-terminal__line--success { color: var(--pea-500); }
+.agent-terminal__line--error { color: var(--tomato-500); }
+.agent-terminal__line--response { color: #f2f0e8; }
+.agent-terminal__line--code { color: #7fb2ce; }
+.agent-terminal__tmuxbar { display: flex; align-items: center; gap: 18px; height: 25px; padding: 0 9px; background: #303446; color: #c6d0f5; font-size: 11px; }
+.agent-terminal__tmuxbar strong { margin: -4px -7px; padding: 4px 7px; background: #414559; color: #8caaee; }
+.agent-terminal__clock { margin-left: auto; }
 
 /* ---------------- Responsive ---------------- */
 @media (max-width: 900px) {
@@ -153,7 +167,7 @@ body {
   .pib-feat-grid { grid-template-columns: 1fr 1fr; }
   .pib-docs { grid-template-columns: 1fr; }
   .pib-docs-side { position: static; }
-  .demo-snapshot, .pib-demo-row, .demo-agent-panes__intro { grid-template-columns: 1fr; }
+  .demo-scenario-notes { grid-template-columns: 1fr; }
 }
 @media (max-width: 620px) {
   .hero-h1 { font-size: 46px; }
@@ -163,6 +177,10 @@ body {
   .demo-panel { padding: 18px; }
   .demo-cap { align-items: flex-start; flex-wrap: wrap; }
   .demo-cap-note { flex-basis: 100%; }
+  .demo-parent-prompt { display: block; }
+  .demo-parent-prompt span { display: block; margin-bottom: 6px; }
+  .agent-terminal { overflow-x: auto; }
+  .agent-terminal__chrome, .agent-terminal__panes, .agent-terminal__tmuxbar { min-width: 680px; }
 }
 
 /* Astro wraps slotted content passed to a framework component in <astro-slot>,

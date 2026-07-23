@@ -4,7 +4,7 @@ import react from "@astrojs/react";
 import { fileURLToPath } from "node:url";
 
 // pibarm docs & marketing site. Static output; React only for the tabbed
-// demo island (the scripted pi session + automatic multiplexer panes).
+// demo island (terminal-faithful automatic multiplexer pane replays).
 //
 // The design system (pibarm-ds) is consumed straight from source — no build
 // step, no symlink. Runtime dependencies are pinned to the site's own copies so

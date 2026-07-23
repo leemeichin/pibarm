@@ -35,10 +35,9 @@ src/
     index.astro             Home — hero, features, tabbed demos
     docs.astro              Docs — sticky sidebar + command reference
   components/
-    Demos.jsx               React island: manual tabs and tool snapshots
-    PiSession.jsx           Scripted /plan → /execute-plan session
-    AgentPanes.jsx         automatic multiplexer-pane orchestration
-  data/site.ts              features, command list, session script (typed)
+    Demos.jsx               React island: realistic agent-flow use cases
+    AgentPanes.jsx          native tmux-pane transcript replay
+  data/site.ts              feature and command reference data
   styles/
     global.css              entry point (@imports the design system, then site.css)
     site.css                page layout + responsive rules
@@ -84,7 +83,7 @@ flex layouts in the DS CSS.
 | `Kbd` | keyboard key cap |
 | `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
-The home page's `Demos` React island switches manually between the stateful `PiSession` and automatic agent-pane simulations plus a static Obsidian vault snapshot; everything else is static Astro.
+The home page's `Demos` React island switches between three realistic agent workflows. `AgentPanes` replays the dedicated `pibarm-agents` tmux window using the same two-over-one tiled layout and transcript syntax emitted by `scripts/agent-render.mjs`; everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 
@@ -96,4 +95,4 @@ The home page's `Demos` React island switches manually between the stateful `PiS
 
 Grounded in [the pibarm repository](../) (README, `lib/task-widget.ts`, `lib/agent-runner.ts`, `extensions/repo-status.ts`) and the pibarm design system in `packages/pibarm-ds` (synced to Claude Design). Explore the repo for deeper implementation detail.
 
-The demos are cosmetic recreations of TUI output, not a real pi runtime.
+The demos mirror a captured `pi` + tmux session; they replay its terminal shape and output in the browser rather than running visitor-funded agents.

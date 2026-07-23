@@ -1163,7 +1163,7 @@ export default function planWorktree(pi: ExtensionAPI) {
     name: "run_worktree_agent",
     label: "Run Worktree Agent",
     description:
-      "Create an isolated git worktree and run a pi subagent inside it using the configured automatic tmux/headless renderer.",
+      "Create an isolated git worktree and run a pi subagent inside it using the configured multiplexer/headless renderer.",
     parameters: WORKTREE_AGENT_PARAMS,
     async execute(_id, params, signal, _update, ctx) {
       const wt = await createWorktree(pi, ctx.cwd, params.name, params.baseRef ?? "HEAD");
@@ -1193,7 +1193,7 @@ export default function planWorktree(pi: ExtensionAPI) {
       finishAgentTask(taskId, failed ? "failed" : "done", failed ? `exit ${result.code}` : undefined);
       updateTaskWidget(ctx);
       const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join("\n\n--- stderr ---\n");
-      const text = [output, result.attachCommand && `tmux: ${result.attachCommand}`].filter(Boolean).join("\n\n");
+      const text = [output, result.attachCommand && `Attach: ${result.attachCommand}`].filter(Boolean).join("\n\n");
       if (failed) {
         throw new Error(`Worktree subagent failed (exit ${result.code}).${text ? `\n\n${clipTail(text)}` : ""}`);
       }

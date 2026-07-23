@@ -1,6 +1,6 @@
 # pibarm site
 
-The documentation & marketing site for **pibarm** — a set of [pi](https://github.com/leemeichin/pibarm) extensions and skills for planning before editing, isolating risky work in git worktrees, and watching agents work in tmux.
+The documentation & marketing site for **pibarm** — a set of [pi](https://github.com/leemeichin/pibarm) extensions and skills for planning before editing, isolating risky work in git worktrees, and watching agents work in tmux or Zellij.
 
 Built with [Astro](https://astro.build). Ships as a static site with near-zero JavaScript — React is used only for the tabbed, animated demo section on the home page. It is the production implementation of the `ui_kits/pibarm-site` prototype from the pibarm design system (see `../project`).
 
@@ -37,7 +37,7 @@ src/
   components/
     Demos.jsx               React island: manual tabs and tool snapshots
     PiSession.jsx           Scripted /plan → /execute-plan session
-    AgentPanes.jsx         automatic tmux multi-pane orchestration
+    AgentPanes.jsx         automatic multiplexer-pane orchestration
   data/site.ts              features, command list, session script (typed)
   styles/
     global.css              entry point (@imports the design system, then site.css)

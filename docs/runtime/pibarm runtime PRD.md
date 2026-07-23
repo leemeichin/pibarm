@@ -17,7 +17,7 @@ next: "[[pibarm runtime design]]"
 
 ## Summary
 
-pibarm today is a set of pi extensions and skills that make agent work safer and more legible in a terminal: plan first, execute in worktrees, multiplex visible agents through tmux, watch PRs in the background, and keep a durable Obsidian record. Its visible agent panes are terminal-independent, but the overall product still assumes a TTY and local shell.
+pibarm today is a set of pi extensions and skills that make agent work safer and more legible in a terminal: plan first, execute in worktrees, multiplex visible agents through tmux or Zellij, watch PRs in the background, and keep a durable Obsidian record. Its visible agent panes are terminal-independent, but the overall product still assumes a TTY and local shell.
 
 This PRD proposes the **pibarm runtime**: the same agent runtime environment lifted out of the CLI behind an ACP-compatible client boundary so it can be driven from a **web client** and a **native desktop app** (macOS first), with native UX affordances instead of terminal emulation. Everything the TUI can do — multiplexing, planning, elicitation, worktrees, watchers, presets, subagents, forge operations — must be doable from web and desktop, and each surface should do it in the way that surface does best.
 
@@ -29,18 +29,18 @@ The full inventory of what exists today, and what each piece must become on web 
 
 - **Planning**: `/plan`, plan mode restrictions, `elicit_plan_questions` with typed inputs, approve/refine loop.
 - **Isolation**: repo-local git worktrees (`.pi/wt/<name>`), worktree agents, diff summaries.
-- **Multiplexing**: standard child-agent tools with automatic tmux panes, capture/wait/kill lifecycle.
+- **Multiplexing**: standard child-agent tools with automatic tmux/Zellij panes and capture/wait/kill lifecycle.
 - **Background work**: watcher agents polling PR/CI state, waking the parent session on change.
 - **Forge**: `forge_*` tools over `gh` (GitHub) and `hut` (SourceHut), repo statusline, `/review`.
 - **Record**: Obsidian session export with a stable note-path scheme and autosync.
 - **Configuration**: role presets (model/tools/thinking), mcporter MCP bridge, themes.
 
-Most of these remain welded to a terminal. Agent panes now depend only on tmux rather than one emulator, but notifications still use terminal escape sequences and rich elicitation is a TUI form. The product is good; the delivery surface is singular.
+Most of these remain welded to a terminal. Agent panes now use small tmux/Zellij adapters rather than one emulator, but notifications still use terminal escape sequences and rich elicitation is a TUI form. The product is good; the delivery surface is singular.
 
 ## Problem statement
 
 1. **The runtime is trapped in the TTY.** You cannot check a plan waiting for approval, answer an elicitation question, or review a worktree diff unless you are at the terminal that owns the session. Sessions die with the terminal window.
-2. **Multiplexing is still borrowed, not owned.** tmux makes visible agents portable across terminals, but it still does not provide a real review surface, diff viewer, or form control.
+2. **Multiplexing is still borrowed, not owned.** tmux and Zellij make visible agents portable across terminals, but they still do not provide a real review surface, diff viewer, or form control.
 3. **Forge work bounces between tools.** pibarm can list PRs and CI, but reviewing, replying, and triaging still means a browser tab per forge. Non-GitHub forges get shallower treatment than GitHub, and AGit-style forges get none.
 4. **The record and the runtime are separate.** Obsidian holds the durable narrative, but you cannot act from it; the runtime holds the action, but its presentation is ephemeral.
 
@@ -56,7 +56,7 @@ Most of these remain welded to a terminal. Agent panes now depend only on tmux r
 ## Non-goals
 
 - **A hosted SaaS.** The web client connects to the user's own runtime host (localhost, LAN, or tailnet). No pibarm-operated multi-tenant service in this cycle.
-- **A general-purpose terminal emulator or multiplexer.** Desktop and web render agent sessions natively; they do not aim to replace tmux or terminal applications for general shell use. An embedded terminal view exists only where a task needs one (inline shell, interactive REPLs).
+- **A general-purpose terminal emulator or multiplexer.** Desktop and web render agent sessions natively; they do not aim to replace tmux, Zellij, or terminal applications for general shell use. An embedded terminal view exists only where a task needs one (inline shell, interactive REPLs).
 - **Mobile clients.** The protocol should not preclude them; nothing in this cycle builds them.
 - **Replacing pi.** pibarm remains a layer over pi. The runtime host embeds and orchestrates pi sessions; it does not fork the agent core.
 - **Forge hosting features** (repo browsing, wikis, releases). Deep integration targets the _work loop_: changes, reviews, CI, tickets.
@@ -107,7 +107,7 @@ Browser app served by the runtime host itself. GitHub issue #44's start → stre
 Native macOS application. Details in [[macos app]].
 
 - True native shell: menu bar, dock badge with waiting-question count, system notifications with reply/approve actions, multi-window, full keyboard control.
-- Agent grid: child agents as a native pane grid — resizable, focusable, detachable to windows — replacing tmux on this surface.
+- Agent grid: child agents as a native pane grid — resizable, focusable, detachable to windows — replacing terminal-multiplexer panes on this surface.
 - Native diff review for worktrees and incoming PRs/patches.
 - Menu bar extra: at-a-glance runtime state (sessions running, questions waiting, CI status) without the main window.
 
@@ -116,7 +116,7 @@ Native macOS application. Details in [[macos app]].
 The shared child-agent runner generalises into runtime children, and each surface renders them its own way. Details in [[sessions and multiplexing]].
 
 - Same lifecycle verbs as today: spawn, attach, capture, join, kill; same roles (scout/planner/worker); same worktree option.
-- tmux rendering remains for the CLI; web/desktop render runtime-native panes.
+- tmux/Zellij rendering remains for the CLI; web/desktop render runtime-native panes.
 - The three-agent row and fourth-agent confirmation become policy in the runtime, uniformly enforced.
 
 ### F5 — Planning and review UX (P0)
@@ -179,7 +179,7 @@ One bounded code-intelligence tool uses trusted, already-installed language serv
 ## Success metrics
 
 - A session started in the CLI can be answered, approved, and completed entirely from web and from macOS — demonstrated across all P0 features (parity checklist in [[parity matrix]] is the acceptance artifact).
-- Zero tmux dependency for multiplexing on web/desktop; CLI automatic-pane behavior unchanged.
+- Zero terminal-multiplexer dependency on web/desktop; CLI automatic-pane behavior unchanged.
 - A full review (open → inline comments → submit) completed against GitHub _and_ SourceHut without opening the forge's website.
 - Median time-to-answer for a waiting elicitation question drops from "whenever I next look at the terminal" to under a minute via notification actions (instrument locally; no telemetry leaves the machine — measurement is a local stat, opt-in).
 - Existing extension test suite passes against the host-embedded session path.

@@ -101,7 +101,9 @@ async function main() {
   if (has("uvx") || has("uv")) ok("code intelligence runtime", "uv found");
   else if (has("mise")) ok("code intelligence runtime", "mise can install pinned uv into the pibarm cache");
   else warn("code intelligence runtime", "install uv or mise to use managed Serena language servers");
-  commandCheck("tmux", { install: "brew install tmux", detail: "terminal-independent visible agent panes" });
+  const multiplexer = ["tmux", "zellij"].find(has);
+  if (multiplexer) ok("agent pane multiplexer", `${multiplexer} found`);
+  else warn("agent pane multiplexer", "install tmux or Zellij for visible delegated agents");
   commandCheck(process.env.PI_NOTIFY_TERMINAL_NOTIFIER || "terminal-notifier", {
     install: "brew install terminal-notifier",
     detail: "optional native macOS notifications",

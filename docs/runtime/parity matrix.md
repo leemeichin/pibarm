@@ -46,7 +46,7 @@ Legend: **native** = purpose-built UI on that surface; **form** = rendered as st
 | standard tool wait + captured result | host verb                           | results fold into parent transcript | same                            | P0       |
 | `/agents`, `/agents-kill`            | host registry (no pane scraping)    | list + kill controls                | same                            | P0       |
 | four-agent limit + tiled layout      | policy in host config               | enforced via same policy            | enforced via same policy        | P0       |
-| tmux panes                           | CLI-only rendering path, kept       | — (runtime panes instead)           | — (native panes instead)        | P0       |
+| tmux/Zellij panes                    | CLI-only adapter renderers, kept    | — (runtime panes instead)           | — (native panes instead)        | P0       |
 
 ## Background work and notifications
 
@@ -102,7 +102,7 @@ Legend: **native** = purpose-built UI on that surface; **form** = rendered as st
 ## Deliberate non-parity
 
 - **General terminal emulation**: web/desktop embed a terminal view only for interactive child processes; they are not shells. Rationale in [[pibarm runtime PRD#Non-goals]].
-- **tmux pane control on web/desktop**: replaced by runtime-native panes; remote-controlling a terminal multiplexer from a GUI would be needless plumbing.
+- **terminal-multiplexer control on web/desktop**: replaced by runtime-native panes; remote-controlling tmux or Zellij from a GUI would be needless plumbing.
 
 ## Related
 

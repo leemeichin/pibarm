@@ -80,7 +80,7 @@ Feature-specific tools:
 | `hut`               | SourceHut-backed `forge_*` tools                       | `brew install hut && hut init`                              |
 | `mcporter`          | MCP bridge tools and managed code intelligence         | install/configure `mcporter`, then edit `.pi/mcporter.json` |
 | `uv` or `mise`      | isolated Serena language-server runtime                | `brew install uv` or use an existing `mise` installation    |
-| `tmux`              | terminal-independent visible agent panes               | `brew install tmux`                                         |
+| `tmux` or `zellij`  | terminal-independent visible agent panes               | `brew install tmux` / `brew install zellij`                 |
 | `terminal-notifier` | optional native macOS notifications                    | `brew install terminal-notifier`                            |
 
 The TUI uses Nerd Font glyphs for the statusline, task widget, and rich planning questions; install a Nerd Font if icons render as boxes.
@@ -183,8 +183,8 @@ Agent command execution is shell-first and fail-fast: prefer direct Unix tools, 
 | `/obsidian-status`                        | Show Obsidian export settings resolved from Pi settings.                  |
 | `/obsidian-export`                        | Export the current session to the configured Obsidian vault.              |
 | `/agents [name]`                          | List managed agents or capture one agent's log.                           |
-| `/agents-attach`                          | Focus the managed tmux window or show its attach command.                 |
-| `/agents-kill [name\|all]`                | Stop managed agent panes without touching the parent tmux session.        |
+| `/agents-attach`                          | Focus a managed pane or show its native attach command.                   |
+| `/agents-kill [name\|all]`                | Stop managed agent panes without touching the parent session.             |
 
 ## Tools exposed to the agent
 
@@ -199,8 +199,8 @@ All custom tools are registered, but only `search_tools`, `question`, `elicit_pl
 | `create_git_worktree`     | Create an isolated repo-local git worktree and branch.                                                                                                            |
 | `summarize_worktree_diff` | Summarize status/diff for a worktree.                                                                                                                             |
 | `remove_git_worktree`     | Remove an isolated worktree after confirmation/review.                                                                                                            |
-| `run_worktree_agent`      | Create/use a worktree and run an agent there, using automatic tmux rendering or headless fallback.                                                                |
-| `run_subagent`            | Run one isolated agent with automatic tmux rendering or headless fallback; defaults to a 10 minute timeout.                                                       |
+| `run_worktree_agent`      | Create/use a worktree and run an agent there, using automatic multiplexer rendering or headless fallback.                                                         |
+| `run_subagent`            | Run one isolated agent with automatic multiplexer rendering or headless fallback; defaults to a 10 minute timeout.                                                |
 | `run_subagents`           | Run up to four agents in parallel with the same configured renderer; defaults to a 10 minute timeout per job.                                                     |
 | `watch_agent`             | Start/list/stop a sibling watcher agent for PR reviews, checks, or external state changes.                                                                        |
 | `mcporter_list`           | Discover MCP servers/tools through `mcporter`.                                                                                                                    |
@@ -262,7 +262,7 @@ The TUI is tabbed, has Nerd Font status icons, supports option descriptions/prev
 
 ## Task widget
 
-`todo-list.ts`, subagents, worktree agents, and watcher agents share one compact widget below the editor/above the status line. It renders clean horizontal pills such as `‹ ○ 1 · inspect auth › ‹ ● sub scout · tmux-agents › ‹ ✓ sub reviewer · gpt-5-mini ›` so delegated work stays visually connected to the parent session without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
+`todo-list.ts`, subagents, worktree agents, and watcher agents share one compact widget below the editor/above the status line. It renders clean horizontal pills such as `‹ ○ 1 · inspect auth › ‹ ● sub scout · pane-agents › ‹ ✓ sub reviewer · gpt-5-mini ›` so delegated work stays visually connected to the parent session without a tall vertical list. Use `/tasks` for the expanded view when pills overflow.
 
 ## Watcher agents
 
@@ -318,26 +318,28 @@ Review and cleanup:
 
 For agent-driven review, ask pi to use `summarize_worktree_diff`.
 
-## Automatic tmux agent panes
+## Automatic agent panes
 
-`run_subagent`, `run_subagents`, and `run_worktree_agent` use one shared runner. With tmux available they stream into a managed tiled window; without tmux they keep the same headless behavior and report one fallback notice. Watchers remain background task pills.
+`run_subagent`, `run_subagents`, and `run_worktree_agent` use one shared runner. With tmux or a compatible Zellij release available they stream into managed panes; without either they keep the same headless behavior and report one fallback notice. Watchers remain background task pills.
 
 ```json
 {
   "pibarm": {
     "agentPanes": {
-      "enabled": "auto",
+      "enabled": true,
       "include": ["subagent", "worktree"],
-      "outsideTmux": "detached",
-      "layout": "tiled"
+      "multiplexer": "auto",
+      "outsideMultiplexer": "detached"
     }
   }
 }
 ```
 
-Inside tmux, pibarm creates a dedicated window in the current session and never kills the parent session. Outside tmux, the default creates a detached session and prints `tmux attach -t ...`; pibarm never launches or controls a terminal application. Set `outsideTmux` to `headless`, remove a tool kind from `include`, or set `enabled` to `false` to opt out.
+Inside tmux, pibarm creates a dedicated tiled window. Inside Zellij, it creates auto-arranged panes without moving focus. Outside either, it creates a detached session and prints the native attach command. `auto` prefers the active multiplexer, then tmux when both are available outside a session; set `multiplexer` to `tmux` or `zellij` to choose. pibarm only shuts down detached sessions it created, never the parent session.
 
-Agent reasoning, responses, and tool activity render live while the standard tool waits and returns the captured result. Logs live under `.pi/agents/`. Use `/agents` to list runs, `/agents <name>` to capture a log, `/agents-attach` to focus/show the attach command, and `/agents-kill all` for cleanup. Concurrent delegation keeps the existing four-agent limit and lets tmux tile the panes without another confirmation flow.
+Set `outsideMultiplexer` to `headless`, remove a tool kind from `include`, or set `enabled` to `false` to opt out. Zellij support requires pane IDs plus targeted close/focus actions (available in Zellij 0.44.3); older releases fall back headlessly.
+
+Agent reasoning, responses, and tool activity render live while the standard tool waits and returns the captured result. Logs live under `.pi/agents/`. Use `/agents` to list runs, `/agents <name>` to capture a log, `/agents-attach` to focus/show the attach command, and `/agents-kill all` for cleanup. Concurrent delegation keeps the existing four-agent limit and lets the multiplexer arrange panes without another confirmation flow.
 
 ## Notifications and permission gates
 
@@ -478,10 +480,12 @@ extensions/todo-list.ts        # compact todo tracking for multi-task prompts
 extensions/watch-agent.ts      # sibling watcher agents for PRs/checks/external state
 extensions/usage-limit-status.ts # statusline warning when provider usage limits are hit
 extensions/agent-presets.ts   # presets and single/parallel subagents
-lib/agent-runner.ts           # shared headless/tmux child-agent runner
+lib/agent-runner.ts           # shared headless/multiplexer child-agent runner
+lib/*-agent-pane.ts           # tmux and Zellij pane adapters
 lib/pibarm-settings.ts        # merged Pi settings helper for pibarm namespace
 lib/obsidian-export.ts        # Obsidian Markdown session exporter
-scripts/agent-render.mjs      # readable live transcript for tmux panes
+scripts/agent-run.sh          # argv-safe pane process wrapper
+scripts/agent-render.mjs      # readable live transcript for agent panes
 skills/*/SKILL.md             # progressive-disclosure workflows
 prompts/plan-execute.md       # reusable plan/execute prompt
 prompts/pr-open.md            # newline-safe PR opening prompt

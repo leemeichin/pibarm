@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Renders a `pi --mode json` event stream as a live human-readable transcript.
-// Used by managed tmux panes so agent reasoning, responses, and tool activity
+// Used by managed multiplexer panes so agent reasoning, responses, and tool activity
 // are visible while the agent runs, instead of only a final answer at exit.
 import { createInterface } from "node:readline";
 

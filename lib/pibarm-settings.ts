@@ -13,10 +13,10 @@ export interface ObsidianSettings {
 }
 
 export interface AgentPanesSettings {
-  enabled?: "auto" | boolean;
+  enabled?: boolean;
   include?: Array<"subagent" | "worktree">;
-  outsideTmux?: "detached" | "headless";
-  layout?: "tiled";
+  multiplexer?: "auto" | "tmux" | "zellij";
+  outsideMultiplexer?: "detached" | "headless";
 }
 
 export interface CodeIntelSettings {

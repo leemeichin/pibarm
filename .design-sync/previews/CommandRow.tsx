@@ -11,7 +11,7 @@ export const Reference = () => (
     <CommandRow name="/execute-plan" args="worktree <name>" trailing={<Badge tone="success">safe</Badge>}>
       Execute the captured plan in a new repo-local git worktree.
     </CommandRow>
-    <CommandRow name="/agents" args="[name]" trailing={<Badge tone="accent">tmux</Badge>}>
+    <CommandRow name="/agents" args="[name]" trailing={<Badge tone="accent">panes</Badge>}>
       List managed agents or capture one agent log.
     </CommandRow>
     <CommandRow name="/repo-status">

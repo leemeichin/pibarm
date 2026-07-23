@@ -17,10 +17,10 @@ const workflowSnippet = `/plan <task>
   ↓  changes happen in .pi/wt/<name>, not your checkout
 /worktree-diff .pi/wt/<name>`;
 
-const agentSnippet = `run_subagents → automatic tiled tmux window
-run_worktree_agent → isolated branch in the same window
+const agentSnippet = `run_subagents → automatic tmux/Zellij panes
+run_worktree_agent → isolated branch in the same session
 /agents            # list or capture logs
-/agents-attach     # focus or print tmux attach command
+/agents-attach     # focus or print native attach command
 /agents-kill all   # stop children, never the parent session`;
 
 const notifySnippet = `export PI_NOTIFY_COOLDOWN_SECONDS=60
@@ -59,7 +59,7 @@ export PI_NOTIFY_INCLUDE_QUESTION=1`;
       <div class="docs-cardwrap">
         {COMMANDS.map((c) => (
           <CommandRow name={c.name} args={c.args || null}>
-            {c.tag === "tmux" && <Badge slot="trailing" tone="accent">tmux</Badge>}
+            {c.tag === "panes" && <Badge slot="trailing" tone="accent">panes</Badge>}
             {c.tag === "safe" && <Badge slot="trailing" tone="success">safe</Badge>}
             {c.desc}
           </CommandRow>
@@ -67,7 +67,7 @@ export PI_NOTIFY_INCLUDE_QUESTION=1`;
       </div>
 
       <h2 id="doc-agents" class="docs-h2">Automatic agent panes</h2>
-      <p>The standard subagent and worktree tools use a shared runner. tmux renders live output in a managed tiled window when available; otherwise the same calls fall back headlessly. Outside tmux, pibarm creates a detached session and prints the attach command instead of controlling a terminal application.</p>
+      <p>The standard subagent and worktree tools use a shared runner with matching tmux and Zellij adapters. The active multiplexer gets managed panes; outside one, pibarm creates a detached native session and prints its attach command. Without either, the same calls fall back headlessly.</p>
       <CodeBlock language="bash" code={agentSnippet} />
       <div class="docs-spacer"></div>
       <Callout tone="tip" title="No second agent API">Models keep using <code>run_subagent</code>, <code>run_subagents</code>, and <code>run_worktree_agent</code>; configuration chooses only the renderer.</Callout>

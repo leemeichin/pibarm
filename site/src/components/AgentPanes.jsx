@@ -1,6 +1,6 @@
 import React from "react";
 
-// Animated automatic tmux agent-pane demo. Client island.
+// Animated automatic multiplexer-pane demo. Client island.
 const paneStyles = {
   root: { height: 460, overflow: "hidden" },
   win: { background: "var(--surface-code)", borderRadius: "var(--radius-md)", overflow: "hidden", boxShadow: "var(--shadow-terminal)", border: "1px solid #0e1620", fontFamily: "var(--font-mono)" },
@@ -81,7 +81,7 @@ export default function AgentPanesDemo() {
       setParent([]); setPanes(AGENT_PANES.map((p) => ({ role: p.role, color: p.color, worktree: p.worktree, mounted: false, status: "idle", lines: [] }))); setWatching(false);
       await wait(650);
       setParent((L) => [...L, { k: "cmd", t: "run_subagents jobs=scout,planner" }]); await wait(700);
-      setParent((L) => [...L, { k: "dim", t: "automatic tmux window · tiled scout + planner" }]); await wait(500);
+      setParent((L) => [...L, { k: "dim", t: "automatic pane adapter · tiled scout + planner" }]); await wait(500);
       await Promise.all([streamPane(0), streamPane(1)]);
       await wait(300);
       setParent((L) => [...L, { k: "cmd", t: "run_subagents → captured results" }]); await wait(650);
@@ -114,7 +114,7 @@ export default function AgentPanesDemo() {
             <span style={{ ...paneStyles.dot, background: "#e6b02c" }} />
             <span style={{ ...paneStyles.dot, background: "#6fa84c" }} />
           </div>
-          <span style={paneStyles.title}>tmux · <b style={{ color: "var(--orange-400)" }}>pibarm-agents</b> · parent pi</span>
+          <span style={paneStyles.title}>tmux / Zellij · <b style={{ color: "var(--orange-400)" }}>pibarm-agents</b> · parent pi</span>
         </div>
 
         <div style={paneStyles.parent}>

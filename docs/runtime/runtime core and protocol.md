@@ -112,7 +112,7 @@ A missing SDK hook is recorded as a pinned compatibility gap and upstreamed or h
 The pibarm CLI experience keeps two paths (PRD open question resolved as recommended):
 
 1. **Standalone** (today's behaviour): extensions in-process with pi. Nothing changes for existing users.
-2. **Attached**: `pibarm attach [session]` — a TUI ACP client of the host. Agent rendering in this mode may target tmux panes (D5): the CLI renderer subscribes to `_pibarm/agent/*` events and maps them onto panes as `agent-runner.ts` does today.
+2. **Attached**: `pibarm attach [session]` — a TUI ACP client of the host. Agent rendering in this mode may target tmux or Zellij panes (D5): the CLI renderer subscribes to `_pibarm/agent/*` events and maps them through the same adapters `agent-runner.ts` uses today.
 
 Shared behaviour lives in `lib/` so the two paths cannot drift; the standalone path is the regression baseline for the host refactor.
 

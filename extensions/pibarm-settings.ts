@@ -24,25 +24,7 @@ const packageJson = createRequire(import.meta.url)("../package.json") as { versi
 if (typeof packageJson.version !== "string") throw new Error("pibarm package version is missing");
 export const PIBARM_VERSION = packageJson.version;
 
-export const PIBARM_SETTING_IDS = [
-  "git.commitTrailer",
-  "codeIntel.enabled",
-  "codeIntel.autoInstall",
-  "codeIntel.timeoutMs",
-  "obsidian.vault",
-  "obsidian.basePath",
-  "obsidian.autoSync",
-  "obsidian.debounceMs",
-  "obsidian.includeAttachments",
-  "agentPanes.enabled",
-  "agentPanes.include",
-  "agentPanes.outsideTmux",
-  "agentPanes.layout",
-] as const;
-
-type PibarmSettingId = (typeof PIBARM_SETTING_IDS)[number];
-
-const SETTING_PATHS: Record<PibarmSettingId, readonly string[]> = {
+const SETTING_PATHS = {
   "git.commitTrailer": ["git", "commitTrailer"],
   "codeIntel.enabled": ["codeIntel", "enabled"],
   "codeIntel.autoInstall": ["codeIntel", "autoInstall"],
@@ -54,9 +36,11 @@ const SETTING_PATHS: Record<PibarmSettingId, readonly string[]> = {
   "obsidian.includeAttachments": ["obsidian", "includeAttachments"],
   "agentPanes.enabled": ["agentPanes", "enabled"],
   "agentPanes.include": ["agentPanes", "include"],
-  "agentPanes.outsideTmux": ["agentPanes", "outsideTmux"],
-  "agentPanes.layout": ["agentPanes", "layout"],
-};
+  "agentPanes.multiplexer": ["agentPanes", "multiplexer"],
+  "agentPanes.outsideMultiplexer": ["agentPanes", "outsideMultiplexer"],
+} as const satisfies Record<string, readonly string[]>;
+
+type PibarmSettingId = keyof typeof SETTING_PATHS;
 
 export function commitTrailerInstruction(version = PIBARM_VERSION): string {
   return `When creating a Git commit, add this exact trailer as the final line of the commit message:\nCo-authored-by: 🥧 pibarm v${version}`;
@@ -166,15 +150,14 @@ function buildSettingItems(
     {
       id: "agentPanes.enabled",
       label: "Agent panes",
-      description: "Use tmux panes automatically, always, or never",
-      currentValue:
-        settings.agentPanes?.enabled === true ? "on" : settings.agentPanes?.enabled === false ? "off" : "auto",
-      values: ["auto", "on", "off"],
+      description: "Render delegated agents in tmux or Zellij panes",
+      currentValue: booleanValue(settings.agentPanes?.enabled !== false),
+      values: ["on", "off"],
     },
     {
       id: "agentPanes.include",
       label: "Pane agent types",
-      description: "Choose which standard delegation tools render in tmux",
+      description: "Choose which standard delegation tools render in panes",
       currentValue: (() => {
         const include = settings.agentPanes?.include ?? ["subagent", "worktree"];
         return include.length === 2 ? "both" : (include[0] ?? "none");
@@ -182,18 +165,18 @@ function buildSettingItems(
       values: ["both", "subagent", "worktree", "none"],
     },
     {
-      id: "agentPanes.outsideTmux",
-      label: "Outside tmux",
-      description: "Create a detached session or keep agents headless",
-      currentValue: settings.agentPanes?.outsideTmux === "headless" ? "headless" : "detached",
-      values: ["detached", "headless"],
+      id: "agentPanes.multiplexer",
+      label: "Agent pane multiplexer",
+      description: "Auto-detect tmux or Zellij, or select one explicitly",
+      currentValue: settings.agentPanes?.multiplexer ?? "auto",
+      values: ["auto", "tmux", "zellij"],
     },
     {
-      id: "agentPanes.layout",
-      label: "Agent pane layout",
-      description: "Layout used for concurrent managed agents",
-      currentValue: "tiled",
-      values: ["tiled"],
+      id: "agentPanes.outsideMultiplexer",
+      label: "Outside a multiplexer",
+      description: "Create a detached session or keep agents headless",
+      currentValue: settings.agentPanes?.outsideMultiplexer === "headless" ? "headless" : "detached",
+      values: ["detached", "headless"],
     },
     {
       id: "save",
@@ -212,6 +195,7 @@ function settingUpdate(id: PibarmSettingId, value: string): PibarmSettingUpdate 
     "codeIntel.autoInstall",
     "obsidian.autoSync",
     "obsidian.includeAttachments",
+    "agentPanes.enabled",
   ]);
   const numberIds = new Set<PibarmSettingId>(["codeIntel.timeoutMs", "obsidian.debounceMs"]);
   return {
@@ -222,19 +206,13 @@ function settingUpdate(id: PibarmSettingId, value: string): PibarmSettingUpdate 
         ? Number(value)
         : id === "obsidian.vault" && value === "(not set)"
           ? ""
-          : id === "agentPanes.enabled"
-            ? value === "on"
-              ? true
-              : value === "off"
-                ? false
-                : "auto"
-            : id === "agentPanes.include"
-              ? value === "both"
-                ? ["subagent", "worktree"]
-                : value === "none"
-                  ? []
-                  : [value]
-              : value,
+          : id === "agentPanes.include"
+            ? value === "both"
+              ? ["subagent", "worktree"]
+              : value === "none"
+                ? []
+                : [value]
+            : value,
   };
 }
 

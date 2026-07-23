@@ -23,8 +23,10 @@ npx wrangler login # once per machine
 npm run deploy
 ```
 
-Pushes to `main` deploy through GitHub Actions when `CLOUDFLARE_API_TOKEN` and
-`CLOUDFLARE_ACCOUNT_ID` are configured as repository secrets.
+Pushes to `main` deploy through GitHub Actions. The repository only stores the
+`OP_SERVICE_ACCOUNT_TOKEN` secret; the workflow loads `CLOUDFLARE_API_TOKEN`
+and `CLOUDFLARE_ACCOUNT_ID` from matching credential items in the `pibarm`
+1Password vault.
 
 ## Structure
 

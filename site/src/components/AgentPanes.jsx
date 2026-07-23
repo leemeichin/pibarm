@@ -1,12 +1,16 @@
 import React from "react";
 
 const PARENT_LINES = [
-  { at: 1, kind: "dim", text: "search_tools → forge · delegation · worktree" },
-  { at: 2, kind: "tool", text: "▶ run_subagents  scout · planner" },
-  { at: 6, kind: "success", text: "✔ joined 2 agents · 4 tickets mapped" },
-  { at: 7, kind: "tool", text: "▶ run_worktree_agent  issue-17" },
-  { at: 11, kind: "success", text: "✔ PR #108 opened · watcher started" },
-  { at: 12, kind: "response", text: "Issue #17 is in review. #21 is the next unblocked plan." },
+  { at: 1, kind: "thinking", text: "Thinking..." },
+  { at: 2, kind: "tool", text: "search_tools  forge · delegation · worktree" },
+  { at: 3, kind: "output", text: "Enabled forge_tickets, run_subagents, run_worktree_agent" },
+  { at: 4, kind: "tool", text: "run_subagents  scout · planner" },
+  { at: 9, kind: "success", text: "Joined 2 agents" },
+  { at: 9.1, kind: "output", text: "4 tickets mapped · #17 is first unblocked" },
+  { at: 10, kind: "thinking", text: "Thinking..." },
+  { at: 11, kind: "tool", text: "run_worktree_agent  issue-17" },
+  { at: 18, kind: "success", text: "PR #108 opened · watcher started" },
+  { at: 19, kind: "response", text: "Issue #17 is in review. #21 is the next unblocked plan." },
 ];
 
 const AGENTS = [
@@ -14,30 +18,39 @@ const AGENTS = [
     name: "scout",
     lines: [
       { at: 1, kind: "start", text: "[agent scout started]" },
-      { at: 2, kind: "tool", text: "▶ forge_tickets {\"state\":\"open\"}" },
-      { at: 3, kind: "success", text: "✔ 4 open · #17 #21 #34 #38" },
-      { at: 4, kind: "response", text: "#17 auth guard blocks #34 deploy work" },
-      { at: 5, kind: "done", text: "[agent scout exited 0]" },
+      { at: 2, kind: "thinking", text: "· thinking ·  Mapping open work" },
+      { at: 3, kind: "tool", text: "▶ forge_tickets {\"state\":\"open\"}" },
+      { at: 4, kind: "output", text: "Open tickets:" },
+      { at: 5, kind: "output", text: "#17 auth guard  ·  #21 docs" },
+      { at: 6, kind: "output", text: "#34 deploy CI  ·  #38 web spike" },
+      { at: 7, kind: "response", text: "#17 blocks #34; #21 can run in parallel." },
+      { at: 8, kind: "done", text: "[agent scout exited 0]" },
     ],
   },
   {
     name: "planner",
     lines: [
       { at: 2, kind: "start", text: "[agent planner started]" },
-      { at: 3, kind: "tool", text: "▶ read {\"path\":\"docs/runtime.md\"}" },
-      { at: 4, kind: "response", text: "queue  #17 → #34 → #38" },
-      { at: 5, kind: "response", text: "parallel  #21 documentation" },
-      { at: 6, kind: "done", text: "[agent planner exited 0]" },
+      { at: 3, kind: "thinking", text: "· thinking ·  Checking dependencies" },
+      { at: 4, kind: "tool", text: "▶ read {\"path\":\"docs/runtime.md\"}" },
+      { at: 5, kind: "output", text: "Runtime order:" },
+      { at: 6, kind: "output", text: "permission gate before deploy workflow" },
+      { at: 7, kind: "response", text: "queue  #17 → #34 → #38" },
+      { at: 8, kind: "response", text: "parallel  #21 documentation" },
+      { at: 9, kind: "done", text: "[agent planner exited 0]" },
     ],
   },
   {
     name: "worktree",
     lines: [
-      { at: 7, kind: "start", text: "[agent worktree issue-17 started]" },
-      { at: 8, kind: "tool", text: "▶ edit extensions/permission-gate.ts" },
-      { at: 9, kind: "tool", text: "▶ bash {\"command\":\"bun test\"}" },
-      { at: 10, kind: "success", text: "✔ 104 tests passed · +18 −7" },
-      { at: 11, kind: "done", text: "[agent worktree exited 0]" },
+      { at: 11, kind: "start", text: "[agent worktree issue-17 started]" },
+      { at: 12, kind: "thinking", text: "· thinking ·  Fixing the shared guard" },
+      { at: 13, kind: "tool", text: "▶ edit extensions/permission-gate.ts" },
+      { at: 14, kind: "output", text: "Updated 1 file · +18 −7" },
+      { at: 15, kind: "tool", text: "▶ bash {\"command\":\"bun test\"}" },
+      { at: 16, kind: "output", text: "bun test v1.3.13" },
+      { at: 17, kind: "success", text: "104 pass · 0 fail · 1.6s" },
+      { at: 18, kind: "done", text: "[agent worktree exited 0]" },
     ],
   },
 ];
@@ -60,10 +73,10 @@ export default function AgentPanesDemo() {
 
   React.useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setFrame(12);
+      setFrame(19);
       return;
     }
-    const timer = window.setInterval(() => setFrame((current) => (current >= 16 ? 0 : current + 1)), 620);
+    const timer = window.setInterval(() => setFrame((current) => (current >= 23 ? 0 : current + 1)), 560);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -89,13 +102,13 @@ export default function AgentPanesDemo() {
             {PARENT_LINES.filter((line) => line.at <= frame).map((line) => (
               <div className={`agent-terminal__line agent-terminal__line--${line.kind}`} key={line.at}>{line.text}</div>
             ))}
-            {frame > 0 && frame < 12 && <span className="pib-term__caret" aria-hidden="true" />}
+            {frame > 0 && frame < 19 && <span className="pib-term__caret" aria-hidden="true" />}
           </div>
           <div className="matrix-parent__tasks">
-            {frame >= 1 && <TaskPill status={frame >= 5 ? "done" : "running"} kind="sub scout" label="open issues" />}
-            {frame >= 2 && <TaskPill status={frame >= 6 ? "done" : "running"} kind="sub planner" label="dependency map" />}
-            {frame >= 7 && <TaskPill status={frame >= 11 ? "done" : "running"} kind="wt issue-17" label="isolated fix" />}
-            {frame >= 11 && <TaskPill status="running" kind="watch pr" label="review + CI" />}
+            {frame >= 1 && <TaskPill status={frame >= 8 ? "done" : "running"} kind="sub scout" label="open issues" />}
+            {frame >= 2 && <TaskPill status={frame >= 9 ? "done" : "running"} kind="sub planner" label="dependency map" />}
+            {frame >= 11 && <TaskPill status={frame >= 18 ? "done" : "running"} kind="wt issue-17" label="isolated fix" />}
+            {frame >= 18 && <TaskPill status="running" kind="watch pr" label="review + CI" />}
           </div>
           <div className="matrix-parent__status">
             <span>issue-triage (main)</span>

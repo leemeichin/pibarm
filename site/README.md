@@ -85,7 +85,7 @@ flex layouts in the DS CSS.
 | `Kbd` | keyboard key cap |
 | `Icon` | Lucide icon rendered to inline SVG **at build time** (no CDN, no runtime JS) · `name` is typed to a curated set |
 
-The home page's `Demos` React island switches between five realistic capability flows. `AgentPanes` renders the flagship Matrix layout with the parent Pi full-height beside three stacked delegated agents; focused replays cover PR/CI watching, managed code intelligence, MCP, and role presets. Everything else is static Astro.
+The home page's `Demos` React island switches between four realistic capability flows. `AgentPanes` renders the flagship Matrix layout with the parent Pi full-height beside three stacked delegated agents; focused replays cover PR/CI watching, managed code intelligence, and MCP. Reasoning and tool output stay expanded so the browser replay matches Pi's `ctrl+o` terminal view. Everything else is static Astro.
 
 ## Substitutions (carried over from the design system)
 
